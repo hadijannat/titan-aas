@@ -99,6 +99,7 @@ def _permission_to_abac(permission: Permission) -> tuple[Action, ResourceType]:
         Permission.CREATE_CONCEPT_DESCRIPTION: (Action.CREATE, ResourceType.CONCEPT_DESCRIPTION),
         Permission.UPDATE_CONCEPT_DESCRIPTION: (Action.UPDATE, ResourceType.CONCEPT_DESCRIPTION),
         Permission.DELETE_CONCEPT_DESCRIPTION: (Action.DELETE, ResourceType.CONCEPT_DESCRIPTION),
+        Permission.ADMIN: (Action.READ, ResourceType.AAS),
     }
     return mapping.get(permission, (Action.READ, ResourceType.AAS))
 

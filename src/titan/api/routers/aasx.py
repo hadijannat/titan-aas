@@ -27,6 +27,8 @@ from titan.api.pagination import DEFAULT_LIMIT, CursorParam, LimitParam
 from titan.compat.aasx import AasxImporter
 from titan.persistence.db import get_session
 from titan.persistence.tables import AasxPackageTable
+from titan.security.deps import require_permission
+from titan.security.rbac import Permission
 from titan.storage.factory import get_blob_storage
 
 logger = logging.getLogger(__name__)
@@ -74,7 +76,10 @@ async def _delete_package_file(storage_uri: str) -> None:
     await storage.delete(metadata)
 
 
-@router.get("")
+@router.get(
+    "",
+    dependencies=[Depends(require_permission(Permission.READ_AAS))],
+)
 async def get_all_packages(
     limit: LimitParam = DEFAULT_LIMIT,
     cursor: CursorParam = None,
@@ -120,7 +125,11 @@ async def get_all_packages(
     }
 
 
-@router.post("", status_code=201)
+@router.post(
+    "",
+    status_code=201,
+    dependencies=[Depends(require_permission(Permission.CREATE_AAS))],
+)
 async def upload_package(
     file: UploadFile = File(...),
     session: AsyncSession = Depends(get_session),
@@ -187,7 +196,10 @@ async def upload_package(
     }
 
 
-@router.get("/{package_id}")
+@router.get(
+    "/{package_id}",
+    dependencies=[Depends(require_permission(Permission.READ_AAS))],
+)
 async def download_package(
     package_id: str,
     session: AsyncSession = Depends(get_session),
@@ -213,7 +225,10 @@ async def download_package(
     )
 
 
-@router.put("/{package_id}")
+@router.put(
+    "/{package_id}",
+    dependencies=[Depends(require_permission(Permission.UPDATE_AAS))],
+)
 async def update_package(
     package_id: str,
     file: UploadFile = File(...),
@@ -282,7 +297,11 @@ async def update_package(
     }
 
 
-@router.delete("/{package_id}", status_code=204)
+@router.delete(
+    "/{package_id}",
+    status_code=204,
+    dependencies=[Depends(require_permission(Permission.DELETE_AAS))],
+)
 async def delete_package(
     package_id: str,
     session: AsyncSession = Depends(get_session),
@@ -306,7 +325,10 @@ async def delete_package(
     logger.info(f"Deleted AASX package {package_id}")
 
 
-@router.get("/{package_id}/shells")
+@router.get(
+    "/{package_id}/shells",
+    dependencies=[Depends(require_permission(Permission.READ_AAS))],
+)
 async def get_package_shells(
     package_id: str,
     session: AsyncSession = Depends(get_session),
@@ -339,7 +361,10 @@ async def get_package_shells(
     return {"result": shells}
 
 
-@router.get("/{package_id}/submodels")
+@router.get(
+    "/{package_id}/submodels",
+    dependencies=[Depends(require_permission(Permission.READ_SUBMODEL))],
+)
 async def get_package_submodels(
     package_id: str,
     session: AsyncSession = Depends(get_session),
@@ -370,7 +395,10 @@ async def get_package_submodels(
     return {"result": submodels}
 
 
-@router.post("/{package_id}/validate")
+@router.post(
+    "/{package_id}/validate",
+    dependencies=[Depends(require_permission(Permission.READ_AAS))],
+)
 async def validate_package(
     package_id: str,
     session: AsyncSession = Depends(get_session),
@@ -409,7 +437,10 @@ async def validate_package(
     }
 
 
-@router.post("/{package_id}/preview")
+@router.post(
+    "/{package_id}/preview",
+    dependencies=[Depends(require_permission(Permission.READ_AAS))],
+)
 async def preview_package_import(
     package_id: str,
     session: AsyncSession = Depends(get_session),
@@ -446,7 +477,11 @@ async def preview_package_import(
     }
 
 
-@router.post("/{package_id}/import", status_code=201)
+@router.post(
+    "/{package_id}/import",
+    status_code=201,
+    dependencies=[Depends(require_permission(Permission.UPDATE_AAS))],
+)
 async def import_package_contents(
     package_id: str,
     conflict_resolution: str = "skip",

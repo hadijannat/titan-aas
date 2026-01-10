@@ -40,10 +40,16 @@
 |---------|-------------|
 | ⚡ **Blazing Fast Reads** | Stream raw bytes from Redis cache—sub-millisecond response times |
 | 🛡️ **IDTA Compliant** | Core repository, registry, discovery, serialization (see conformance matrix) |
-| 🔐 **Enterprise Security** | OIDC authentication, RBAC authorization, rate limiting |
+| 🔐 **Enterprise Security** | OIDC authentication, RBAC + ABAC authorization, rate limiting |
 | 📊 **Observable** | OpenTelemetry tracing + Prometheus metrics built-in |
 | 🐳 **Cloud Native** | Helm charts, Terraform modules for AWS/Azure/GCP |
 | 🔌 **Real-time Events** | WebSocket + MQTT for live asset updates |
+| 🌐 **Federation** | Multi-instance synchronization with peer discovery |
+| 📦 **AASX Packages** | Import/export with validation, versioning, conflict resolution |
+| ☁️ **Multi-Cloud Storage** | S3, Azure Blob, GCS for binary attachments |
+| 🖥️ **Admin UI** | React-based dashboard for monitoring and management |
+| 🔋 **Edge Deployment** | Offline-first with background sync when connected |
+| 🔌 **Plugin System** | Extensible with custom plugins and connectors |
 
 ---
 
@@ -394,6 +400,8 @@ uv run -- locust -f tests/load/locustfile.py --headless -u 100 -r 10 -t 60s
 
 Titan-AAS is configured via environment variables:
 
+### Core Settings
+
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `TITAN_ENV` | Environment (development/production) | `development` |
@@ -402,6 +410,23 @@ Titan-AAS is configured via environment variables:
 | `OIDC_ISSUER` | OIDC provider URL | *(disabled)* |
 | `ENABLE_TRACING` | Enable OpenTelemetry | `true` |
 | `ENABLE_METRICS` | Enable Prometheus metrics | `true` |
+
+### Blob Storage
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `BLOB_STORAGE_TYPE` | Storage backend: `local`, `s3`, `azure`, `gcs` | `local` |
+| `S3_BUCKET` / `AWS_ACCESS_KEY_ID` | S3 configuration | — |
+| `AZURE_CONTAINER` / `AZURE_STORAGE_CONNECTION_STRING` | Azure Blob configuration | — |
+| `GCS_BUCKET` / `GCS_PROJECT` | Google Cloud Storage configuration | — |
+
+### Federation & Edge
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `FEDERATION_ENABLED` | Enable multi-instance federation | `false` |
+| `EDGE_MODE` | Run as edge node (offline-capable) | `false` |
+| `HUB_URL` | Hub URL for edge sync | — |
 
 ---
 

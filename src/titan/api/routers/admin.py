@@ -37,7 +37,7 @@ router = APIRouter(prefix="/admin", tags=["Admin"])
 
 @router.get(
     "/stats",
-    dependencies=[Depends(require_permission(Permission.READ_AAS))],
+    dependencies=[Depends(require_permission(Permission.ADMIN))],
 )
 async def get_dashboard_stats(
     session: AsyncSession = Depends(get_session),
@@ -101,7 +101,7 @@ async def get_dashboard_stats(
 
 @router.get(
     "/activity",
-    dependencies=[Depends(require_permission(Permission.READ_AAS))],
+    dependencies=[Depends(require_permission(Permission.ADMIN))],
 )
 async def get_recent_activity(
     limit: int = 20,
@@ -175,7 +175,10 @@ async def get_recent_activity(
     }
 
 
-@router.get("/health")
+@router.get(
+    "/health",
+    dependencies=[Depends(require_permission(Permission.ADMIN))],
+)
 async def get_admin_health(
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
@@ -226,7 +229,7 @@ async def get_admin_health(
 
 @router.get(
     "/semantic-ids",
-    dependencies=[Depends(require_permission(Permission.READ_SUBMODEL))],
+    dependencies=[Depends(require_permission(Permission.ADMIN))],
 )
 async def get_semantic_ids(
     session: AsyncSession = Depends(get_session),
@@ -254,7 +257,7 @@ async def get_semantic_ids(
 
 @router.get(
     "/asset-ids",
-    dependencies=[Depends(require_permission(Permission.READ_AAS))],
+    dependencies=[Depends(require_permission(Permission.ADMIN))],
 )
 async def get_global_asset_ids(
     session: AsyncSession = Depends(get_session),
