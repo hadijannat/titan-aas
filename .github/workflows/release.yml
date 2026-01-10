@@ -93,13 +93,27 @@ jobs:
       - name: Install dependencies
         run: uv sync --group dev
 
-      - name: Run contract tests and generate conformance report
+      - name: Run conformance tests and generate report
+        env:
+          DATABASE_URL: postgresql+asyncpg://titan:titan@localhost:5432/titan
+          REDIS_URL: redis://localhost:6379/0
         run: |
-          uv run -- pytest tests/contract -v --tb=short --junitxml=test-results/contract.xml || true
+          mkdir -p test-results
+          # Run contract tests and Discovery integration tests for full SSP coverage
+          uv run -- pytest tests/contract tests/integration/test_discovery.py \
+            -v --tb=short \
+            --junitxml=test-results/conformance.xml || true
+
+          # Generate machine-readable conformance report
           python scripts/generate_conformance_report.py \
-            --input test-results/contract.xml \
+            --input test-results/conformance.xml \
             --output conformance-report.json \
             --version ${{ github.ref_name }}
+
+          # Generate human-readable conformance summary
+          python scripts/generate_conformance_summary.py \
+            --input conformance-report.json \
+            --output conformance-summary.md
 
       - name: Start server and run load test
         env:
@@ -171,6 +185,7 @@ jobs:
           name: release-artifacts
           path: |
             conformance-report.json
+            conformance-summary.md
             benchmark-results.json
 
   create-release:
@@ -197,4 +212,5 @@ jobs:
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
           files: |
             artifacts/conformance-report.json
+            artifacts/conformance-summary.md
             artifacts/benchmark-results.json

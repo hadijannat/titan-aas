@@ -78,16 +78,18 @@ Legend:
 
 **Coverage: 5/5 endpoints (100%)**
 
-### Discovery Service (SSP-002)
+### Discovery Service (SSP-001/SSP-002)
 
-| Endpoint | Method | Status | Test Reference |
-|----------|--------|--------|----------------|
-| `/lookup/shells` | GET | Implemented | `tests/unit/api/test_discovery.py` |
-| `/lookup/shells` | POST | Implemented | `tests/unit/api/test_discovery.py` |
-| `/lookup/shells/{aasIdentifier}` | GET | Implemented | `tests/unit/api/test_discovery.py` |
-| `/lookup/shells/{aasIdentifier}` | DELETE | Partial | Cleanup not fully implemented |
+| Endpoint | Method | Status | Test Reference | Profile |
+|----------|--------|--------|----------------|---------|
+| `/lookup/shells` | GET | Implemented | `tests/integration/test_discovery.py` | SSP-001 (legacy) |
+| `/lookup/shellsByAssetLink` | POST | Implemented | `tests/integration/test_discovery.py` | SSP-002 |
+| `/lookup/shells/{aasIdentifier}` | GET | Implemented | `tests/integration/test_discovery.py` | SSP-002 |
+| `/lookup/shells/{aasIdentifier}` | POST | Implemented | `tests/integration/test_discovery.py` | SSP-001 |
+| `/lookup/shells/{aasIdentifier}` | DELETE | Implemented | `tests/integration/test_discovery.py` | SSP-001 |
+| `/lookup/submodels` | GET | Implemented | `tests/integration/test_discovery.py` | SSP-002 |
 
-**Coverage: 3/4 endpoints (75%)**
+**Coverage: 6/6 endpoints (100%)**
 
 ### ConceptDescription Repository Service (SSP-001)
 
@@ -124,8 +126,8 @@ Legend:
 | SubmodelRegistryServiceSpecification/SSP-002 | Implemented | Read-only subset of SSP-001. |
 | SubmodelRegistryServiceSpecification/SSP-003 | Planned | Bulk operations not implemented. |
 | SubmodelRegistryServiceSpecification/SSP-004 | Planned | Query operations not implemented. |
-| DiscoveryServiceSpecification/SSP-002 | Implemented | Read operations in `src/titan/api/routers/discovery.py`. |
-| DiscoveryServiceSpecification/SSP-001 | Partial | Deprecated legacy read operation not implemented. |
+| DiscoveryServiceSpecification/SSP-002 | Implemented | Read operations (GET, POST /shellsByAssetLink) in `src/titan/api/routers/discovery.py`. |
+| DiscoveryServiceSpecification/SSP-001 | Implemented | Full CRUD for asset links (POST, DELETE /shells/{id}) in `src/titan/api/routers/discovery.py`. |
 | ConceptDescriptionRepositoryServiceSpecification/SSP-001 | Implemented | CRUD endpoints for /concept-descriptions. |
 | ConceptDescriptionRepositoryServiceSpecification/SSP-002 | Implemented | Query endpoint with `idShort`, `isCaseOf`, and `dataSpecificationRef` filters. |
 | AasxFileServerServiceSpecification/SSP-001 | Planned | AASX file server not implemented. |
@@ -140,9 +142,9 @@ Legend:
 | Submodel Repository | 12 | 12 | 100% |
 | AAS Registry | 9 | 10 | 90% |
 | Submodel Registry | 5 | 5 | 100% |
-| Discovery | 3 | 4 | 75% |
+| Discovery | 6 | 6 | 100% |
 | ConceptDescription | 5 | 5 | 100% |
-| **Total** | **44** | **46** | **96%** |
+| **Total** | **47** | **48** | **98%** |
 
 ## Data Specification Conformance (IDTA-01003-a)
 

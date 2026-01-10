@@ -158,6 +158,8 @@ packages = ["src/titan"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+# Use xunit2 format to include user_properties (SSP markers) in JUnit XML
+junit_family = "xunit2"
 
 [dependency-groups]
 dev = [

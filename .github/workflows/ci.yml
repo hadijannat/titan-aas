@@ -140,8 +140,33 @@ jobs:
           path: test-results/integration.xml
 
   test-contract:
-    name: Contract Tests
+    name: Contract & Conformance Tests
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: titan
+          POSTGRES_PASSWORD: titan
+          POSTGRES_DB: titan
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
@@ -156,32 +181,70 @@ jobs:
       - name: Install dependencies
         run: uv sync --group dev
 
-      - name: Run contract tests
+      - name: Run contract and conformance tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://titan:titan@localhost:5432/titan
+          REDIS_URL: redis://localhost:6379/0
         run: |
           mkdir -p test-results
-          uv run -- pytest tests/contract -v --tb=short --junitxml=test-results/contract.xml
+          # Run both contract tests and Discovery integration tests for SSP coverage
+          uv run -- pytest tests/contract tests/integration/test_discovery.py \
+            -v --tb=short \
+            --junitxml=test-results/conformance.xml
 
       - name: Generate conformance report
         if: always()
         run: |
           python scripts/generate_conformance_report.py \
-            --input test-results/contract.xml \
+            --input test-results/conformance.xml \
             --output conformance-report.json \
-            --version ${{ github.ref_name || 'dev' }}
+            --version ${{ github.ref_name || 'dev' }} \
+            --min-conformance 0.95
+
+      - name: Generate conformance summary
+        if: always()
+        run: |
+          python scripts/generate_conformance_summary.py \
+            --input conformance-report.json \
+            --output conformance-summary.md
+
+      - name: Validate conformance threshold
+        run: |
+          python -c "
+          import json
+          import sys
+
+          with open('conformance-report.json') as f:
+              report = json.load(f)
+
+          rate = report['summary']['conformance_rate']
+          threshold = 0.95
+
+          print(f'Conformance rate: {rate:.1%}')
+          print(f'Threshold: {threshold:.0%}')
+
+          if rate < threshold:
+              print(f'FAIL: Conformance rate {rate:.1%} below {threshold:.0%} threshold')
+              sys.exit(1)
+
+          print('PASS: Conformance meets threshold')
+          "
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: contract-test-results
-          path: test-results/contract.xml
+          name: conformance-test-results
+          path: test-results/conformance.xml
 
       - name: Upload conformance report
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: conformance-report
-          path: conformance-report.json
+          path: |
+            conformance-report.json
+            conformance-summary.md
 
   build:
     name: Build Docker Image

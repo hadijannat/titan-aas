@@ -76,7 +76,13 @@ class ConformanceReport:
 
 
 def parse_junit_xml(xml_path: Path) -> list[TestCaseResult]:
-    """Parse JUnit XML and extract SSP test case results."""
+    """Parse JUnit XML and extract SSP test case results.
+
+    SSP IDs are extracted from:
+    1. JUnit XML <properties> elements (from pytest markers)
+    2. Pattern matching on test names
+    3. Legacy mapping for older tests
+    """
     tree = ET.parse(xml_path)  # noqa: S314 - Input is trusted CI artifact
     root = tree.getroot()
 
@@ -91,9 +97,13 @@ def parse_junit_xml(xml_path: Path) -> list[TestCaseResult]:
             classname = testcase.get("classname", "")
             time_str = testcase.get("time", "0")
 
-            # Extract SSP test case ID from test name or markers
-            # Convention: test function name includes SSP ID or marker
-            ssp_id = extract_ssp_id(name, classname)
+            # Extract SSP test case ID from properties (pytest markers)
+            ssp_id = extract_ssp_id_from_properties(testcase)
+
+            # Fall back to pattern matching on test name/classname
+            if not ssp_id:
+                ssp_id = extract_ssp_id_from_name(name, classname)
+
             if not ssp_id:
                 continue
 
@@ -129,30 +139,51 @@ def parse_junit_xml(xml_path: Path) -> list[TestCaseResult]:
     return results
 
 
-def extract_ssp_id(test_name: str, classname: str) -> str | None:
+def extract_ssp_id_from_properties(testcase) -> str | None:
+    """Extract SSP ID from JUnit XML properties element.
+
+    Looks for <properties><property name="ssp_id" value="SSP-..."/></properties>
+    This is set by the pytest @pytest.mark.ssp("SSP-...") marker.
+    """
+    properties = testcase.find("properties")
+    if properties is None:
+        return None
+
+    for prop in properties.findall("property"):
+        if prop.get("name") == "ssp_id":
+            return prop.get("value")
+
+    return None
+
+
+def extract_ssp_id_from_name(test_name: str, classname: str) -> str | None:
     """Extract SSP test case ID from test name or classname.
 
     Looks for patterns like:
     - test_ssp_aas_repo_get_001
     - test_SSP_AAS_REPO_GET_001
     - [SSP-AAS-REPO-GET-001]
+    - SSP-DISC-LOOKUP-001 (from marker argument in name)
     """
     # Pattern: SSP-{profile}-{category}-{sequence}
-    pattern = r"SSP[-_]([A-Z0-9]+[-_][A-Z0-9]+[-_][A-Z0-9]+[-_][0-9]+)"
+    # Support both SSP-DISC-LOOKUP-001 and SSP_DISC_LOOKUP_001 formats
+    pattern = r"SSP[-_]([A-Z0-9]+[-_][A-Z0-9]+[-_][A-Z0-9]+)"
 
     # Check test name first
-    match = re.search(pattern, test_name.upper().replace("_", "-"))
+    normalized_name = test_name.upper().replace("_", "-")
+    match = re.search(pattern, normalized_name)
     if match:
         return f"SSP-{match.group(1)}"
 
     # Check classname
-    match = re.search(pattern, classname.upper().replace("_", "-"))
+    normalized_class = classname.upper().replace("_", "-")
+    match = re.search(pattern, normalized_class)
     if match:
         return f"SSP-{match.group(1)}"
 
-    # Try simpler pattern for test names like test_shells_list_returns_paginated_response
-    # Map known test names to SSP IDs
-    test_to_ssp = {
+    # Legacy mapping for older tests without markers
+    # These should be migrated to use @pytest.mark.ssp markers
+    legacy_test_to_ssp = {
         "test_shells_list_returns_paginated_response": "SSP-AAS-REPO-LIST-001",
         "test_shell_not_found_returns_404": "SSP-AAS-REPO-ERR-001",
         "test_invalid_base64_returns_400": "SSP-AAS-REPO-ERR-002",
@@ -163,7 +194,7 @@ def extract_ssp_id(test_name: str, classname: str) -> str | None:
         "test_description_profiles_list": "SSP-DESC-003",
     }
 
-    return test_to_ssp.get(test_name)
+    return legacy_test_to_ssp.get(test_name)
 
 
 def _extract_profile(test_case_id: str) -> str:
