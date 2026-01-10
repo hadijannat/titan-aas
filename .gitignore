@@ -1,5 +1,7 @@
 # Python
 __pycache__/
+.CLAUDE.md
+CLAUDE.md
 *.py[cod]
 *.pyd
 *.so

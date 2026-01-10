@@ -569,6 +569,264 @@ docker compose cp redis:/data/dump.rdb ./redis-backup.rdb
 
 ---
 
+## Incident Procedures
+
+### Database Down Recovery
+
+**Detection:**
+- Health endpoint returns unhealthy for database
+- Logs show `sqlalchemy.exc.OperationalError`
+- `/health/ready` returns 503
+
+**Immediate Response:**
+
+```bash
+# 1. Verify database status
+docker compose exec postgres pg_isready -U titan
+# OR for external DB:
+psql $DATABASE_URL -c "SELECT 1"
+
+# 2. Check database logs
+docker compose logs postgres --tail=100
+
+# 3. If connection pool exhausted, restart Titan
+docker compose restart titan
+
+# 4. If database crashed, restart it
+docker compose restart postgres
+sleep 30  # Wait for recovery
+docker compose restart titan
+```
+
+**Kubernetes:**
+
+```bash
+# Check database pod
+kubectl get pods -n titan -l app=postgresql
+
+# Check database logs
+kubectl logs -n titan -l app=postgresql --tail=100
+
+# Restart application pods (will reconnect)
+kubectl rollout restart deployment/titan-titan-aas -n titan
+```
+
+**Verification:**
+
+```bash
+curl http://localhost:8080/health/ready
+# Should return {"status": "healthy"}
+```
+
+### Redis Down Recovery
+
+**Detection:**
+- Cache misses spike to 100%
+- Logs show `redis.exceptions.ConnectionError`
+- Rate limiting stops working
+
+**Immediate Response:**
+
+```bash
+# 1. Verify Redis status
+docker compose exec redis redis-cli ping
+# Should return PONG
+
+# 2. Check Redis logs
+docker compose logs redis --tail=100
+
+# 3. If Redis crashed, restart it
+docker compose restart redis
+sleep 10
+docker compose restart titan
+
+# 4. Cache will auto-populate on requests
+```
+
+**Impact During Outage:**
+- Application continues to function (cache miss fallback to database)
+- Performance degradation expected
+- Rate limiting may not work correctly
+
+**Verification:**
+
+```bash
+# Check cache is working
+redis-cli INFO stats | grep keyspace_hits
+```
+
+### OIDC Provider Down Recovery
+
+**Detection:**
+- All authenticated requests return 401
+- Logs show JWKS fetch failures
+- `/health` works but authenticated endpoints fail
+
+**Immediate Response:**
+
+```bash
+# 1. Check OIDC provider status
+curl -s "$OIDC_ISSUER/.well-known/openid-configuration" | jq .
+
+# 2. Check JWKS endpoint
+curl -s "$OIDC_ISSUER/protocol/openid-connect/certs" | jq .
+
+# 3. If provider is down, enable emergency bypass (use with caution!)
+# Option A: Switch to anonymous mode temporarily
+TITAN_AUTH_MODE=anonymous docker compose up -d titan
+
+# Option B: Use cached JWKS (if configured)
+# Titan caches JWKS for OIDC_JWKS_CACHE_SECONDS (default 3600)
+# Existing tokens will continue to validate
+```
+
+**Production Mitigation:**
+- Configure JWKS cache for longer duration
+- Set up OIDC provider redundancy
+- Consider backup authentication provider
+
+**Verification:**
+
+```bash
+# Get a fresh token and test
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/shells
+```
+
+### Secret Rotation Procedures
+
+#### Database Password Rotation
+
+```bash
+# 1. Generate new password
+NEW_PASSWORD=$(openssl rand -base64 32)
+
+# 2. Update in PostgreSQL
+psql $DATABASE_URL -c "ALTER USER titan PASSWORD '$NEW_PASSWORD'"
+
+# 3. Update Kubernetes secret
+kubectl create secret generic titan-db-credentials \
+  --from-literal=password="$NEW_PASSWORD" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+# 4. Restart application to pick up new credentials
+kubectl rollout restart deployment/titan-titan-aas -n titan
+
+# 5. Verify
+kubectl logs -n titan -l app.kubernetes.io/name=titan-aas | grep -i database
+```
+
+#### Redis Password Rotation
+
+```bash
+# 1. Generate new password
+NEW_PASSWORD=$(openssl rand -base64 32)
+
+# 2. Update in Redis (if requirepass is set)
+redis-cli CONFIG SET requirepass "$NEW_PASSWORD"
+redis-cli AUTH "$NEW_PASSWORD" PING
+
+# 3. Update Kubernetes secret
+kubectl create secret generic titan-redis-credentials \
+  --from-literal=password="$NEW_PASSWORD" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+# 4. Restart application
+kubectl rollout restart deployment/titan-titan-aas -n titan
+```
+
+#### OIDC Client Secret Rotation
+
+```bash
+# 1. Generate new client secret in OIDC provider (e.g., Keycloak)
+# 2. Update Kubernetes secret
+kubectl create secret generic titan-oidc-credentials \
+  --from-literal=client-secret="$NEW_SECRET" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+# 3. Restart application
+kubectl rollout restart deployment/titan-titan-aas -n titan
+```
+
+### Cache Warming Procedures
+
+#### Manual Cache Warming
+
+```bash
+#!/bin/bash
+# cache-warm.sh - Warm the cache after restart or deployment
+
+TITAN_HOST="${TITAN_HOST:-http://localhost:8080}"
+
+echo "Warming cache for $TITAN_HOST..."
+
+# Warm shell list (first page)
+curl -s "$TITAN_HOST/shells?limit=1000" > /dev/null
+echo "Warmed shells list"
+
+# Warm submodel list (first page)
+curl -s "$TITAN_HOST/submodels?limit=1000" > /dev/null
+echo "Warmed submodels list"
+
+# Warm frequently accessed items (if known)
+# curl -s "$TITAN_HOST/shells/{id}" > /dev/null
+
+echo "Cache warming complete"
+```
+
+#### Kubernetes Job for Cache Warming
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: titan-cache-warm
+  namespace: titan
+spec:
+  template:
+    spec:
+      containers:
+        - name: cache-warm
+          image: curlimages/curl:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Warming cache..."
+              curl -sf http://titan-titan-aas:8080/shells?limit=1000 > /dev/null
+              curl -sf http://titan-titan-aas:8080/submodels?limit=1000 > /dev/null
+              echo "Cache warming complete"
+      restartPolicy: Never
+  backoffLimit: 3
+```
+
+#### Automated Cache Warming on Deployment
+
+Add to deployment post-hook:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: titan-titan-aas
+spec:
+  template:
+    spec:
+      containers:
+        - name: titan-aas
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    sleep 10  # Wait for app to start
+                    curl -sf http://localhost:8080/shells?limit=100 > /dev/null || true
+                    curl -sf http://localhost:8080/submodels?limit=100 > /dev/null || true
+```
+
+---
+
 ## Security Checklist
 
 - [ ] OIDC authentication enabled

@@ -1,0 +1,41 @@
+# CODEOWNERS - Defines code ownership for pull request reviews
+# Syntax: <pattern> <owner1> [<owner2> ...]
+# Owners are @username or team names (e.g., @org/team-name)
+
+# Default owner for everything in the repository
+* @hadijannat
+
+# Security-critical paths require security review
+/src/titan/security/ @hadijannat
+/.github/workflows/ @hadijannat
+/deployment/ @hadijannat
+/SECURITY.md @hadijannat
+
+# API changes require API owner review
+/src/titan/api/ @hadijannat
+/specs/ @hadijannat
+
+# Core AAS models and persistence
+/src/titan/core/ @hadijannat
+/src/titan/persistence/ @hadijannat
+
+# External integrations (Catena-X, OPC UA, DPP)
+/src/titan/integrations/ @hadijannat
+/src/titan/connectors/ @hadijannat
+
+# Observability configuration
+/src/titan/observability/ @hadijannat
+
+# Infrastructure and deployment configuration
+/terraform/ @hadijannat
+/deployment/kubernetes/ @hadijannat
+docker-compose*.yml @hadijannat
+Dockerfile @hadijannat
+
+# Documentation
+/docs/ @hadijannat
+*.md @hadijannat
+
+# Dependency management
+pyproject.toml @hadijannat
+uv.lock @hadijannat

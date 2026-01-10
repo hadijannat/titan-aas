@@ -149,7 +149,7 @@ jobs:
   build:
     name: Build Docker Image
     runs-on: ubuntu-latest
-    needs: [lint, test-unit, test-integration]
+    needs: [lint, test-unit, test-integration, test-contract]
     permissions:
       contents: read
       security-events: write
@@ -172,14 +172,48 @@ jobs:
 
       - name: Test Docker image health
         run: |
-          docker run -d --name titan-test \
-            -e DATABASE_URL=postgresql+asyncpg://test:test@localhost/test \
-            -e REDIS_URL=redis://localhost:6379/0 \
+          # Create isolated network for container testing
+          docker network create titan-test-net
+
+          # Start PostgreSQL for health check
+          docker run -d --name titan-test-postgres --network titan-test-net \
+            -e POSTGRES_USER=titan \
+            -e POSTGRES_PASSWORD=titan \
+            -e POSTGRES_DB=titan \
+            postgres:16-alpine
+
+          # Start Redis for health check
+          docker run -d --name titan-test-redis --network titan-test-net \
+            redis:7-alpine
+
+          # Wait for dependencies to be ready
+          echo "Waiting for PostgreSQL and Redis..."
+          sleep 10
+
+          # Run Titan-AAS container
+          docker run -d --name titan-test --network titan-test-net \
+            -e DATABASE_URL=postgresql+asyncpg://titan:titan@titan-test-postgres:5432/titan \
+            -e REDIS_URL=redis://titan-test-redis:6379/0 \
+            -e TITAN_ENV=production \
             -p 8080:8080 \
-            titan-aas:${{ github.sha }} || true
-          sleep 5
-          docker logs titan-test || true
-          docker stop titan-test || true
+            titan-aas:${{ github.sha }}
+
+          # Wait for application to start
+          echo "Waiting for Titan-AAS to start..."
+          sleep 15
+
+          # Verify health endpoints
+          echo "Testing health endpoints..."
+          curl -f http://localhost:8080/health/live || (docker logs titan-test && exit 1)
+          curl -f http://localhost:8080/health/ready || (docker logs titan-test && exit 1)
+          curl -f http://localhost:8080/docs || (docker logs titan-test && exit 1)
+
+          echo "Container health check passed!"
+
+          # Cleanup
+          docker stop titan-test titan-test-redis titan-test-postgres
+          docker rm titan-test titan-test-redis titan-test-postgres
+          docker network rm titan-test-net
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.33.1

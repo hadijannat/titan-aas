@@ -26,6 +26,7 @@ from titan.api.errors import AasApiError, aas_api_exception_handler, generic_exc
 from titan.api.middleware import (
     CachingMiddleware,
     CompressionMiddleware,
+    CorrelationMiddleware,
     RateLimitMiddleware,
     SecurityHeadersMiddleware,
 )
@@ -54,6 +55,7 @@ from titan.config import settings
 from titan.connectors.mqtt import MqttEventHandler, close_mqtt, get_mqtt_publisher
 from titan.events import AasEvent, AnyEvent, SubmodelEvent
 from titan.events.runtime import get_event_bus, start_event_bus, stop_event_bus
+from titan.observability import configure_logging
 from titan.observability.metrics import MetricsMiddleware, get_metrics
 from titan.observability.tracing import (
     TracingMiddleware,
@@ -70,6 +72,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Manage application lifecycle.
 
     On startup:
+    - Configure structured logging
     - Initialize OpenTelemetry tracing
     - Initialize Prometheus metrics
     - Initialize database connection pool
@@ -83,6 +86,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     - Close database connections
     - Shutdown tracing
     """
+    # Configure structured logging (JSON in production, console in dev)
+    configure_logging(
+        json_format=settings.env != "dev",
+        level=settings.log_level,
+    )
+
     # Initialize observability
     setup_tracing()
     get_metrics()  # Initialize metrics registry
@@ -160,7 +169,9 @@ def create_app() -> FastAPI:
     )
 
     # Add observability middleware
-    # Order matters: TracingMiddleware wraps MetricsMiddleware
+    # Order matters: TracingMiddleware wraps MetricsMiddleware wraps CorrelationMiddleware
+    # CorrelationMiddleware is innermost to set context for all other middleware
+    app.add_middleware(CorrelationMiddleware)
     if settings.enable_metrics:
         app.add_middleware(MetricsMiddleware)
     if settings.enable_tracing:
