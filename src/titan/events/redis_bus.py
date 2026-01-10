@@ -138,7 +138,7 @@ class RedisStreamEventBus(EventBus):
             maxlen=100000,  # Keep last 100k events
         )
 
-        logger.debug(f"Published event {event.event_id} as {message_id}")
+        logger.debug(f"Published event {event.event_id} as {message_id!r}")
 
     async def subscribe(self, handler: EventHandler) -> None:
         """Subscribe a handler to receive events."""
@@ -249,9 +249,9 @@ class RedisStreamEventBus(EventBus):
         """Process a single message from the stream."""
         try:
             # Deserialize event
-            data_bytes = message_data.get(b"data") or message_data.get("data")
+            data_bytes = message_data.get(b"data")
             if not data_bytes:
-                logger.warning(f"Message {message_id} has no data field")
+                logger.warning(f"Message {message_id!r} has no data field")
                 await redis.xack(self.stream_name, self.consumer_group, message_id)
                 return
 
@@ -268,10 +268,10 @@ class RedisStreamEventBus(EventBus):
 
             # Acknowledge successful processing
             await redis.xack(self.stream_name, self.consumer_group, message_id)
-            logger.debug(f"Processed and ACKed message {message_id}")
+            logger.debug(f"Processed and ACKed message {message_id!r}")
 
         except Exception as e:
-            logger.error(f"Failed to process message {message_id}: {e}")
+            logger.error(f"Failed to process message {message_id!r}: {e}")
             # Message will be retried (not ACKed)
 
     async def _move_to_dead_letter(self, redis: Redis, message_id: bytes | str) -> None:
@@ -281,16 +281,19 @@ class RedisStreamEventBus(EventBus):
             messages = await redis.xrange(self.stream_name, message_id, message_id)
             if messages:
                 _, message_data = messages[0]
+                original_id = (
+                    message_id.decode() if isinstance(message_id, bytes) else str(message_id)
+                )
                 # Add to dead letter stream with original ID in metadata
                 await redis.xadd(
                     DEAD_LETTER_STREAM,
                     {
-                        "original_id": str(message_id),
+                        "original_id": original_id,
                         "original_stream": self.stream_name,
                         **message_data,
                     },
                 )
-                logger.warning(f"Moved message {message_id} to dead letter queue")
+                logger.warning(f"Moved message {message_id!r} to dead letter queue")
 
             # ACK the original message
             await redis.xack(self.stream_name, self.consumer_group, message_id)
@@ -332,8 +335,6 @@ class RedisStreamEventBus(EventBus):
         # Handle bytes fields (base64 decode)
         for key in ("doc_bytes", "value_bytes"):
             if key in parsed and parsed[key] is not None:
-                import base64
-
                 parsed[key] = base64.b64decode(parsed[key])
 
         # Determine event type and construct

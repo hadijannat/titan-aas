@@ -23,7 +23,7 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Awaitable, Callable
+from typing import TYPE_CHECKING, Awaitable, Callable, cast
 
 import orjson
 
@@ -32,6 +32,8 @@ from titan.cache.redis import get_redis
 if TYPE_CHECKING:
     from redis.asyncio import Redis
     from redis.asyncio.client import PubSub
+
+    from titan.cache.redis import RedisCache
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +114,8 @@ class CacheInvalidationBroadcaster:
     def add_handler(self, handler: InvalidationHandler) -> None:
         """Register a handler for invalidation messages."""
         self._handlers.append(handler)
-        logger.info(f"Registered invalidation handler: {handler.__name__}")
+        handler_name = getattr(handler, "__name__", handler.__class__.__name__)
+        logger.info(f"Registered invalidation handler: {handler_name}")
 
     async def start(self) -> None:
         """Start listening for invalidation messages."""
@@ -187,7 +190,7 @@ class CacheInvalidationBroadcaster:
         Returns the number of subscribers that received the message.
         """
         redis = await self._get_redis()
-        count = await redis.publish(self.channel, message.to_bytes())
+        count = cast(int, await redis.publish(self.channel, message.to_bytes()))
         logger.debug(
             f"Published invalidation {message.type.value} {message.identifier_b64} "
             f"to {count} subscribers"
@@ -241,10 +244,10 @@ class LocalCacheInvalidator:
     and performs the actual cache invalidation on the local Redis cache.
     """
 
-    def __init__(self):
-        self._cache = None
+    def __init__(self) -> None:
+        self._cache: RedisCache | None = None
 
-    async def _get_cache(self):
+    async def _get_cache(self) -> "RedisCache":
         """Get or create the Redis cache instance."""
         if self._cache is None:
             from titan.cache.redis import RedisCache, get_redis

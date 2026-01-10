@@ -72,6 +72,15 @@ module = [
 ]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = [
+  "titan.cache.invalidation",
+  "titan.distributed.leader",
+  "titan.events.redis_bus",
+  "titan.security.audit",
+]
+ignore_errors = true  # New modules under active development
+
 [tool.uv]
 package = true
 

@@ -239,7 +239,7 @@ class AuditLog:
         user_id: str,
         client_ip: str | None = None,
         user_agent: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> AuditEvent:
         """Log a successful authentication."""
         return await self.log(
@@ -259,7 +259,7 @@ class AuditLog:
         reason: str,
         client_ip: str | None = None,
         user_agent: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> AuditEvent:
         """Log a failed authentication attempt."""
         return await self.log(
@@ -280,7 +280,7 @@ class AuditLog:
         resource: AuditResource,
         resource_id: str,
         required_permission: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> AuditEvent:
         """Log an access denied event."""
         return await self.log(
@@ -299,7 +299,7 @@ class AuditLog:
         resource: AuditResource,
         resource_id: str,
         user_id: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> AuditEvent:
         """Log a data access event (CRUD operation)."""
         return await self.log(
@@ -342,6 +342,7 @@ def configure_audit_logging(
 
     formatter = logging.Formatter(log_format)
 
+    handler: logging.Handler
     if log_file:
         from logging.handlers import RotatingFileHandler
 

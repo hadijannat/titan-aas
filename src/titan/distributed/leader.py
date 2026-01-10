@@ -36,7 +36,8 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-from typing import TYPE_CHECKING
+from types import TracebackType
+from typing import TYPE_CHECKING, Awaitable, Callable, ParamSpec, TypeVar, cast
 from uuid import uuid4
 
 from titan.cache.redis import get_redis
@@ -226,7 +227,10 @@ class LeaderElection:
             return 0
         end
         """
-        result = await redis.eval(script, 1, self._lock_key, self.instance_id)
+        result = await cast(
+            Awaitable[int],
+            redis.eval(script, 1, self._lock_key, self.instance_id),
+        )
         if result:
             logger.info(f"Released leadership for '{self.name}'")
             self._is_leader = False
@@ -297,7 +301,12 @@ class LeaderElection:
         self._is_leader = bool(acquired)
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         """Context manager exit - release leadership if held."""
         if self._is_leader:
             await self._release_lock()
@@ -333,12 +342,23 @@ class LeaderOnlyTask:
         await self._election.__aenter__()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         if self._election:
             await self._election.__aexit__(exc_type, exc_val, exc_tb)
 
 
-def leader_only(name: str, lease_ttl: int = DEFAULT_LEASE_TTL):
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+def leader_only(
+    name: str, lease_ttl: int = DEFAULT_LEASE_TTL
+) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R | None]]]:
     """Decorator that makes a function only run on the leader instance.
 
     Args:
@@ -352,8 +372,8 @@ def leader_only(name: str, lease_ttl: int = DEFAULT_LEASE_TTL):
             ...
     """
 
-    def decorator(func):
-        async def wrapper(*args, **kwargs):
+    def decorator(func: Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R | None]]:
+        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R | None:
             async with LeaderElection(name, lease_ttl=lease_ttl) as election:
                 if election.is_leader:
                     return await func(*args, **kwargs)
