@@ -46,6 +46,7 @@ def _await_redis(result: Awaitable[T] | T) -> Awaitable[T]:
     """Cast redis-py async results to an awaitable for mypy."""
     return cast(Awaitable[T], result)
 
+
 logger = logging.getLogger(__name__)
 
 # Redis key prefixes
@@ -116,14 +117,10 @@ class Job:
             status=JobStatus(data["status"]),
             created_at=datetime.fromisoformat(data["created_at"]),
             started_at=(
-                datetime.fromisoformat(data["started_at"])
-                if data.get("started_at")
-                else None
+                datetime.fromisoformat(data["started_at"]) if data.get("started_at") else None
             ),
             completed_at=(
-                datetime.fromisoformat(data["completed_at"])
-                if data.get("completed_at")
-                else None
+                datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None
             ),
             result=data.get("result"),
             error=data.get("error"),
@@ -270,11 +267,7 @@ class JobQueue:
             if job_id_bytes is None:
                 break
 
-            job_id = (
-                job_id_bytes.decode()
-                if isinstance(job_id_bytes, bytes)
-                else job_id_bytes
-            )
+            job_id = job_id_bytes.decode() if isinstance(job_id_bytes, bytes) else job_id_bytes
             job = await self.get_job(job_id)
 
             if job is None:
@@ -371,8 +364,7 @@ class JobQueue:
             )
             await _await_redis(redis.lpush(QUEUE_PENDING, job_id))
             logger.info(
-                f"Job queued for retry: {job_id} "
-                f"(attempt {job.attempts}/{job.max_retries})"
+                f"Job queued for retry: {job_id} (attempt {job.attempts}/{job.max_retries})"
             )
         else:
             # Move to dead letter queue
@@ -457,11 +449,7 @@ class JobQueue:
             job_ids = pending + processing + dlq
 
         for job_id_bytes in job_ids[:limit]:
-            job_id = (
-                job_id_bytes.decode()
-                if isinstance(job_id_bytes, bytes)
-                else job_id_bytes
-            )
+            job_id = job_id_bytes.decode() if isinstance(job_id_bytes, bytes) else job_id_bytes
             job = await self.get_job(job_id)
             if job is not None:
                 if status is None or job.status == status:

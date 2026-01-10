@@ -1,7 +1,6 @@
 """Tests for plugin loader."""
 
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
@@ -108,9 +107,7 @@ class TestPluginLoader:
         assert ENTRY_POINT_GROUP == "titan.plugins"
 
     @pytest.mark.asyncio
-    async def test_load_plugin(
-        self, loader: PluginLoader, registry: PluginRegistry
-    ) -> None:
+    async def test_load_plugin(self, loader: PluginLoader, registry: PluginRegistry) -> None:
         """Loading a plugin adds it to registry."""
         plugin = SimplePlugin()
 
@@ -151,9 +148,7 @@ class TestPluginLoader:
         assert "simple-plugin" in loaded
 
     @pytest.mark.asyncio
-    async def test_load_all_respects_disabled(
-        self, registry: PluginRegistry
-    ) -> None:
+    async def test_load_all_respects_disabled(self, registry: PluginRegistry) -> None:
         """Load all skips disabled plugins."""
         config = LoaderConfig(
             discover_entry_points=False,
@@ -172,9 +167,7 @@ class TestPluginLoader:
         assert "simple-plugin" not in loaded
 
     @pytest.mark.asyncio
-    async def test_load_all_with_dependencies(
-        self, loader: PluginLoader
-    ) -> None:
+    async def test_load_all_with_dependencies(self, loader: PluginLoader) -> None:
         """Load all sorts by dependencies."""
         plugins = {
             "dependent-plugin": DependentPlugin,
@@ -187,9 +180,7 @@ class TestPluginLoader:
         assert loaded.index("simple-plugin") < loaded.index("dependent-plugin")
 
     @pytest.mark.asyncio
-    async def test_unload_all(
-        self, loader: PluginLoader, registry: PluginRegistry
-    ) -> None:
+    async def test_unload_all(self, loader: PluginLoader, registry: PluginRegistry) -> None:
         """Unload all removes all plugins."""
         await loader.load_plugin(SimplePlugin())
 

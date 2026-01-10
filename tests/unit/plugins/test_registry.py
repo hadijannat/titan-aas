@@ -114,9 +114,7 @@ class TestPluginRegistry:
         assert plugin.unloaded is True
 
     @pytest.mark.asyncio
-    async def test_unload_nonexistent_plugin(
-        self, registry: PluginRegistry
-    ) -> None:
+    async def test_unload_nonexistent_plugin(self, registry: PluginRegistry) -> None:
         """Unloading non-existent plugin raises error."""
         with pytest.raises(PluginNotFoundError):
             await registry.unload_plugin("nonexistent")
@@ -132,9 +130,7 @@ class TestPluginRegistry:
         assert result is plugin
 
     @pytest.mark.asyncio
-    async def test_get_nonexistent_plugin(
-        self, registry: PluginRegistry
-    ) -> None:
+    async def test_get_nonexistent_plugin(self, registry: PluginRegistry) -> None:
         """Getting non-existent plugin returns None."""
         result = registry.get_plugin("nonexistent")
 
@@ -152,9 +148,7 @@ class TestPluginRegistry:
         assert plugins["test-plugin"] is plugin
 
     @pytest.mark.asyncio
-    async def test_load_with_missing_dependency(
-        self, registry: PluginRegistry
-    ) -> None:
+    async def test_load_with_missing_dependency(self, registry: PluginRegistry) -> None:
         """Loading plugin with missing dependency raises error."""
         plugin = DependentPlugin()
 
@@ -162,9 +156,7 @@ class TestPluginRegistry:
             await registry.load_plugin(plugin)
 
     @pytest.mark.asyncio
-    async def test_load_with_satisfied_dependency(
-        self, registry: PluginRegistry
-    ) -> None:
+    async def test_load_with_satisfied_dependency(self, registry: PluginRegistry) -> None:
         """Loading plugin with satisfied dependency succeeds."""
         base = TestPlugin()
         dependent = DependentPlugin()
@@ -175,9 +167,7 @@ class TestPluginRegistry:
         assert registry.is_loaded("dependent-plugin")
 
     @pytest.mark.asyncio
-    async def test_unload_with_dependents(
-        self, registry: PluginRegistry
-    ) -> None:
+    async def test_unload_with_dependents(self, registry: PluginRegistry) -> None:
         """Cannot unload plugin that others depend on."""
         base = TestPlugin()
         dependent = DependentPlugin()
@@ -212,9 +202,7 @@ class TestHookExecution:
         return PluginRegistry()
 
     @pytest.mark.asyncio
-    async def test_execute_hooks_no_handlers(
-        self, registry: PluginRegistry
-    ) -> None:
+    async def test_execute_hooks_no_handlers(self, registry: PluginRegistry) -> None:
         """Executing hooks with no handlers proceeds."""
         ctx = HookContext(hook_type=HookType.PRE_CREATE_SHELL)
 
@@ -223,9 +211,7 @@ class TestHookExecution:
         assert result.result_type.name == "PROCEED"
 
     @pytest.mark.asyncio
-    async def test_execute_hooks_with_handler(
-        self, registry: PluginRegistry
-    ) -> None:
+    async def test_execute_hooks_with_handler(self, registry: PluginRegistry) -> None:
         """Executing hooks calls registered handlers."""
         plugin = HookedPlugin()
         await registry.load_plugin(plugin)
@@ -236,9 +222,7 @@ class TestHookExecution:
         assert plugin.hook_called is True
 
     @pytest.mark.asyncio
-    async def test_hook_abort_stops_execution(
-        self, registry: PluginRegistry
-    ) -> None:
+    async def test_hook_abort_stops_execution(self, registry: PluginRegistry) -> None:
         """Hook returning abort stops further execution."""
 
         class AbortPlugin(TitanPlugin):
@@ -268,9 +252,7 @@ class TestHookExecution:
         assert result.error_code == 403
 
     @pytest.mark.asyncio
-    async def test_hook_modify_updates_context(
-        self, registry: PluginRegistry
-    ) -> None:
+    async def test_hook_modify_updates_context(self, registry: PluginRegistry) -> None:
         """Hook returning modify updates context data."""
 
         class ModifyPlugin(TitanPlugin):

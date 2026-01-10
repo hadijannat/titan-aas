@@ -1,8 +1,5 @@
 """Tests for GraphQL schema definitions."""
 
-import pytest
-import strawberry
-
 from titan.graphql.schema import (
     AdministrativeInfo,
     AssetInformation,
@@ -200,14 +197,14 @@ class TestSubmodelElements:
         """SubmodelElementCollection can be created."""
         collection = SubmodelElementCollection(
             id_short="Identification",
-            value=[
+            elements=[
                 Property(id_short="SerialNumber", value_type="xs:string", value="123"),
             ],
         )
 
         assert collection.id_short == "Identification"
         assert collection.model_type == "SubmodelElementCollection"
-        assert len(collection.value) == 1
+        assert len(collection.elements) == 1
 
 
 class TestSubmodel:

@@ -1,7 +1,5 @@
 """Tests for plugin hooks."""
 
-import pytest
-
 from titan.plugins.hooks import (
     HOOK_METADATA,
     HookContext,

@@ -100,15 +100,11 @@ class VersionInfo:
 
             if self.sunset_date:
                 # Format: Sun, 31 Dec 2025 23:59:59 GMT
-                headers["Sunset"] = self.sunset_date.strftime(
-                    "%a, %d %b %Y %H:%M:%S GMT"
-                )
+                headers["Sunset"] = self.sunset_date.strftime("%a, %d %b %Y %H:%M:%S GMT")
 
             if self.successor:
                 # Link header for successor version
-                headers["Link"] = (
-                    f"<{self.successor.prefix}>; rel=\"successor-version\""
-                )
+                headers["Link"] = f'<{self.successor.prefix}>; rel="successor-version"'
 
         return headers
 
@@ -149,9 +145,7 @@ class VersionHeaderMiddleware(BaseHTTPMiddleware):
         self.version = version
         self.version_info = get_version_info(version)
 
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         response = await call_next(request)
 
         # Add version headers
@@ -228,13 +222,9 @@ def deprecated(
             if response is not None:
                 response.headers["Deprecation"] = "true"
                 if sunset_date:
-                    response.headers["Sunset"] = sunset_date.strftime(
-                        "%a, %d %b %Y %H:%M:%S GMT"
-                    )
+                    response.headers["Sunset"] = sunset_date.strftime("%a, %d %b %Y %H:%M:%S GMT")
                 if successor_path:
-                    response.headers["Link"] = (
-                        f"<{successor_path}>; rel=\"successor-version\""
-                    )
+                    response.headers["Link"] = f'<{successor_path}>; rel="successor-version"'
 
             return result
 
@@ -271,13 +261,9 @@ class DeprecatedRoute(APIRoute):
             # Add deprecation headers
             response.headers["Deprecation"] = "true"
             if self.sunset_date:
-                response.headers["Sunset"] = self.sunset_date.strftime(
-                    "%a, %d %b %Y %H:%M:%S GMT"
-                )
+                response.headers["Sunset"] = self.sunset_date.strftime("%a, %d %b %Y %H:%M:%S GMT")
             if self.successor_path:
-                response.headers["Link"] = (
-                    f"<{self.successor_path}>; rel=\"successor-version\""
-                )
+                response.headers["Link"] = f'<{self.successor_path}>; rel="successor-version"'
 
             return response
 

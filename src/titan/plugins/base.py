@@ -141,10 +141,7 @@ class TitanPlugin(ABC):
             priority: Handler priority (higher runs first)
         """
         self._hooks.append((hook_type, handler, priority))
-        logger.debug(
-            f"Plugin {self.name} registered hook: "
-            f"{hook_type.name} (priority={priority})"
-        )
+        logger.debug(f"Plugin {self.name} registered hook: {hook_type.name} (priority={priority})")
 
     def get_registered_hooks(
         self,

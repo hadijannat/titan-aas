@@ -87,9 +87,7 @@ class HookResult:
         return cls(result_type=HookResultType.PROCEED, data=data)
 
     @classmethod
-    def abort(
-        cls, message: str, code: int = 400
-    ) -> "HookResult":
+    def abort(cls, message: str, code: int = 400) -> "HookResult":
         """Abort operation with error."""
         return cls(
             result_type=HookResultType.ABORT,

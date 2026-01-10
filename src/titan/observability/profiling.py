@@ -26,7 +26,7 @@ import logging
 import time
 import tracemalloc
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Callable, Generator
 
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -216,7 +216,7 @@ class ProfileCollector:
 
         # Trim history if needed
         if len(self._request_history) > self.max_history:
-            self._request_history = self._request_history[-self.max_history:]
+            self._request_history = self._request_history[-self.max_history :]
 
         # Update endpoint stats
         key = f"{method}:{path}"
@@ -256,9 +256,7 @@ class ProfileCollector:
             durations.sort()
 
             stats.total_requests = len(durations)
-            stats.total_errors = sum(
-                1 for r in self._request_history if r.status_code >= 400
-            )
+            stats.total_errors = sum(1 for r in self._request_history if r.status_code >= 400)
             stats.avg_duration_ms = sum(durations) / len(durations)
 
             # Percentiles
@@ -286,9 +284,7 @@ class ProfileCollector:
         # DB stats
         stats.db_query_count = self._db_query_count
         if self._db_query_count > 0:
-            stats.avg_query_duration_ms = (
-                self._db_query_total_ms / self._db_query_count
-            )
+            stats.avg_query_duration_ms = self._db_query_total_ms / self._db_query_count
 
         return stats
 

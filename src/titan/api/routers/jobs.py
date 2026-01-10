@@ -177,8 +177,7 @@ async def list_jobs(
         except ValueError:
             raise HTTPException(
                 status_code=400,
-                detail=f"Invalid status: {status}. "
-                f"Valid values: {[s.value for s in JobStatus]}",
+                detail=f"Invalid status: {status}. Valid values: {[s.value for s in JobStatus]}",
             )
 
     jobs = await queue.list_jobs(status=status_filter, limit=limit)

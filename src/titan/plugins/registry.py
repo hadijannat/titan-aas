@@ -119,16 +119,12 @@ class PluginRegistry:
         """
         async with self._lock:
             if plugin.name in self._plugins:
-                raise PluginLoadError(
-                    f"Plugin already loaded: {plugin.name}"
-                )
+                raise PluginLoadError(f"Plugin already loaded: {plugin.name}")
 
             # Check dependencies
             for dep in plugin.dependencies:
                 if dep not in self._plugins:
-                    raise PluginLoadError(
-                        f"Missing dependency for {plugin.name}: {dep}"
-                    )
+                    raise PluginLoadError(f"Missing dependency for {plugin.name}: {dep}")
 
             # Configure plugin
             plugin.set_registry(self)
@@ -139,9 +135,7 @@ class PluginRegistry:
             try:
                 await plugin.on_load()
             except Exception as e:
-                raise PluginLoadError(
-                    f"Failed to load plugin {plugin.name}: {e}"
-                ) from e
+                raise PluginLoadError(f"Failed to load plugin {plugin.name}: {e}") from e
 
             # Register hooks
             for hook_type, handler, priority in plugin.get_registered_hooks():
@@ -175,17 +169,12 @@ class PluginRegistry:
             # Check if other plugins depend on this one
             for other_name, other_plugin in self._plugins.items():
                 if name in other_plugin.dependencies:
-                    raise PluginError(
-                        f"Cannot unload {name}: "
-                        f"{other_name} depends on it"
-                    )
+                    raise PluginError(f"Cannot unload {name}: {other_name} depends on it")
 
             # Remove hook registrations
             for hook_type in HookType:
                 self._hooks[hook_type] = [
-                    reg
-                    for reg in self._hooks[hook_type]
-                    if reg.plugin.name != name
+                    reg for reg in self._hooks[hook_type] if reg.plugin.name != name
                 ]
 
             # Unload plugin
@@ -237,8 +226,7 @@ class PluginRegistry:
 
                 if result.result_type == HookResultType.ABORT:
                     logger.debug(
-                        f"Hook aborted by {registration.plugin.name}: "
-                        f"{result.error_message}"
+                        f"Hook aborted by {registration.plugin.name}: {result.error_message}"
                     )
                     return result
 
@@ -248,9 +236,7 @@ class PluginRegistry:
                         context.data.update(result.data)
 
             except Exception as e:
-                logger.error(
-                    f"Hook error in {registration.plugin.name}: {e}"
-                )
+                logger.error(f"Hook error in {registration.plugin.name}: {e}")
                 # Continue with other hooks by default
                 # Could be configurable to abort on error
 
@@ -260,9 +246,7 @@ class PluginRegistry:
         """Get number of registered hooks for a type."""
         return len(self._hooks.get(hook_type, []))
 
-    def list_hooks(
-        self, hook_type: HookType | None = None
-    ) -> list[HookRegistration]:
+    def list_hooks(self, hook_type: HookType | None = None) -> list[HookRegistration]:
         """List registered hooks.
 
         Args:

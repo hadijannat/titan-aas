@@ -65,9 +65,7 @@ class CronExpression:
         """Parse cron expression into components."""
         parts = expression.strip().split()
         if len(parts) != 5:
-            raise ValueError(
-                f"Invalid cron expression (expected 5 parts): {expression}"
-            )
+            raise ValueError(f"Invalid cron expression (expected 5 parts): {expression}")
 
         self.minute = self._parse_field(parts[0], 0, 59)
         self.hour = self._parse_field(parts[1], 0, 23)
@@ -198,10 +196,7 @@ class JobScheduler:
         self._jobs[name] = job
         self._crons[name] = cron_expr
 
-        logger.info(
-            f"Scheduled job added: {name} ({cron}), "
-            f"next run: {job.next_run}"
-        )
+        logger.info(f"Scheduled job added: {name} ({cron}), next run: {job.next_run}")
         return job
 
     def remove_job(self, name: str) -> bool:

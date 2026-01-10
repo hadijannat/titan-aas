@@ -18,9 +18,7 @@ from typing import Any
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
 
-from titan.config import settings
 from titan.observability.profiling import (
-    ProfileCollector,
     get_collector,
     get_memory_snapshot,
 )
@@ -109,11 +107,7 @@ async def get_endpoint_stats(
     # Convert to response format
     endpoints = []
     for stat in endpoint_stats:
-        error_rate = (
-            stat.error_count / stat.request_count
-            if stat.request_count > 0
-            else 0.0
-        )
+        error_rate = stat.error_count / stat.request_count if stat.request_count > 0 else 0.0
         endpoints.append(
             EndpointStatsResponse(
                 path=stat.path,
@@ -121,9 +115,7 @@ async def get_endpoint_stats(
                 request_count=stat.request_count,
                 avg_duration_ms=round(stat.avg_duration_ms, 2),
                 min_duration_ms=(
-                    round(stat.min_duration_ms, 2)
-                    if stat.min_duration_ms != float("inf")
-                    else 0.0
+                    round(stat.min_duration_ms, 2) if stat.min_duration_ms != float("inf") else 0.0
                 ),
                 max_duration_ms=round(stat.max_duration_ms, 2),
                 error_count=stat.error_count,

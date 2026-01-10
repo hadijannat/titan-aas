@@ -169,9 +169,7 @@ class TestProfileCollector:
 
         assert len(endpoint_stats) == 2
 
-        shells_stats = next(
-            s for s in endpoint_stats if s.path == "/shells"
-        )
+        shells_stats = next(s for s in endpoint_stats if s.path == "/shells")
         assert shells_stats.request_count == 2
         assert shells_stats.avg_duration_ms == 15.0
 

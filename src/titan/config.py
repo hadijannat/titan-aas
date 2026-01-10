@@ -32,9 +32,7 @@ class Settings(BaseSettings):
 
     # Event Bus
     event_bus_backend: str = Field(default="redis", validation_alias="EVENT_BUS_BACKEND")
-    event_bus_stream_name: str = Field(
-        default="titan:events", validation_alias="EVENT_BUS_STREAM"
-    )
+    event_bus_stream_name: str = Field(default="titan:events", validation_alias="EVENT_BUS_STREAM")
     event_bus_consumer_group: str = Field(
         default="titan-workers", validation_alias="EVENT_BUS_GROUP"
     )

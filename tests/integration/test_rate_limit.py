@@ -13,9 +13,7 @@ pytest.importorskip("testcontainers")
 
 
 @pytest.mark.asyncio
-async def test_rate_limit_enforced(
-    redis_client: Redis, monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_rate_limit_enforced(redis_client: Redis, monkeypatch: pytest.MonkeyPatch) -> None:
     """Requests beyond the configured window should return 429."""
     from fastapi import FastAPI
 

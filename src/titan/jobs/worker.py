@@ -122,9 +122,7 @@ class JobWorker:
                 lease_ttl=self.config.leader_lease_ttl,
             )
             await self._leader.start()
-            logger.info(
-                f"Started leader election for worker: {self.config.name}"
-            )
+            logger.info(f"Started leader election for worker: {self.config.name}")
 
         logger.info(f"Worker started: {self.config.name}")
 
@@ -175,9 +173,7 @@ class JobWorker:
                         # Process job in a task
                         task = asyncio.create_task(self._process_job(job))
                         self._tasks.append(task)
-                        task.add_done_callback(
-                            lambda t: self._tasks.remove(t)
-                        )
+                        task.add_done_callback(lambda t: self._tasks.remove(t))
 
                 except asyncio.CancelledError:
                     break

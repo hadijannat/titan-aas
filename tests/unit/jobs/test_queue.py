@@ -139,9 +139,7 @@ class TestJobQueue:
         assert mock_redis.lpush.called
 
     @pytest.mark.asyncio
-    async def test_submit_with_priority(
-        self, queue: JobQueue, mock_redis: AsyncMock
-    ) -> None:
+    async def test_submit_with_priority(self, queue: JobQueue, mock_redis: AsyncMock) -> None:
         """Job can be submitted with priority."""
         job_id = await queue.submit("export", {}, priority=10)
 
@@ -151,9 +149,7 @@ class TestJobQueue:
         assert "10" in str(call_args) or call_args is not None
 
     @pytest.mark.asyncio
-    async def test_get_job_not_found(
-        self, queue: JobQueue, mock_redis: AsyncMock
-    ) -> None:
+    async def test_get_job_not_found(self, queue: JobQueue, mock_redis: AsyncMock) -> None:
         """Getting non-existent job returns None."""
         mock_redis.get.return_value = None
 
@@ -162,9 +158,7 @@ class TestJobQueue:
         assert job is None
 
     @pytest.mark.asyncio
-    async def test_get_job_found(
-        self, queue: JobQueue, mock_redis: AsyncMock
-    ) -> None:
+    async def test_get_job_found(self, queue: JobQueue, mock_redis: AsyncMock) -> None:
         """Getting existing job returns Job instance."""
         import json
 
@@ -191,9 +185,7 @@ class TestJobQueue:
         assert mock_redis.lrem.called
 
     @pytest.mark.asyncio
-    async def test_cancel_nonexistent_job(
-        self, queue: JobQueue, mock_redis: AsyncMock
-    ) -> None:
+    async def test_cancel_nonexistent_job(self, queue: JobQueue, mock_redis: AsyncMock) -> None:
         """Cancelling non-existent job returns False."""
         mock_redis.get.return_value = None
 
@@ -202,9 +194,7 @@ class TestJobQueue:
         assert result is False
 
     @pytest.mark.asyncio
-    async def test_get_queue_stats(
-        self, queue: JobQueue, mock_redis: AsyncMock
-    ) -> None:
+    async def test_get_queue_stats(self, queue: JobQueue, mock_redis: AsyncMock) -> None:
         """Queue stats returns counts for each queue."""
         mock_redis.llen.side_effect = [5, 2, 1]  # pending, processing, dlq
 
@@ -215,9 +205,7 @@ class TestJobQueue:
         assert stats["dlq"] == 1
 
     @pytest.mark.asyncio
-    async def test_complete_job(
-        self, queue: JobQueue, mock_redis: AsyncMock
-    ) -> None:
+    async def test_complete_job(self, queue: JobQueue, mock_redis: AsyncMock) -> None:
         """Completing a job updates status and removes from processing."""
         import json
 
@@ -235,9 +223,7 @@ class TestJobQueue:
         assert mock_redis.lrem.called
 
     @pytest.mark.asyncio
-    async def test_fail_job_with_retry(
-        self, queue: JobQueue, mock_redis: AsyncMock
-    ) -> None:
+    async def test_fail_job_with_retry(self, queue: JobQueue, mock_redis: AsyncMock) -> None:
         """Failed job with retries remaining is re-queued."""
         import json
 
@@ -257,9 +243,7 @@ class TestJobQueue:
         assert mock_redis.lpush.called
 
     @pytest.mark.asyncio
-    async def test_fail_job_to_dlq(
-        self, queue: JobQueue, mock_redis: AsyncMock
-    ) -> None:
+    async def test_fail_job_to_dlq(self, queue: JobQueue, mock_redis: AsyncMock) -> None:
         """Failed job at max retries moves to DLQ."""
         import json
 

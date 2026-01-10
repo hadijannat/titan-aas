@@ -37,8 +37,7 @@ class TestShellMutations:
         assert result.data["createShell"]["idShort"] == "NewShell"
         assert result.data["createShell"]["assetInformation"]["assetKind"] == "INSTANCE"
         assert (
-            result.data["createShell"]["assetInformation"]["globalAssetId"]
-            == "urn:example:asset:1"
+            result.data["createShell"]["assetInformation"]["globalAssetId"] == "urn:example:asset:1"
         )
 
     @pytest.mark.asyncio
@@ -206,9 +205,7 @@ class TestMutationWithVariables:
             }
         }
 
-        result: ExecutionResult = await schema.execute(
-            query, variable_values=variables
-        )
+        result: ExecutionResult = await schema.execute(query, variable_values=variables)
 
         assert result.errors is None
         assert result.data["createShell"]["id"] == "urn:example:aas:variable"
@@ -233,9 +230,7 @@ class TestMutationWithVariables:
             }
         }
 
-        result: ExecutionResult = await schema.execute(
-            query, variable_values=variables
-        )
+        result: ExecutionResult = await schema.execute(query, variable_values=variables)
 
         assert result.errors is None
         assert result.data["createSubmodel"]["id"] == "urn:example:submodel:variable"

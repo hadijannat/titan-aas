@@ -102,10 +102,7 @@ class PluginLoader:
         for plugin_dir in self.config.plugin_dirs:
             self._discover_directory(plugin_dir)
 
-        logger.info(
-            f"Discovered {len(self._discovered)} plugins: "
-            f"{list(self._discovered.keys())}"
-        )
+        logger.info(f"Discovered {len(self._discovered)} plugins: {list(self._discovered.keys())}")
         return self._discovered
 
     def _discover_entry_points(self) -> None:
@@ -124,13 +121,9 @@ class PluginLoader:
                     ):
                         name = getattr(plugin_class, "name", ep.name)
                         self._discovered[name] = plugin_class
-                        logger.debug(
-                            f"Discovered plugin from entry point: {name}"
-                        )
+                        logger.debug(f"Discovered plugin from entry point: {name}")
                 except Exception as e:
-                    logger.error(
-                        f"Failed to load entry point {ep.name}: {e}"
-                    )
+                    logger.error(f"Failed to load entry point {ep.name}: {e}")
         except TypeError:
             # Fallback for older Python
             all_eps = entry_points()
@@ -139,10 +132,7 @@ class PluginLoader:
                 for ep in eps:
                     try:
                         plugin_class = ep.load()
-                        if (
-                            isinstance(plugin_class, type)
-                            and issubclass(plugin_class, TitanPlugin)
-                        ):
+                        if isinstance(plugin_class, type) and issubclass(plugin_class, TitanPlugin):
                             self._discovered[plugin_class.name] = plugin_class
                     except Exception as e:
                         logger.error(f"Failed to load entry point: {e}")
@@ -170,9 +160,7 @@ class PluginLoader:
                     module = importlib.import_module(module_name)
                     self._find_plugins_in_module(module)
                 except Exception as e:
-                    logger.error(
-                        f"Failed to import {py_file}: {e}"
-                    )
+                    logger.error(f"Failed to import {py_file}: {e}")
         finally:
             sys.path.remove(str(plugin_dir))
 
@@ -188,9 +176,7 @@ class PluginLoader:
                 and obj.name
             ):
                 self._discovered[obj.name] = obj
-                logger.debug(
-                    f"Discovered plugin in module: {obj.name}"
-                )
+                logger.debug(f"Discovered plugin in module: {obj.name}")
 
     async def load_all(
         self,
@@ -221,9 +207,7 @@ class PluginLoader:
 
             try:
                 plugin = plugin_class()
-                config = (
-                    plugin_config.config if plugin_config else {}
-                )
+                config = plugin_config.config if plugin_config else {}
                 await self.registry.load_plugin(plugin, config)
                 loaded.append(name)
             except Exception as e:
@@ -299,10 +283,7 @@ def load_config_file(path: Path) -> LoaderConfig:
 
             data = yaml.safe_load(content)
         except ImportError:
-            raise ImportError(
-                "PyYAML required for YAML config files: "
-                "pip install pyyaml"
-            )
+            raise ImportError("PyYAML required for YAML config files: pip install pyyaml")
     else:
         data = json.loads(content)
 
@@ -316,11 +297,7 @@ def load_config_file(path: Path) -> LoaderConfig:
         )
 
     return LoaderConfig(
-        discover_entry_points=data.get(
-            "discover_entry_points", True
-        ),
-        plugin_dirs=[
-            Path(d) for d in data.get("plugin_dirs", [])
-        ],
+        discover_entry_points=data.get("discover_entry_points", True),
+        plugin_dirs=[Path(d) for d in data.get("plugin_dirs", [])],
         plugins=plugin_configs,
     )

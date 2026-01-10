@@ -237,9 +237,7 @@ class TestJobScheduler:
         assert "report" in names
 
     @pytest.mark.asyncio
-    async def test_run_now(
-        self, scheduler: JobScheduler, mock_queue: AsyncMock
-    ) -> None:
+    async def test_run_now(self, scheduler: JobScheduler, mock_queue: AsyncMock) -> None:
         """Manual trigger submits job immediately."""
         scheduler.add_job(
             name="cleanup",

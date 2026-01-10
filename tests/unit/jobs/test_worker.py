@@ -78,9 +78,7 @@ class TestJobWorker:
         assert len(worker._handlers) == 2
 
     @pytest.mark.asyncio
-    async def test_process_job_success(
-        self, worker: JobWorker, mock_queue: AsyncMock
-    ) -> None:
+    async def test_process_job_success(self, worker: JobWorker, mock_queue: AsyncMock) -> None:
         """Successful job processing completes the job."""
         job = Job(id="test-123", task="export", payload={})
 
@@ -90,14 +88,10 @@ class TestJobWorker:
         worker.register_handler("export", handler)
         await worker._process_job(job)
 
-        mock_queue.complete_job.assert_called_once_with(
-            "test-123", {"exported": True}
-        )
+        mock_queue.complete_job.assert_called_once_with("test-123", {"exported": True})
 
     @pytest.mark.asyncio
-    async def test_process_job_failure(
-        self, worker: JobWorker, mock_queue: AsyncMock
-    ) -> None:
+    async def test_process_job_failure(self, worker: JobWorker, mock_queue: AsyncMock) -> None:
         """Failed job processing marks job as failed."""
         job = Job(id="test-123", task="export", payload={})
 
@@ -113,9 +107,7 @@ class TestJobWorker:
         assert "Something went wrong" in call_args[0][1]
 
     @pytest.mark.asyncio
-    async def test_process_unknown_task(
-        self, worker: JobWorker, mock_queue: AsyncMock
-    ) -> None:
+    async def test_process_unknown_task(self, worker: JobWorker, mock_queue: AsyncMock) -> None:
         """Unknown task type fails without retry."""
         job = Job(id="test-123", task="unknown_task", payload={})
 

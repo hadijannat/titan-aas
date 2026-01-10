@@ -14,9 +14,8 @@ Example:
 
 from __future__ import annotations
 
-from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Annotated, Union
 
 import strawberry
 from strawberry.types import Info
@@ -101,81 +100,89 @@ class Qualifier:
     value: str | None = None
 
 
-@strawberry.interface
-class SubmodelElementBase:
-    """Base interface for all submodel elements."""
+@strawberry.type
+class Property:
+    """Property submodel element."""
 
     id_short: str
+    model_type: str = "Property"
+    value_type: str = "xs:string"
+    value: str | None = None
     description: list[LangString] | None = None
     semantic_id: Reference | None = None
     qualifiers: list[Qualifier] | None = None
 
 
 @strawberry.type
-class Property(SubmodelElementBase):
-    """Property submodel element."""
-
-    model_type: str = "Property"
-    value_type: str
-    value: str | None = None
-
-
-@strawberry.type
-class MultiLanguageProperty(SubmodelElementBase):
+class MultiLanguageProperty:
     """Multi-language property."""
 
+    id_short: str
     model_type: str = "MultiLanguageProperty"
     value: list[LangString] | None = None
+    description: list[LangString] | None = None
+    semantic_id: Reference | None = None
+    qualifiers: list[Qualifier] | None = None
 
 
 @strawberry.type
-class Range(SubmodelElementBase):
+class Range:
     """Range submodel element."""
 
+    id_short: str
     model_type: str = "Range"
-    value_type: str
+    value_type: str = "xs:double"
     min: str | None = None
     max: str | None = None
+    description: list[LangString] | None = None
+    semantic_id: Reference | None = None
+    qualifiers: list[Qualifier] | None = None
 
 
 @strawberry.type
-class Blob(SubmodelElementBase):
+class Blob:
     """Blob submodel element."""
 
+    id_short: str
     model_type: str = "Blob"
-    content_type: str
+    content_type: str = "application/octet-stream"
     value: str | None = None  # Base64 encoded
+    description: list[LangString] | None = None
+    semantic_id: Reference | None = None
+    qualifiers: list[Qualifier] | None = None
 
 
 @strawberry.type
-class File(SubmodelElementBase):
+class File:
     """File submodel element."""
 
+    id_short: str
     model_type: str = "File"
-    content_type: str
+    content_type: str = "application/octet-stream"
     value: str | None = None  # URL or path
+    description: list[LangString] | None = None
+    semantic_id: Reference | None = None
+    qualifiers: list[Qualifier] | None = None
+
+
+# Define SubmodelElement union using the new Annotated syntax
+# Note: Must be defined after all element types but before use
+SubmodelElement = Annotated[
+    Union[Property, MultiLanguageProperty, Range, Blob, File],
+    strawberry.union("SubmodelElement"),
+]
 
 
 @strawberry.type
-class SubmodelElementCollection(SubmodelElementBase):
+class SubmodelElementCollection:
     """Collection of submodel elements."""
 
+    id_short: str
     model_type: str = "SubmodelElementCollection"
-    value: list["SubmodelElement"] | None = None
-
-
-# Union type for all submodel elements
-SubmodelElement = strawberry.union(
-    "SubmodelElement",
-    types=(
-        Property,
-        MultiLanguageProperty,
-        Range,
-        Blob,
-        File,
-        SubmodelElementCollection,
-    ),
-)
+    elements: list[SubmodelElement] | None = None
+    description: list[LangString] | None = None
+    semantic_id: Reference | None = None
+    qualifiers: list[Qualifier] | None = None
 
 
 @strawberry.type
@@ -380,4 +387,5 @@ class Mutation:
 schema = strawberry.Schema(
     query=Query,
     mutation=Mutation,
+    types=[SubmodelElementCollection],  # Include collection type
 )

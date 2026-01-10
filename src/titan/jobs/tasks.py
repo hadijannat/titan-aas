@@ -52,7 +52,7 @@ async def handle_export_aasx(job: Job) -> dict[str, Any]:
     # This is a placeholder - in production, would fetch from DB
     # and create actual package
     result = {
-        "path": f"/tmp/export-{job.id}.aasx",
+        "path": f"/tmp/export-{job.id}.aasx",  # nosec B108 - temporary job output
         "size": 0,
         "count": len(submodel_ids) + (1 if aas_id else 0),
         "format": "json" if use_json else "xml",
@@ -79,10 +79,7 @@ async def handle_cleanup_expired(job: Job) -> dict[str, Any]:
     max_age_days = job.payload.get("max_age_days", 30)
     dry_run = job.payload.get("dry_run", False)
 
-    logger.info(
-        f"Cleanup task: type={resource_type}, "
-        f"max_age={max_age_days}d, dry_run={dry_run}"
-    )
+    logger.info(f"Cleanup task: type={resource_type}, max_age={max_age_days}d, dry_run={dry_run}")
 
     # Placeholder for actual cleanup logic
     result = {
@@ -154,15 +151,12 @@ async def handle_generate_report(job: Job) -> dict[str, Any]:
     end_date = job.payload.get("end_date")
     output_format = job.payload.get("format", "json")
 
-    logger.info(
-        f"Generating report: type={report_type}, "
-        f"period={start_date} to {end_date}"
-    )
+    logger.info(f"Generating report: type={report_type}, period={start_date} to {end_date}")
 
     # Placeholder for actual report generation
     result = {
         "report_type": report_type,
-        "path": f"/tmp/report-{job.id}.{output_format}",
+        "path": f"/tmp/report-{job.id}.{output_format}",  # nosec B108 - temporary job output
         "size": 0,
         "records": 0,
         "format": output_format,
@@ -188,9 +182,7 @@ async def handle_sync_registry(job: Job) -> dict[str, Any]:
     """
     registry_url = job.payload.get("registry_url")
     direction = job.payload.get("direction", "sync")
-    logger.info(
-        f"Registry sync: url={registry_url}, direction={direction}"
-    )
+    logger.info(f"Registry sync: url={registry_url}, direction={direction}")
 
     # Placeholder for actual sync logic
     result = {
@@ -202,8 +194,7 @@ async def handle_sync_registry(job: Job) -> dict[str, Any]:
     }
 
     logger.info(
-        f"Registry sync complete: "
-        f"pushed={result['pushed_count']}, pulled={result['pulled_count']}"
+        f"Registry sync complete: pushed={result['pushed_count']}, pulled={result['pulled_count']}"
     )
     return result
 
