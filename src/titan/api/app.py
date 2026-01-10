@@ -40,6 +40,7 @@ from titan.api.routers import (
     concept_description_repository,
     description,
     discovery,
+    federation,
     health,
     registry,
     serialization,
@@ -247,6 +248,9 @@ def create_app() -> FastAPI:
 
     # Admin Dashboard API
     app.include_router(admin.router)
+
+    # Federation API
+    app.include_router(federation.router)
 
     # Real-time events
     app.include_router(ws_router.router)

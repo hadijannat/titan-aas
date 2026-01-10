@@ -147,6 +147,7 @@ async def test_client(
         concept_description_repository,
         description,
         discovery,
+        federation,
         health,
         registry,
         serialization,
@@ -214,6 +215,7 @@ async def test_client(
     app.include_router(discovery.router)
     app.include_router(description.router)
     app.include_router(serialization.router)
+    app.include_router(federation.router)
 
     async with AsyncClient(
         transport=ASGITransport(app=app),

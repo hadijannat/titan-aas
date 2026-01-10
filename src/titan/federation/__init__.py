@@ -7,6 +7,13 @@ Enables multi-instance deployment with:
 - Conflict resolution
 """
 
+from titan.federation.conflicts import (
+    ConflictInfo,
+    ConflictManager,
+    ConflictResolver,
+    ResolutionResult,
+    ResolutionStrategy,
+)
 from titan.federation.discovery import FederatedDiscovery
 from titan.federation.edge import EdgeConfig, EdgeController, EdgeStatus
 from titan.federation.peer import Peer, PeerRegistry
@@ -21,4 +28,9 @@ __all__ = [
     "EdgeController",
     "EdgeConfig",
     "EdgeStatus",
+    "ConflictInfo",
+    "ConflictManager",
+    "ConflictResolver",
+    "ResolutionResult",
+    "ResolutionStrategy",
 ]

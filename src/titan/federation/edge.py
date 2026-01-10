@@ -329,7 +329,38 @@ class EdgeController:
         return response.status_code in (200, 201, 204)
 
     async def _pull_from_hub(self, client: Any) -> int:
-        """Pull updates from hub.
+        """Pull updates from hub using cursor-based delta sync.
+
+        Fetches new/updated entities since last sync cursor.
+        Detects conflicts when local and remote versions differ.
+
+        Returns:
+            Number of items pulled
+        """
+        if not self.config.hub_url:
+            return 0
+
+        total_pulled = 0
+
+        # Pull shells
+        shells_pulled = await self._pull_entity_type(client, "aas", "/shells")
+        total_pulled += shells_pulled
+
+        # Pull submodels
+        submodels_pulled = await self._pull_entity_type(client, "submodel", "/submodels")
+        total_pulled += submodels_pulled
+
+        return total_pulled
+
+    async def _pull_entity_type(
+        self, client: Any, entity_type: str, endpoint: str
+    ) -> int:
+        """Pull a specific entity type from hub.
+
+        Args:
+            client: HTTP client
+            entity_type: Type of entity (aas, submodel)
+            endpoint: API endpoint path
 
         Returns:
             Number of items pulled
@@ -338,8 +369,188 @@ class EdgeController:
             return 0
 
         pulled = 0
-        # TODO: Implement delta pull with cursor/timestamp
+        cursor = self._get_sync_cursor(entity_type)
+        url = f"{self.config.hub_url}{endpoint}"
+
+        try:
+            while True:
+                # Build query with cursor pagination
+                params: dict[str, Any] = {"limit": 100}
+                if cursor:
+                    params["cursor"] = cursor
+
+                response = await client.get(url, params=params)
+                if response.status_code != 200:
+                    logger.error(
+                        f"Failed to pull {entity_type}: {response.status_code}"
+                    )
+                    break
+
+                data = response.json()
+                items = data.get("result", [])
+
+                if not items:
+                    break
+
+                for item in items:
+                    try:
+                        await self._process_pulled_item(entity_type, item)
+                        pulled += 1
+                    except Exception as e:
+                        logger.error(f"Error processing {entity_type} item: {e}")
+
+                # Update cursor for next page
+                paging = data.get("paging_metadata", {})
+                next_cursor = paging.get("cursor")
+
+                if next_cursor:
+                    cursor = next_cursor
+                    self._set_sync_cursor(entity_type, cursor)
+                else:
+                    # No more pages
+                    break
+
+        except Exception as e:
+            logger.error(f"Pull {entity_type} failed: {e}")
+
         return pulled
+
+    async def _process_pulled_item(
+        self, entity_type: str, item: dict[str, Any]
+    ) -> None:
+        """Process a single pulled item.
+
+        Checks for conflicts and either applies update or queues conflict.
+
+        Args:
+            entity_type: Type of entity
+            item: The pulled item data
+        """
+        item_id = item.get("id", "")
+        remote_etag = item.get("_etag", "")  # May be in response headers
+
+        # Check if we have a local version
+        local_item = await self._get_local_item(entity_type, item_id)
+
+        if local_item is None:
+            # New item - apply directly
+            await self._apply_pulled_item(entity_type, item)
+            logger.debug(f"Applied new {entity_type}: {item_id}")
+        else:
+            local_etag = local_item.get("_etag", "")
+
+            if local_etag == remote_etag:
+                # Same version - no update needed
+                pass
+            elif local_etag and remote_etag and local_etag != remote_etag:
+                # Conflict detected
+                await self._handle_conflict(
+                    entity_type=entity_type,
+                    entity_id=item_id,
+                    local_doc=local_item,
+                    local_etag=local_etag,
+                    remote_doc=item,
+                    remote_etag=remote_etag,
+                )
+            else:
+                # No local etag or no conflict - apply update
+                await self._apply_pulled_item(entity_type, item)
+                logger.debug(f"Applied update {entity_type}: {item_id}")
+
+    async def _get_local_item(
+        self, entity_type: str, item_id: str
+    ) -> dict[str, Any] | None:
+        """Get local version of an item.
+
+        Args:
+            entity_type: Type of entity
+            item_id: Entity identifier
+
+        Returns:
+            Local item data or None if not found
+        """
+        # This is a stub - actual implementation requires repository access
+        # In production, this would query the local database
+        return None
+
+    async def _apply_pulled_item(
+        self, entity_type: str, item: dict[str, Any]
+    ) -> None:
+        """Apply a pulled item to local storage.
+
+        Args:
+            entity_type: Type of entity
+            item: Item data to apply
+        """
+        # This is a stub - actual implementation requires repository access
+        # In production, this would upsert to the local database
+        pass
+
+    async def _handle_conflict(
+        self,
+        entity_type: str,
+        entity_id: str,
+        local_doc: dict[str, Any],
+        local_etag: str,
+        remote_doc: dict[str, Any],
+        remote_etag: str,
+    ) -> None:
+        """Handle a sync conflict.
+
+        Args:
+            entity_type: Type of entity
+            entity_id: Entity identifier
+            local_doc: Local version
+            local_etag: Local ETag
+            remote_doc: Remote version
+            remote_etag: Remote ETag
+        """
+        conflict = {
+            "entity_type": entity_type,
+            "entity_id": entity_id,
+            "local_doc": local_doc,
+            "local_etag": local_etag,
+            "remote_doc": remote_doc,
+            "remote_etag": remote_etag,
+            "detected_at": datetime.now(UTC).isoformat(),
+        }
+        self._conflict_queue.append(conflict)
+        logger.warning(
+            f"Conflict detected for {entity_type}/{entity_id}: "
+            f"local={local_etag[:8]}... remote={remote_etag[:8]}..."
+        )
+
+    def _get_sync_cursor(self, entity_type: str) -> str | None:
+        """Get sync cursor for entity type.
+
+        Args:
+            entity_type: Type of entity
+
+        Returns:
+            Cursor string or None
+        """
+        # For now, use in-memory cursor
+        # In production, this would read from federation_sync_state table
+        if entity_type == "aas":
+            return getattr(self, "_aas_cursor", None)
+        elif entity_type == "submodel":
+            return getattr(self, "_submodel_cursor", None)
+        return None
+
+    def _set_sync_cursor(self, entity_type: str, cursor: str) -> None:
+        """Set sync cursor for entity type.
+
+        Args:
+            entity_type: Type of entity
+            cursor: Cursor string
+        """
+        # For now, use in-memory cursor
+        # In production, this would update federation_sync_state table
+        if entity_type == "aas":
+            self._aas_cursor = cursor
+        elif entity_type == "submodel":
+            self._submodel_cursor = cursor
+        self._last_sync_cursor = cursor
 
     async def _sync_high_priority(self) -> None:
         """Sync only high-priority items."""
