@@ -54,6 +54,7 @@ SUPPORTED_PROFILE_KEYS = [
     "aas_registry_full",
     "submodel_registry_full",
     "discovery_read",
+    "concept_description_full",
 ]
 
 
@@ -100,6 +101,8 @@ async def get_description() -> dict[str, Any]:
             PROFILE_IDS["submodel_registry_full"],
             # Discovery (read profile)
             PROFILE_IDS["discovery_read"],
+            # Concept Description Repository (full profile)
+            PROFILE_IDS["concept_description_full"],
         ],
         "features": {
             # Serialization formats

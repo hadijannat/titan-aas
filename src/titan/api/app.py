@@ -1,7 +1,7 @@
 """FastAPI application factory for Titan-AAS.
 
 Creates the application with:
-- IDTA-compliant API routers (/shells, /submodels, /shell-descriptors, /submodel-descriptors)
+- IDTA-compliant API routers (/shells, /submodels, /concept-descriptions, /shell-descriptors, /submodel-descriptors)
 - Registry and Discovery endpoints
 - WebSocket for real-time events
 - Lifecycle management for database, cache, and MQTT connections
@@ -27,6 +27,7 @@ from titan.api.middleware.rate_limit import RateLimitConfig
 from titan.api.routers import (
     aas_repository,
     blobs,
+    concept_description_repository,
     description,
     discovery,
     health,
@@ -199,6 +200,7 @@ def create_app() -> FastAPI:
     app.include_router(aas_repository.router)
     app.include_router(submodel_repository.router)
     app.include_router(blobs.router)
+    app.include_router(concept_description_repository.router)
 
     # IDTA-01002 Part 2 Registry and Discovery API routers
     app.include_router(registry.router)

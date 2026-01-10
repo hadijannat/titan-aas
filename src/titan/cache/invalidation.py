@@ -278,12 +278,7 @@ class LocalCacheInvalidator:
                 )
 
         elif message.type == InvalidationType.CONCEPT_DESCRIPTION:
-            # ConceptDescriptions use same pattern as AAS
-            from titan.cache.keys import CacheKeys
-
-            redis = await get_redis()
-            key = CacheKeys.concept_description_bytes(message.identifier_b64)
-            await redis.delete(key)
+            await cache.delete_concept_description(message.identifier_b64)
             logger.debug(f"Invalidated local CD cache: {message.identifier_b64}")
 
         elif message.type == InvalidationType.ALL:

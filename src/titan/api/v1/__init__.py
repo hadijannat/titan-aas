@@ -19,6 +19,7 @@ from fastapi import FastAPI
 from titan.api.routers import (
     aas_repository,
     blobs,
+    concept_description_repository,
     description,
     discovery,
     registry,
@@ -56,6 +57,10 @@ def create_v1_app() -> FastAPI:
         blobs.router,
         tags=["Submodel Repository API"],
     )
+    app.include_router(
+        concept_description_repository.router,
+        tags=["Concept Description Repository API"],
+    )
 
     # IDTA-01002 Part 2 Registry and Discovery API routers
     app.include_router(
@@ -86,6 +91,7 @@ __all__ = [
     "aas_repository",
     "submodel_repository",
     "blobs",
+    "concept_description_repository",
     "registry",
     "discovery",
     "description",

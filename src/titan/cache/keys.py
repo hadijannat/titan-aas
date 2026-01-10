@@ -47,6 +47,11 @@ class CacheKeys:
         return f"{cls.PREFIX}:cd:{identifier_b64}:bytes"
 
     @classmethod
+    def concept_description_etag(cls, identifier_b64: str) -> str:
+        """Key for ConceptDescription ETag."""
+        return f"{cls.PREFIX}:cd:{identifier_b64}:etag"
+
+    @classmethod
     def submodel_element_value(cls, submodel_b64: str, id_short_path: str) -> str:
         """Key for SubmodelElement $value cache.
 

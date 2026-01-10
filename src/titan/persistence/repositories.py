@@ -654,6 +654,24 @@ class ConceptDescriptionRepository:
 
         return (doc_bytes, etag)
 
+    async def get_bytes_by_id(self, identifier: str) -> tuple[bytes, str] | None:
+        """Fast path: get by original identifier."""
+        stmt = select(ConceptDescriptionTable).where(
+            ConceptDescriptionTable.identifier == identifier
+        )
+        result = await self.session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row is None:
+            return None
+
+        doc_bytes, etag = _doc_bytes_and_etag(row.doc)
+        if row.doc_bytes != doc_bytes or row.etag != etag:
+            row.doc_bytes = doc_bytes
+            row.etag = etag
+            await self.session.flush()
+
+        return (doc_bytes, etag)
+
     async def list_all(self, limit: int = 100, offset: int = 0) -> list[tuple[bytes, str]]:
         """List all ConceptDescriptions (fast path)."""
         stmt = (
@@ -687,14 +705,14 @@ class ConceptDescriptionRepository:
             return None
         return ConceptDescription.model_validate(row.doc)
 
-    async def create(self, concept: ConceptDescription) -> ConceptDescription:
+    async def create(self, concept: ConceptDescription) -> tuple[bytes, str]:
         """Create a new ConceptDescription.
 
         Args:
             concept: ConceptDescription to create
 
         Returns:
-            Created ConceptDescription
+            Tuple of (doc_bytes, etag)
 
         Raises:
             IntegrityError: If identifier already exists
@@ -707,26 +725,27 @@ class ConceptDescriptionRepository:
         row = ConceptDescriptionTable(
             identifier=identifier,
             identifier_b64=identifier_b64,
-            id_short=concept.id_short,
             doc=doc,
             doc_bytes=doc_bytes,
             etag=etag,
         )
         self.session.add(row)
         await self.session.flush()
-        return concept
+        return (doc_bytes, etag)
 
-    async def update(self, concept: ConceptDescription) -> ConceptDescription | None:
+    async def update(
+        self, identifier: str, concept: ConceptDescription
+    ) -> tuple[bytes, str] | None:
         """Update an existing ConceptDescription.
 
         Args:
             concept: ConceptDescription with updated data
 
         Returns:
-            Updated ConceptDescription or None if not found
+            Tuple of (doc_bytes, etag) or None if not found
         """
         stmt = select(ConceptDescriptionTable).where(
-            ConceptDescriptionTable.identifier == concept.id
+            ConceptDescriptionTable.identifier == identifier
         )
         result = await self.session.execute(stmt)
         row = result.scalar_one_or_none()
@@ -741,7 +760,7 @@ class ConceptDescriptionRepository:
         row.etag = etag
 
         await self.session.flush()
-        return concept
+        return (doc_bytes, etag)
 
     async def delete(self, identifier: str) -> bool:
         """Delete a ConceptDescription.

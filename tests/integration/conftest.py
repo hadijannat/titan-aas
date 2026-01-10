@@ -135,6 +135,7 @@ async def test_client(
     from titan.api.errors import AasApiError, aas_api_exception_handler, generic_exception_handler
     from titan.api.routers import (
         aas_repository,
+        concept_description_repository,
         description,
         discovery,
         health,
@@ -183,6 +184,7 @@ async def test_client(
     app.dependency_overrides[redis_module.get_redis] = get_test_redis
     app.dependency_overrides[aas_repository.get_cache] = get_test_cache
     app.dependency_overrides[submodel_repository.get_cache] = get_test_cache
+    app.dependency_overrides[concept_description_repository.get_cache] = get_test_cache
 
     # Register exception handlers
     app.add_exception_handler(AasApiError, aas_api_exception_handler)  # type: ignore[arg-type]
@@ -193,6 +195,7 @@ async def test_client(
     app.include_router(system.router)
     app.include_router(aas_repository.router)
     app.include_router(submodel_repository.router)
+    app.include_router(concept_description_repository.router)
     app.include_router(registry.router)
     app.include_router(discovery.router)
     app.include_router(description.router)

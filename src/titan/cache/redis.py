@@ -134,6 +134,44 @@ class RedisCache:
         await self.client.delete(key_bytes, key_etag)
 
     # -------------------------------------------------------------------------
+    # ConceptDescription caching
+    # -------------------------------------------------------------------------
+
+    async def get_concept_description(self, identifier_b64: str) -> tuple[bytes, str] | None:
+        """Get cached ConceptDescription bytes and ETag."""
+        key_bytes = CacheKeys.concept_description_bytes(identifier_b64)
+        key_etag = CacheKeys.concept_description_etag(identifier_b64)
+
+        async with self.client.pipeline() as pipe:
+            pipe.get(key_bytes)
+            pipe.get(key_etag)
+            results = await pipe.execute()
+
+        doc_bytes, etag = results
+        if doc_bytes is None or etag is None:
+            return None
+
+        return (doc_bytes, etag.decode() if isinstance(etag, bytes) else etag)
+
+    async def set_concept_description(
+        self, identifier_b64: str, doc_bytes: bytes, etag: str
+    ) -> None:
+        """Cache ConceptDescription bytes and ETag."""
+        key_bytes = CacheKeys.concept_description_bytes(identifier_b64)
+        key_etag = CacheKeys.concept_description_etag(identifier_b64)
+
+        async with self.client.pipeline() as pipe:
+            pipe.setex(key_bytes, self.ttl, doc_bytes)
+            pipe.setex(key_etag, self.ttl, etag)
+            await pipe.execute()
+
+    async def delete_concept_description(self, identifier_b64: str) -> None:
+        """Delete cached ConceptDescription."""
+        key_bytes = CacheKeys.concept_description_bytes(identifier_b64)
+        key_etag = CacheKeys.concept_description_etag(identifier_b64)
+        await self.client.delete(key_bytes, key_etag)
+
+    # -------------------------------------------------------------------------
     # SubmodelElement $value caching
     # -------------------------------------------------------------------------
 
