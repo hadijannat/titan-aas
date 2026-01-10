@@ -24,6 +24,7 @@ from titan.core.model import (
     ConceptDescription,
     Submodel,
 )
+from titan.core.model.identifiers import AasSubmodelElements
 
 logger = logging.getLogger(__name__)
 
@@ -195,6 +196,10 @@ class XmlSerializer:
 class XmlDeserializer:
     """Deserialize IDTA-compliant XML to Pydantic AAS models."""
 
+    SUBMODEL_ELEMENT_TAGS = frozenset(
+        value[0].lower() + value[1:] for value in AasSubmodelElements
+    )
+
     def __init__(self) -> None:
         self.ns = AAS_NS
         self.ns_prefix = AAS_NS_PREFIX
@@ -344,7 +349,14 @@ class XmlDeserializer:
         # Check for child elements
         if len(element) > 0:
             # Has children - recursively parse as dict
-            return self._element_to_dict(element)
+            data = self._element_to_dict(element)
+            if (
+                tag in self.SUBMODEL_ELEMENT_TAGS
+                and "modelType" not in data
+                and "model_type" not in data
+            ):
+                data["modelType"] = tag[0].upper() + tag[1:]
+            return data
         else:
             # Text content only
             text = element.text

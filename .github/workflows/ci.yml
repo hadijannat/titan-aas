@@ -197,5 +197,5 @@ jobs:
       - name: Run bandit security scan
         run: uv run -- pip install bandit && uv run -- bandit -r src/titan -ll
 
-      - name: Run safety dependency check
-        run: uv run -- pip install safety && uv run -- safety check
+      - name: Run pip-audit dependency check
+        run: uv run -- pip install pip-audit && uv run -- pip-audit
