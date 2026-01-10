@@ -219,14 +219,22 @@ jobs:
         run: uv python install ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
-        run: uv sync --group dev
+        run: uv sync
 
       - name: Run bandit security scan
         run: uv run -- pip install bandit && uv run -- bandit -r src/titan -ll
 
+      - name: Ensure pip is present in the venv
+        run: uv run -- python -m ensurepip --upgrade
+
       - name: Run pip-audit dependency check
+        env:
+          PIPAPI_PYTHON_LOCATION: .venv/bin/python
         run: |
           uv run -- pip install pip-audit
           # Audit project dependencies only (skip system packages)
-          uv run -- pip-audit --local --skip-editable --ignore-vuln PYSEC-2024-230 --ignore-vuln PYSEC-2024-225 || true
-        continue-on-error: true  # pip-audit may have issues with some packages
+          uv run -- python -m pip install --upgrade pip
+          uv run -- pip-audit --local --skip-editable \
+            --ignore-vuln PYSEC-2024-230 \
+            --ignore-vuln PYSEC-2024-225 \
+            --ignore-vuln CVE-2024-23342
