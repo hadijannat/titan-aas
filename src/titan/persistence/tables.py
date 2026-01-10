@@ -392,8 +392,8 @@ class AasxPackageTable(Base):
     # Number of concept descriptions in package
     concept_description_count: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
 
-    # JSONB metadata (shell IDs, submodel IDs, etc.)
-    metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    # JSONB package info (shell IDs, submodel IDs, etc.)
+    package_info: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(

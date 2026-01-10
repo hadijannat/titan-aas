@@ -32,6 +32,7 @@ from titan.api.middleware import (
 from titan.api.middleware.rate_limit import RateLimitConfig
 from titan.api.routers import (
     aas_repository,
+    aasx,
     blobs,
     concept_description_repository,
     description,
@@ -227,6 +228,9 @@ def create_app() -> FastAPI:
     # IDTA-01002 Part 2 Description and Serialization
     app.include_router(description.router)
     app.include_router(serialization.router)
+
+    # AASX File Server (SSP-001)
+    app.include_router(aasx.router)
 
     # Real-time events
     app.include_router(ws_router.router)
