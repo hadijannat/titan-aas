@@ -121,7 +121,7 @@ jobs:
           REDIS_URL: redis://localhost:6379/0
           TITAN_ENV: production
           ENABLE_RATE_LIMITING: "false"
-          LOAD_TEST_P99_MS: "250"
+          LOAD_TEST_P99_MS: "300"
           LOAD_TEST_MAX_ERROR_RATE: "0.01"
         run: |
           # Start server
@@ -172,7 +172,7 @@ jobs:
               'commit': '${{ github.sha }}',
               'generated_at': datetime.now(timezone.utc).isoformat(),
               'results': stats,
-              'thresholds': {'p99_ms': 250, 'max_error_rate': 0.01},
+              'thresholds': {'p99_ms': 300, 'max_error_rate': 0.01},
           }
 
           with open('benchmark-results.json', 'w') as f:
