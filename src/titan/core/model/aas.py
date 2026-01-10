@@ -85,6 +85,9 @@ class AssetAdministrationShell(HasExtensionsMixin, HasDataSpecificationMixin):
     - Administrative information
     """
 
+    model_type: str | None = Field(
+        default=None, alias="modelType", description="Model type identifier"
+    )
     id: Identifier = Field(..., description="Globally unique identifier of the AAS")
     id_short: IdShort | None = Field(
         default=None,

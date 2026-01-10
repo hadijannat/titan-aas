@@ -163,7 +163,7 @@ class TestSubmodelElementCrud:
             f"/submodels/{encoded_id}/submodel-elements/Target",
             json=replacement,
         )
-        assert response.status_code == 200
+        assert response.status_code == 204
 
         # Patch element
         patch_response = await test_client.patch(

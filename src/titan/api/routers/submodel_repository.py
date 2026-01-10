@@ -358,8 +358,7 @@ async def put_submodel_by_id(
     )
 
     return Response(
-        content=doc_bytes,
-        media_type="application/json",
+        status_code=204,
         headers={"ETag": f'"{etag}"'},
     )
 
@@ -1078,8 +1077,7 @@ async def put_submodel_element(
     )
 
     return Response(
-        content=canonical_bytes(element),
-        media_type="application/json",
+        status_code=204,
         headers={"ETag": f'"{etag}"'},
     )
 

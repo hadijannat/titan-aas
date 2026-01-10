@@ -337,8 +337,7 @@ async def put_shell_by_id(
     )
 
     return Response(
-        content=doc_bytes,
-        media_type="application/json",
+        status_code=204,
         headers={"ETag": f'"{etag}"'},
     )
 

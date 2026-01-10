@@ -18,7 +18,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
@@ -165,7 +165,7 @@ class MetricsRegistry:
         try:
             from prometheus_client import generate_latest
 
-            return cast(bytes, generate_latest(self._registry))
+            return generate_latest(self._registry)
         except ImportError:
             return b"# prometheus_client not installed\n"
 
