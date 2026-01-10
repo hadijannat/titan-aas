@@ -94,29 +94,6 @@ spec:
                   name: {{ .Values.externalRedis.existingSecret }}
                   key: {{ .Values.externalRedis.existingSecretPasswordKey }}
             {{- end }}
-            # Azure Blob Storage Secrets
-            {{- if and (eq .Values.blobStorage.type "azure") .Values.blobStorage.azure.existingSecret }}
-            - name: AZURE_STORAGE_ACCOUNT_NAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.blobStorage.azure.existingSecret }}
-                  key: {{ .Values.blobStorage.azure.existingSecretAccountNameKey }}
-            - name: AZURE_STORAGE_ACCOUNT_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.blobStorage.azure.existingSecret }}
-                  key: {{ .Values.blobStorage.azure.existingSecretAccountKeyKey }}
-            - name: AZURE_STORAGE_CONTAINER_NAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.blobStorage.azure.existingSecret }}
-                  key: {{ .Values.blobStorage.azure.existingSecretContainerKey }}
-            {{- end }}
-            # GCS Blob Storage Secrets
-            {{- if and (eq .Values.blobStorage.type "gcs") .Values.blobStorage.gcs.existingSecret }}
-            - name: GOOGLE_APPLICATION_CREDENTIALS
-              value: /var/secrets/gcs/gcs-key.json
-            {{- end }}
             # S3 Blob Storage Secrets
             {{- if and (eq .Values.blobStorage.type "s3") .Values.blobStorage.s3.existingSecret }}
             - name: AWS_ACCESS_KEY_ID
@@ -155,11 +132,6 @@ spec:
             - name: blob-storage
               mountPath: {{ .Values.blobStorage.local.path }}
             {{- end }}
-            {{- if and (eq .Values.blobStorage.type "gcs") .Values.blobStorage.gcs.existingSecret }}
-            - name: gcs-credentials
-              mountPath: /var/secrets/gcs
-              readOnly: true
-            {{- end }}
       volumes:
         - name: tmp
           emptyDir: {}
@@ -167,14 +139,6 @@ spec:
         - name: blob-storage
           persistentVolumeClaim:
             claimName: {{ include "titan-aas.fullname" . }}-blobs
-        {{- end }}
-        {{- if and (eq .Values.blobStorage.type "gcs") .Values.blobStorage.gcs.existingSecret }}
-        - name: gcs-credentials
-          secret:
-            secretName: {{ .Values.blobStorage.gcs.existingSecret }}
-            items:
-              - key: {{ .Values.blobStorage.gcs.existingSecretKeyFile }}
-                path: gcs-key.json
         {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

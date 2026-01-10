@@ -37,9 +37,12 @@ from titan.api.routers import (
 )
 from titan.api.routers import metrics as metrics_router
 from titan.api.routers import websocket as ws_router
+from titan.api.v1 import create_v1_app
+from titan.api.versioning import ApiVersion
 from titan.cache import close_redis, get_redis
 from titan.config import settings
 from titan.connectors.mqtt import close_mqtt, get_mqtt_publisher
+from titan.events.runtime import start_event_bus, stop_event_bus
 from titan.observability.metrics import MetricsMiddleware, get_metrics
 from titan.observability.tracing import (
     TracingMiddleware,
@@ -76,6 +79,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info(f"Starting Titan-AAS ({settings.env})")
     await init_db()
     await get_redis()  # Initialize Redis connection
+    await start_event_bus()
     await get_mqtt_publisher()  # Initialize MQTT connection (optional)
     logger.info("Titan-AAS startup complete")
 
@@ -84,6 +88,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Shutdown
     logger.info("Shutting down Titan-AAS")
     await close_mqtt()
+    await stop_event_bus()
     await close_redis()
     await close_db()
     shutdown_tracing()
@@ -173,6 +178,13 @@ def create_app() -> FastAPI:
 
     # Real-time events
     app.include_router(ws_router.router)
+
+    # Mount versioned APIs
+    # The v1 API is available at /api/v1/* with version headers
+    v1_app = create_v1_app()
+    app.mount(ApiVersion.V1.prefix, v1_app)
+
+    logger.info(f"Mounted API versions: {ApiVersion.V1.value}")
 
     return app
 

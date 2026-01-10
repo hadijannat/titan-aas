@@ -255,11 +255,15 @@ kubectl port-forward svc/titan-titan-aas 8080:8080 -n titan
 | `REDIS_URL` | - | Redis connection string |
 | `MQTT_BROKER` | localhost | MQTT broker hostname |
 | `MQTT_PORT` | 1883 | MQTT port |
+| `EVENT_BUS_BACKEND` | redis | Event bus backend (memory/redis/redis_stream) |
+| `EVENT_BUS_STREAM` | titan:events | Redis stream name (redis backends only) |
+| `EVENT_BUS_GROUP` | titan-workers | Redis consumer group (redis backends only) |
+| `EVENT_BUS_CONSUMER_ID` | - | Optional Redis consumer ID |
 | `OIDC_ISSUER` | - | OIDC issuer URL |
 | `OIDC_AUDIENCE` | titan-aas | OIDC audience |
-| `BLOB_STORAGE_TYPE` | local | Blob storage (local/s3) |
+| `BLOB_STORAGE_TYPE` | local | Blob storage (local/s3/minio) |
 | `S3_BUCKET` | - | S3 bucket for blobs |
-| `S3_ENDPOINT` | - | S3-compatible endpoint |
+| `S3_ENDPOINT_URL` | - | S3-compatible endpoint (e.g., MinIO) |
 | `ENABLE_TRACING` | false | Enable OpenTelemetry tracing |
 | `OTLP_ENDPOINT` | - | OTLP collector endpoint |
 | `ENABLE_METRICS` | true | Enable Prometheus metrics |

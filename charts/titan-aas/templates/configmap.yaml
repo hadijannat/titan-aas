@@ -18,6 +18,13 @@ data:
   MQTT_BROKER: {{ .Values.mqtt.broker | quote }}
   MQTT_PORT: {{ .Values.mqtt.port | quote }}
   {{- end }}
+  # Event Bus Configuration
+  EVENT_BUS_BACKEND: {{ .Values.eventBus.backend | quote }}
+  EVENT_BUS_STREAM: {{ .Values.eventBus.stream | quote }}
+  EVENT_BUS_GROUP: {{ .Values.eventBus.group | quote }}
+  {{- if .Values.eventBus.consumerId }}
+  EVENT_BUS_CONSUMER_ID: {{ .Values.eventBus.consumerId | quote }}
+  {{- end }}
   {{- if .Values.oidc.enabled }}
   OIDC_ISSUER: {{ .Values.oidc.issuer | quote }}
   OIDC_AUDIENCE: {{ .Values.oidc.audience | quote }}
@@ -34,16 +41,6 @@ data:
   {{- if .Values.blobStorage.s3.endpoint }}
   S3_ENDPOINT_URL: {{ .Values.blobStorage.s3.endpoint | quote }}
   {{- end }}
-  {{- end }}
-  {{- if eq .Values.blobStorage.type "gcs" }}
-  GCS_BUCKET: {{ .Values.blobStorage.gcs.bucket | quote }}
-  {{- if .Values.blobStorage.gcs.projectId }}
-  GCS_PROJECT_ID: {{ .Values.blobStorage.gcs.projectId | quote }}
-  {{- end }}
-  {{- end }}
-  {{- if eq .Values.blobStorage.type "azure" }}
-  AZURE_STORAGE_ACCOUNT_NAME: {{ .Values.blobStorage.azure.accountName | quote }}
-  AZURE_STORAGE_CONTAINER_NAME: {{ .Values.blobStorage.azure.containerName | quote }}
   {{- end }}
   # External Database Configuration
   {{- if .Values.externalDatabase.enabled }}

@@ -30,6 +30,18 @@ class Settings(BaseSettings):
     mqtt_broker: str | None = Field(default=None, validation_alias="MQTT_BROKER")
     mqtt_port: int = Field(default=1883, validation_alias="MQTT_PORT")
 
+    # Event Bus
+    event_bus_backend: str = Field(default="redis", validation_alias="EVENT_BUS_BACKEND")
+    event_bus_stream_name: str = Field(
+        default="titan:events", validation_alias="EVENT_BUS_STREAM"
+    )
+    event_bus_consumer_group: str = Field(
+        default="titan-workers", validation_alias="EVENT_BUS_GROUP"
+    )
+    event_bus_consumer_id: str | None = Field(
+        default=None, validation_alias="EVENT_BUS_CONSUMER_ID"
+    )
+
     # OIDC Authentication (optional)
     oidc_issuer: str | None = Field(default=None, validation_alias="OIDC_ISSUER")
     oidc_audience: str | None = Field(default=None, validation_alias="OIDC_AUDIENCE")

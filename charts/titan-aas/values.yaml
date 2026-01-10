@@ -165,9 +165,17 @@ observability:
       enabled: false
       interval: 30s
 
+# Event bus configuration
+eventBus:
+  # -- Backend: memory, redis, redis_stream
+  backend: redis
+  stream: titan:events
+  group: titan-workers
+  consumerId: ""
+
 # Blob storage configuration
 blobStorage:
-  # -- Storage type: local, s3, minio (gcs/azure not supported yet)
+  # -- Storage type: local, s3, minio
   type: local
 
   # -- Local storage configuration
@@ -184,23 +192,7 @@ blobStorage:
     existingSecretAccessKeyId: access_key_id
     existingSecretSecretAccessKey: secret_access_key
 
-  # -- Google Cloud Storage configuration
-  gcs:
-    bucket: ""
-    projectId: ""
-    # Use existing secret for GCS credentials (JSON key file)
-    existingSecret: ""
-    existingSecretKeyFile: gcs_key_json
-
-  # -- Azure Blob Storage configuration
-  azure:
-    accountName: ""
-    containerName: ""
-    # Use existing secret for Azure credentials
-    existingSecret: ""
-    existingSecretAccountNameKey: account_name
-    existingSecretAccountKeyKey: account_key
-    existingSecretContainerKey: container_name
+  # NOTE: GCS and Azure blob backends are not supported yet.
 
 # Network policy configuration
 networkPolicy:
