@@ -56,6 +56,13 @@ class MetricsRegistry:
     submodels_total: Any = None
     events_published_total: Any = None
 
+    # MQTT metrics
+    mqtt_messages_published_total: Any = None
+    mqtt_publish_errors_total: Any = None
+    mqtt_messages_received_total: Any = None
+    mqtt_processing_errors_total: Any = None
+    mqtt_connection_state: Any = None
+
     # Internal state
     _initialized: bool = field(default=False, repr=False)
     _registry: Any = field(default=None, repr=False)
@@ -148,6 +155,37 @@ class MetricsRegistry:
                 "titan_events_published_total",
                 "Total events published",
                 ["event_type", "entity_type"],
+            )
+
+            # MQTT metrics
+            self.mqtt_messages_published_total = Counter(
+                "titan_mqtt_messages_published_total",
+                "Total MQTT messages published",
+                ["topic_prefix"],
+            )
+
+            self.mqtt_publish_errors_total = Counter(
+                "titan_mqtt_publish_errors_total",
+                "Total MQTT publish errors",
+                ["topic_prefix"],
+            )
+
+            self.mqtt_messages_received_total = Counter(
+                "titan_mqtt_messages_received_total",
+                "Total MQTT messages received",
+                ["topic_pattern"],
+            )
+
+            self.mqtt_processing_errors_total = Counter(
+                "titan_mqtt_processing_errors_total",
+                "Total MQTT message processing errors",
+                ["topic_pattern"],
+            )
+
+            self.mqtt_connection_state = Gauge(
+                "titan_mqtt_connection_state",
+                "MQTT connection state (0=disconnected, 1=connecting, 2=connected, 3=reconnecting, 4=failed)",
+                ["broker"],
             )
 
             self._initialized = True
@@ -374,3 +412,60 @@ def record_event_published(event_type: str, entity_type: str) -> None:
             event_type=event_type,
             entity_type=entity_type,
         ).inc()
+
+
+def record_mqtt_message_published(topic_prefix: str = "titan") -> None:
+    """Record MQTT message publication.
+
+    Args:
+        topic_prefix: Topic prefix for the message (e.g., "titan")
+    """
+    metrics = get_metrics()
+    if metrics.mqtt_messages_published_total:
+        metrics.mqtt_messages_published_total.labels(topic_prefix=topic_prefix).inc()
+
+
+def record_mqtt_publish_error(topic_prefix: str = "titan") -> None:
+    """Record MQTT publish error.
+
+    Args:
+        topic_prefix: Topic prefix for the message
+    """
+    metrics = get_metrics()
+    if metrics.mqtt_publish_errors_total:
+        metrics.mqtt_publish_errors_total.labels(topic_prefix=topic_prefix).inc()
+
+
+def record_mqtt_message_received(topic_pattern: str = "titan/#") -> None:
+    """Record MQTT message received.
+
+    Args:
+        topic_pattern: Topic pattern for categorization
+    """
+    metrics = get_metrics()
+    if metrics.mqtt_messages_received_total:
+        metrics.mqtt_messages_received_total.labels(topic_pattern=topic_pattern).inc()
+
+
+def record_mqtt_processing_error(topic_pattern: str = "titan/#") -> None:
+    """Record MQTT message processing error.
+
+    Args:
+        topic_pattern: Topic pattern for categorization
+    """
+    metrics = get_metrics()
+    if metrics.mqtt_processing_errors_total:
+        metrics.mqtt_processing_errors_total.labels(topic_pattern=topic_pattern).inc()
+
+
+def set_mqtt_connection_state(broker: str, state: int) -> None:
+    """Set MQTT connection state.
+
+    Args:
+        broker: MQTT broker hostname
+        state: Connection state (0=disconnected, 1=connecting, 2=connected,
+               3=reconnecting, 4=failed)
+    """
+    metrics = get_metrics()
+    if metrics.mqtt_connection_state:
+        metrics.mqtt_connection_state.labels(broker=broker).set(state)
