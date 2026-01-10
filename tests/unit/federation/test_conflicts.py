@@ -8,7 +8,6 @@ from titan.federation.conflicts import (
     ConflictInfo,
     ConflictManager,
     ConflictResolver,
-    ResolutionResult,
     ResolutionStrategy,
 )
 

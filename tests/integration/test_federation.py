@@ -131,7 +131,9 @@ class TestFederationConflictsAPI:
     async def test_get_conflict_not_found(self, test_client: AsyncClient) -> None:
         """Get non-existent conflict returns 404."""
         # Use a valid UUID format for non-existent ID
-        response = await test_client.get("/federation/conflicts/00000000-0000-0000-0000-000000000000")
+        response = await test_client.get(
+            "/federation/conflicts/00000000-0000-0000-0000-000000000000"
+        )
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_resolve_conflict_not_found(self, test_client: AsyncClient) -> None:
