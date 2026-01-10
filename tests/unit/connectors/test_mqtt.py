@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import orjson
 import pytest
 
-from titan.connectors.mqtt import MqttConnectionManager, MqttConfig, MqttPublisher
+from titan.connectors.mqtt import MqttConfig, MqttConnectionManager, MqttPublisher
 from titan.events import AasEvent, EventType, SubmodelEvent
 
 

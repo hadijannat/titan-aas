@@ -3,9 +3,11 @@
 Tests the wiring between event publishers, event bus, and MQTT handlers.
 """
 
+from typing import Any
+
 import pytest
 
-from titan.connectors.mqtt import MqttEventHandler, MqttPublisher
+from titan.connectors.mqtt import MqttConfig, MqttEventHandler, MqttMetrics, MqttPublisher
 from titan.events import (
     EventType,
     InMemoryEventBus,
@@ -22,8 +24,22 @@ class MockMqttClient:
     def __init__(self) -> None:
         self.published: list[tuple[str, bytes]] = []
 
-    async def publish(self, topic: str, payload: bytes, qos: int = 0) -> None:
+    async def publish(
+        self, topic: str, payload: bytes, qos: int = 0, retain: bool = False
+    ) -> None:
         self.published.append((topic, payload))
+
+
+class StubConnectionManager:
+    """Minimal connection manager for publisher tests."""
+
+    def __init__(self, client: Any, config: MqttConfig | None = None) -> None:
+        self.config = config or MqttConfig(broker="test-broker")
+        self.metrics = MqttMetrics()
+        self._client = client
+
+    async def ensure_connected(self) -> Any:
+        return self._client
 
 
 @pytest.fixture
@@ -44,7 +60,7 @@ def mock_mqtt_client() -> MockMqttClient:
 @pytest.fixture
 def mqtt_publisher(mock_mqtt_client: MockMqttClient) -> MqttPublisher:
     """Create an MQTT publisher with mock client."""
-    return MqttPublisher(mock_mqtt_client)
+    return MqttPublisher(StubConnectionManager(mock_mqtt_client))
 
 
 @pytest.fixture
@@ -288,10 +304,12 @@ class TestMqttEventHandler:
         """Handler catches and logs errors without propagating."""
 
         class FailingClient:
-            async def publish(self, topic: str, payload: bytes, qos: int = 0) -> None:
+            async def publish(
+                self, topic: str, payload: bytes, qos: int = 0, retain: bool = False
+            ) -> None:
                 raise ConnectionError("MQTT connection lost")
 
-        failing_publisher = MqttPublisher(FailingClient())
+        failing_publisher = MqttPublisher(StubConnectionManager(FailingClient()))
         handler = MqttEventHandler(failing_publisher)
 
         event = AasEvent(
@@ -315,7 +333,9 @@ class TestMqttEventHandler:
         call_count = 0
 
         class FlakeyClient:
-            async def publish(self, topic: str, payload: bytes, qos: int = 0) -> None:
+            async def publish(
+                self, topic: str, payload: bytes, qos: int = 0, retain: bool = False
+            ) -> None:
                 nonlocal call_count
                 call_count += 1
                 if call_count == 1:
@@ -323,7 +343,7 @@ class TestMqttEventHandler:
                 # Second call succeeds
                 mock_mqtt_client.published.append((topic, payload))
 
-        flakey_publisher = MqttPublisher(FlakeyClient())
+        flakey_publisher = MqttPublisher(StubConnectionManager(FlakeyClient()))
         handler = MqttEventHandler(flakey_publisher)
 
         event1 = AasEvent(

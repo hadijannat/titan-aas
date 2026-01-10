@@ -184,7 +184,8 @@ class MetricsRegistry:
 
             self.mqtt_connection_state = Gauge(
                 "titan_mqtt_connection_state",
-                "MQTT connection state (0=disconnected, 1=connecting, 2=connected, 3=reconnecting, 4=failed)",
+                "MQTT connection state (0=disconnected, 1=connecting, 2=connected, "
+                "3=reconnecting, 4=failed)",
                 ["broker"],
             )
 
