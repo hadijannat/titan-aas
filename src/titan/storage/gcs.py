@@ -37,9 +37,7 @@ class GcsBlobStorage(BlobStorage):
             try:
                 from google.cloud import storage
             except ImportError as exc:
-                raise RuntimeError(
-                    "google-cloud-storage is required for GCS blob storage"
-                ) from exc
+                raise RuntimeError("google-cloud-storage is required for GCS blob storage") from exc
 
             if self.credentials_path:
                 self._client = storage.Client.from_service_account_json(
@@ -90,9 +88,7 @@ class GcsBlobStorage(BlobStorage):
             "id-short-path": id_short_path,
             "content-hash": content_hash,
         }
-        await asyncio.to_thread(
-            blob.upload_from_string, content_bytes, content_type=content_type
-        )
+        await asyncio.to_thread(blob.upload_from_string, content_bytes, content_type=content_type)
 
         now = datetime.now(timezone.utc)
         return BlobMetadata(

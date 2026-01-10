@@ -38,7 +38,7 @@ from titan.cache import RedisCache, get_redis
 from titan.core.canonicalize import canonical_bytes
 from titan.core.ids import InvalidBase64Url, decode_id_from_b64url, encode_id_to_b64url
 from titan.core.model import AssetAdministrationShell
-from titan.core.projection import ProjectionModifiers, apply_projection
+from titan.core.projection import ProjectionModifiers, apply_projection, extract_reference_for_aas
 from titan.events import EventType, get_event_bus, publish_aas_deleted, publish_aas_event
 from titan.persistence.db import get_session
 from titan.persistence.repositories import AasRepository
@@ -308,3 +308,37 @@ async def delete_shell_by_id(
     )
 
     return Response(status_code=204)
+
+
+@router.get("/{aas_identifier}/$reference")
+async def get_shell_reference(
+    aas_identifier: str,
+    repo: AasRepository = Depends(get_aas_repo),
+    cache: RedisCache = Depends(get_cache),
+) -> Response:
+    """Get the $reference of an AAS.
+
+    Returns a ModelReference pointing to this AAS per IDTA-01002.
+    """
+    try:
+        identifier = decode_id_from_b64url(aas_identifier)
+    except InvalidBase64Url:
+        raise InvalidBase64UrlError(aas_identifier)
+
+    cached = await cache.get_aas(aas_identifier)
+    if cached:
+        doc_bytes, _ = cached
+    else:
+        result = await repo.get_bytes_by_id(identifier)
+        if result is None:
+            raise NotFoundError("AssetAdministrationShell", identifier)
+        doc_bytes, etag = result
+        await cache.set_aas(aas_identifier, doc_bytes, etag)
+
+    doc = orjson.loads(doc_bytes)
+    reference = extract_reference_for_aas(doc)
+
+    return Response(
+        content=canonical_bytes(reference),
+        media_type="application/json",
+    )

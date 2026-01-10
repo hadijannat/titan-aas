@@ -333,3 +333,88 @@ def extract_value(element: dict[str, Any]) -> Any:
 
     else:
         return None
+
+
+def extract_metadata(element: dict[str, Any]) -> dict[str, Any]:
+    """Extract $metadata from a SubmodelElement or Submodel.
+
+    Returns only metadata fields (no values) per IDTA-01002.
+    Recursively extracts metadata for nested elements.
+    """
+    result: dict[str, Any] = {}
+
+    for key, value in element.items():
+        if key in METADATA_FIELDS:
+            result[key] = value
+        elif key == "submodelElements" and isinstance(value, list):
+            # For Submodel: recursively extract metadata from elements
+            result[key] = [extract_metadata(elem) for elem in value]
+        elif key == "value" and isinstance(value, list):
+            # For SubmodelElementCollection/List
+            model_type = element.get("modelType")
+            if model_type in ("SubmodelElementCollection", "SubmodelElementList"):
+                result[key] = [extract_metadata(elem) for elem in value]
+        # Preserve submodel-level metadata
+        elif key in ("id", "administration", "kind"):
+            result[key] = value
+
+    return result
+
+
+def extract_reference(
+    element: dict[str, Any],
+    submodel_id: str,
+    id_short_path: str | None = None,
+) -> dict[str, Any]:
+    """Extract $reference representation for a SubmodelElement.
+
+    Returns a ModelReference pointing to this element per IDTA-01002.
+
+    Args:
+        element: The SubmodelElement dictionary
+        submodel_id: The parent Submodel's identifier
+        id_short_path: The idShortPath to this element (None for Submodel itself)
+
+    Returns:
+        Reference structure with type and keys
+    """
+    keys: list[dict[str, str]] = [{"type": "Submodel", "value": submodel_id}]
+
+    if id_short_path:
+        # Add SubmodelElement key
+        model_type = element.get("modelType", "SubmodelElement")
+        keys.append({"type": model_type, "value": id_short_path})
+
+    return {
+        "type": "ModelReference",
+        "keys": keys,
+    }
+
+
+def extract_reference_for_aas(aas: dict[str, Any]) -> dict[str, Any]:
+    """Extract $reference representation for an AAS.
+
+    Returns a ModelReference pointing to this AAS per IDTA-01002.
+    """
+    aas_id = aas.get("id", "")
+    return {
+        "type": "ModelReference",
+        "keys": [{"type": "AssetAdministrationShell", "value": aas_id}],
+    }
+
+
+def extract_path(element: dict[str, Any], id_short_path: str) -> dict[str, Any]:
+    """Extract $path representation for a SubmodelElement.
+
+    Returns the idShortPath representation per IDTA-01002.
+
+    Args:
+        element: The SubmodelElement dictionary
+        id_short_path: The full idShortPath to this element
+
+    Returns:
+        Path structure containing idShortPath
+    """
+    return {
+        "idShortPath": id_short_path,
+    }

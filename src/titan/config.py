@@ -74,9 +74,7 @@ class Settings(BaseSettings):
     gcs_bucket: str | None = Field(default=None, validation_alias="GCS_BUCKET")
     gcs_prefix: str = Field(default="", validation_alias="GCS_PREFIX")
     gcs_project: str | None = Field(default=None, validation_alias="GCS_PROJECT")
-    gcs_credentials_path: str | None = Field(
-        default=None, validation_alias="GCS_CREDENTIALS_PATH"
-    )
+    gcs_credentials_path: str | None = Field(default=None, validation_alias="GCS_CREDENTIALS_PATH")
 
     # Azure Blob Storage (when blob_storage_type="azure")
     azure_container: str | None = Field(default=None, validation_alias="AZURE_CONTAINER")

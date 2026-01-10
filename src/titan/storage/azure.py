@@ -35,14 +35,10 @@ class AzureBlobStorage(BlobStorage):
             try:
                 from azure.storage.blob.aio import BlobServiceClient
             except ImportError as exc:
-                raise RuntimeError(
-                    "azure-storage-blob is required for Azure blob storage"
-                ) from exc
+                raise RuntimeError("azure-storage-blob is required for Azure blob storage") from exc
 
             if self.connection_string:
-                self._client = BlobServiceClient.from_connection_string(
-                    self.connection_string
-                )
+                self._client = BlobServiceClient.from_connection_string(self.connection_string)
             elif self.account_url:
                 self._client = BlobServiceClient(
                     account_url=self.account_url, credential=self.credential

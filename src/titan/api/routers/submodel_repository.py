@@ -45,6 +45,9 @@ from titan.core.model import Submodel
 from titan.core.projection import (
     ProjectionModifiers,
     apply_projection,
+    extract_metadata,
+    extract_path,
+    extract_reference,
     extract_value,
     navigate_id_short_path,
 )
@@ -488,3 +491,146 @@ async def get_element_value(
     await cache.set_element_value(submodel_identifier, id_short_path, value_bytes)
 
     return Response(content=value_bytes, media_type="application/json")
+
+
+@router.get("/{submodel_identifier}/$metadata")
+async def get_submodel_metadata(
+    submodel_identifier: str,
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+    cache: RedisCache = Depends(get_cache),
+) -> Response:
+    """Get the $metadata of a Submodel.
+
+    Returns only metadata fields (no values) per IDTA-01002.
+    """
+    try:
+        identifier = decode_id_from_b64url(submodel_identifier)
+    except InvalidBase64Url:
+        raise InvalidBase64UrlError(submodel_identifier)
+
+    cached = await cache.get_submodel(submodel_identifier)
+    if cached:
+        doc_bytes, _ = cached
+    else:
+        result = await repo.get_bytes_by_id(identifier)
+        if result is None:
+            raise NotFoundError("Submodel", identifier)
+        doc_bytes, etag = result
+        await cache.set_submodel(submodel_identifier, doc_bytes, etag)
+
+    doc = orjson.loads(doc_bytes)
+    metadata = extract_metadata(doc)
+
+    return json_bytes_response(canonical_bytes(metadata))
+
+
+@router.get("/{submodel_identifier}/submodel-elements/{id_short_path:path}/$metadata")
+async def get_element_metadata(
+    submodel_identifier: str,
+    id_short_path: str,
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+    cache: RedisCache = Depends(get_cache),
+) -> Response:
+    """Get the $metadata of a specific SubmodelElement.
+
+    Returns only metadata fields (no values) per IDTA-01002.
+    """
+    try:
+        identifier = decode_id_from_b64url(submodel_identifier)
+    except InvalidBase64Url:
+        raise InvalidBase64UrlError(submodel_identifier)
+
+    cached = await cache.get_submodel(submodel_identifier)
+    if cached:
+        doc_bytes, _ = cached
+    else:
+        result = await repo.get_bytes_by_id(identifier)
+        if result is None:
+            raise NotFoundError("Submodel", identifier)
+        doc_bytes, etag = result
+        await cache.set_submodel(submodel_identifier, doc_bytes, etag)
+
+    doc = orjson.loads(doc_bytes)
+
+    # Navigate to element
+    element = navigate_id_short_path(doc, id_short_path)
+    if element is None:
+        raise NotFoundError("SubmodelElement", id_short_path)
+
+    metadata = extract_metadata(element)
+    return json_bytes_response(canonical_bytes(metadata))
+
+
+@router.get("/{submodel_identifier}/submodel-elements/{id_short_path:path}/$reference")
+async def get_element_reference(
+    submodel_identifier: str,
+    id_short_path: str,
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+    cache: RedisCache = Depends(get_cache),
+) -> Response:
+    """Get the $reference of a specific SubmodelElement.
+
+    Returns a ModelReference pointing to this element per IDTA-01002.
+    """
+    try:
+        identifier = decode_id_from_b64url(submodel_identifier)
+    except InvalidBase64Url:
+        raise InvalidBase64UrlError(submodel_identifier)
+
+    cached = await cache.get_submodel(submodel_identifier)
+    if cached:
+        doc_bytes, _ = cached
+    else:
+        result = await repo.get_bytes_by_id(identifier)
+        if result is None:
+            raise NotFoundError("Submodel", identifier)
+        doc_bytes, etag = result
+        await cache.set_submodel(submodel_identifier, doc_bytes, etag)
+
+    doc = orjson.loads(doc_bytes)
+    submodel_id = doc.get("id", "")
+
+    # Navigate to element
+    element = navigate_id_short_path(doc, id_short_path)
+    if element is None:
+        raise NotFoundError("SubmodelElement", id_short_path)
+
+    reference = extract_reference(element, submodel_id, id_short_path)
+    return json_bytes_response(canonical_bytes(reference))
+
+
+@router.get("/{submodel_identifier}/submodel-elements/{id_short_path:path}/$path")
+async def get_element_path(
+    submodel_identifier: str,
+    id_short_path: str,
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+    cache: RedisCache = Depends(get_cache),
+) -> Response:
+    """Get the $path of a specific SubmodelElement.
+
+    Returns the idShortPath representation per IDTA-01002.
+    """
+    try:
+        identifier = decode_id_from_b64url(submodel_identifier)
+    except InvalidBase64Url:
+        raise InvalidBase64UrlError(submodel_identifier)
+
+    cached = await cache.get_submodel(submodel_identifier)
+    if cached:
+        doc_bytes, _ = cached
+    else:
+        result = await repo.get_bytes_by_id(identifier)
+        if result is None:
+            raise NotFoundError("Submodel", identifier)
+        doc_bytes, etag = result
+        await cache.set_submodel(submodel_identifier, doc_bytes, etag)
+
+    doc = orjson.loads(doc_bytes)
+
+    # Navigate to element
+    element = navigate_id_short_path(doc, id_short_path)
+    if element is None:
+        raise NotFoundError("SubmodelElement", id_short_path)
+
+    path_result = extract_path(element, id_short_path)
+    return json_bytes_response(canonical_bytes(path_result))
