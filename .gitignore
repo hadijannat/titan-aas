@@ -27,7 +27,6 @@ build/
 .DS_Store
 
 # Local artifacts
-uv.lock
 *.log
 AGENTS.md
 
