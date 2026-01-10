@@ -35,8 +35,7 @@ jobs:
         run: uv run -- ruff format --check src/ tests/
 
       - name: Run mypy type checker
-        run: uv run -- mypy src/titan --ignore-missing-imports
-        continue-on-error: true  # Type errors don't block CI yet
+        run: uv run -- mypy src/titan
 
   test-unit:
     name: Unit Tests

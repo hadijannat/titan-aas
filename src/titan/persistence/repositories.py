@@ -24,7 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from titan.core.canonicalize import canonical_bytes, canonical_bytes_from_model
 from titan.core.ids import encode_id_to_b64url
-from titan.core.model import AssetAdministrationShell, Submodel
+from titan.core.model import AssetAdministrationShell, ConceptDescription, Submodel
 from titan.persistence.tables import (
     AasTable,
     BlobAssetTable,
@@ -664,3 +664,192 @@ class ConceptDescriptionRepository:
         )
         result = await self.session.execute(stmt)
         return [_doc_bytes_and_etag(row.doc) for row in result.all()]
+
+    # -------------------------------------------------------------------------
+    # Slow path: model operations (with Pydantic hydration)
+    # -------------------------------------------------------------------------
+
+    async def get(self, identifier: str) -> ConceptDescription | None:
+        """Slow path: get ConceptDescription as Pydantic model.
+
+        Args:
+            identifier: The unique identifier of the ConceptDescription
+
+        Returns:
+            ConceptDescription model or None if not found
+        """
+        stmt = select(ConceptDescriptionTable).where(
+            ConceptDescriptionTable.identifier == identifier
+        )
+        result = await self.session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row is None:
+            return None
+        return ConceptDescription.model_validate(row.doc)
+
+    async def create(self, concept: ConceptDescription) -> ConceptDescription:
+        """Create a new ConceptDescription.
+
+        Args:
+            concept: ConceptDescription to create
+
+        Returns:
+            Created ConceptDescription
+
+        Raises:
+            IntegrityError: If identifier already exists
+        """
+        identifier = concept.id
+        identifier_b64 = encode_id_to_b64url(identifier)
+        doc = concept.model_dump(mode="json", by_alias=True, exclude_none=True)
+        doc_bytes, etag = _doc_bytes_and_etag(doc)
+
+        row = ConceptDescriptionTable(
+            identifier=identifier,
+            identifier_b64=identifier_b64,
+            id_short=concept.id_short,
+            doc=doc,
+            doc_bytes=doc_bytes,
+            etag=etag,
+        )
+        self.session.add(row)
+        await self.session.flush()
+        return concept
+
+    async def update(self, concept: ConceptDescription) -> ConceptDescription | None:
+        """Update an existing ConceptDescription.
+
+        Args:
+            concept: ConceptDescription with updated data
+
+        Returns:
+            Updated ConceptDescription or None if not found
+        """
+        stmt = select(ConceptDescriptionTable).where(
+            ConceptDescriptionTable.identifier == concept.id
+        )
+        result = await self.session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row is None:
+            return None
+
+        doc = concept.model_dump(mode="json", by_alias=True, exclude_none=True)
+        doc_bytes, etag = _doc_bytes_and_etag(doc)
+
+        row.id_short = concept.id_short
+        row.doc = doc
+        row.doc_bytes = doc_bytes
+        row.etag = etag
+
+        await self.session.flush()
+        return concept
+
+    async def delete(self, identifier: str) -> bool:
+        """Delete a ConceptDescription.
+
+        Args:
+            identifier: The unique identifier of the ConceptDescription
+
+        Returns:
+            True if deleted, False if not found
+        """
+        stmt = select(ConceptDescriptionTable).where(
+            ConceptDescriptionTable.identifier == identifier
+        )
+        result = await self.session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row is None:
+            return False
+
+        await self.session.delete(row)
+        await self.session.flush()
+        return True
+
+    async def exists(self, identifier: str) -> bool:
+        """Check if a ConceptDescription exists.
+
+        Args:
+            identifier: The unique identifier to check
+
+        Returns:
+            True if exists, False otherwise
+        """
+        stmt = select(ConceptDescriptionTable.id).where(
+            ConceptDescriptionTable.identifier == identifier
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none() is not None
+
+    async def list_paged_zero_copy(
+        self,
+        limit: int = 100,
+        cursor: str | None = None,
+        is_case_of: str | None = None,
+    ) -> PagedResult:
+        """Zero-copy paginated list using SQL-level JSON aggregation.
+
+        Args:
+            limit: Maximum items per page
+            cursor: Cursor from previous page (created_at timestamp)
+            is_case_of: Optional filter by isCaseOf reference
+
+        Returns:
+            PagedResult with response_bytes ready to stream
+        """
+        # For now, simplified query without is_case_of filter
+        # (isCaseOf would require JSONB path query)
+        query = text(
+            """
+            WITH page AS (
+                SELECT doc, created_at
+                FROM concept_descriptions
+                WHERE (CAST(:cursor AS text) IS NULL OR created_at > CAST(:cursor AS timestamptz))
+                ORDER BY created_at
+                LIMIT :limit
+            ),
+            next_cursor AS (
+                SELECT created_at::text as cursor
+                FROM page
+                ORDER BY created_at DESC
+                LIMIT 1
+            ),
+            has_more AS (
+                SELECT EXISTS(
+                    SELECT 1 FROM concept_descriptions
+                    WHERE created_at > (SELECT MAX(created_at) FROM page)
+                ) as more
+            )
+            SELECT json_build_object(
+                'result', COALESCE((SELECT json_agg(doc) FROM page), '[]'::json),
+                'paging_metadata', CASE
+                    WHEN (SELECT more FROM has_more) THEN
+                        json_build_object('cursor', (SELECT cursor FROM next_cursor))
+                    ELSE NULL
+                END
+            )::text as response
+            """
+        )
+
+        result = await self.session.execute(query, {"limit": limit, "cursor": cursor})
+        row = result.scalar_one_or_none()
+
+        if row is None:
+            empty_response = orjson.dumps({"result": [], "paging_metadata": None})
+            return PagedResult(
+                response_bytes=empty_response,
+                next_cursor=None,
+                count=0,
+            )
+
+        response_bytes = row.encode("utf-8") if isinstance(row, str) else row
+        parsed = orjson.loads(response_bytes)
+        next_cursor = None
+        if parsed.get("paging_metadata"):
+            next_cursor = parsed["paging_metadata"].get("cursor")
+        count = len(parsed.get("result", []))
+
+        return PagedResult(
+            response_bytes=response_bytes,
+            next_cursor=next_cursor,
+            count=count,
+        )

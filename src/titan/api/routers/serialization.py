@@ -14,7 +14,11 @@ from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from titan.persistence.db import get_session
-from titan.persistence.repositories import AasRepository, SubmodelRepository
+from titan.persistence.repositories import (
+    AasRepository,
+    ConceptDescriptionRepository,
+    SubmodelRepository,
+)
 
 router = APIRouter(tags=["serialization"])
 
@@ -72,9 +76,11 @@ async def get_serialization(
 
     aas_repo = AasRepository(session)
     submodel_repo = SubmodelRepository(session)
+    cd_repo = ConceptDescriptionRepository(session)
 
     shells: list[dict[str, Any]] = []
     submodels: list[dict[str, Any]] = []
+    concept_descriptions: list[dict[str, Any]] = []
 
     # Fetch AAS
     if aas_ids:
@@ -100,11 +106,17 @@ async def get_serialization(
         for doc_bytes, _ in results:
             submodels.append(orjson.loads(doc_bytes))
 
+    # Fetch ConceptDescriptions if requested
+    if include_concept_descriptions:
+        results = await cd_repo.list_all(limit=1000)
+        for doc_bytes, _ in results:
+            concept_descriptions.append(orjson.loads(doc_bytes))
+
     # Build environment
     environment = {
         "assetAdministrationShells": shells,
         "submodels": submodels,
-        "conceptDescriptions": [],  # TODO: Add ConceptDescription support
+        "conceptDescriptions": concept_descriptions,
     }
 
     # Serialize
@@ -145,18 +157,20 @@ async def post_serialization(
     environment: dict[str, Any],
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
-    """Import an AAS environment with AAS and Submodels.
+    """Import an AAS environment with AAS, Submodels, and ConceptDescriptions.
 
     Accepts an environment in IDTA-01001 Part 1 format and imports
-    all contained AAS and Submodels.
+    all contained AAS, Submodels, and ConceptDescriptions.
     """
-    from titan.core.model import AssetAdministrationShell, Submodel
+    from titan.core.model import AssetAdministrationShell, ConceptDescription, Submodel
 
     aas_repo = AasRepository(session)
     submodel_repo = SubmodelRepository(session)
+    cd_repo = ConceptDescriptionRepository(session)
 
     imported_shells = 0
     imported_submodels = 0
+    imported_cds = 0
     errors: list[str] = []
 
     # Import AAS
@@ -185,12 +199,26 @@ async def post_serialization(
         except Exception as e:
             errors.append(f"Failed to import Submodel: {e}")
 
+    # Import ConceptDescriptions
+    cds = environment.get("conceptDescriptions", [])
+    for cd_data in cds:
+        try:
+            cd = ConceptDescription.model_validate(cd_data)
+            if await cd_repo.exists(cd.id):
+                errors.append(f"ConceptDescription already exists: {cd.id}")
+            else:
+                await cd_repo.create(cd)
+                imported_cds += 1
+        except Exception as e:
+            errors.append(f"Failed to import ConceptDescription: {e}")
+
     await session.commit()
 
     return {
         "imported": {
             "shells": imported_shells,
             "submodels": imported_submodels,
+            "conceptDescriptions": imported_cds,
         },
         "errors": errors,
     }

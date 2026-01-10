@@ -56,6 +56,22 @@ strict = true
 warn_unreachable = true
 warn_unused_ignores = true
 
+[[tool.mypy.overrides]]
+module = [
+  "aioboto3",
+  "alembic",
+  "alembic.*",
+  "brotli",
+  "jose",
+  "jose.*",
+  "opentelemetry.instrumentation.httpx",
+  "opentelemetry.instrumentation.redis",
+  "opentelemetry.instrumentation.sqlalchemy",
+  "prometheus_client",
+  "prometheus_client.*",
+]
+ignore_missing_imports = true
+
 [tool.uv]
 package = true
 
