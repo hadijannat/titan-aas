@@ -43,9 +43,7 @@ class TestSubmodelElementCrud:
         assert response.status_code == 201
         assert "Location" in response.headers
 
-        get_response = await test_client.get(
-            f"/submodels/{encoded_id}/submodel-elements/Pressure"
-        )
+        get_response = await test_client.get(f"/submodels/{encoded_id}/submodel-elements/Pressure")
         assert get_response.status_code == 200
         body = get_response.json()
         assert body["idShort"] == "Pressure"
@@ -181,9 +179,7 @@ class TestSubmodelElementCrud:
         )
         assert value_response.status_code == 200
 
-        get_response = await test_client.get(
-            f"/submodels/{encoded_id}/submodel-elements/Target"
-        )
+        get_response = await test_client.get(f"/submodels/{encoded_id}/submodel-elements/Target")
         assert get_response.status_code == 200
         assert get_response.json()["value"] == "value-only"
 
