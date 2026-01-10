@@ -139,6 +139,7 @@ async def upload_package(
         package = await importer.import_from_stream(BytesIO(content))
     except ValueError as e:
         from titan.api.errors import BadRequestError
+
         raise BadRequestError(str(e))
 
     # Store package in blob storage
@@ -237,6 +238,7 @@ async def update_package(
         parsed = await importer.import_from_stream(BytesIO(content))
     except ValueError as e:
         from titan.api.errors import BadRequestError
+
         raise BadRequestError(str(e))
 
     # Delete old file from storage
@@ -325,12 +327,14 @@ async def get_package_shells(
     shells = []
     for shell in parsed.shells:
         asset_info = shell.asset_information
-        shells.append({
-            "id": shell.id,
-            "idShort": shell.id_short,
-            "assetKind": asset_info.asset_kind.value if asset_info else None,
-            "globalAssetId": asset_info.global_asset_id if asset_info else None,
-        })
+        shells.append(
+            {
+                "id": shell.id,
+                "idShort": shell.id_short,
+                "assetKind": asset_info.asset_kind.value if asset_info else None,
+                "globalAssetId": asset_info.global_asset_id if asset_info else None,
+            }
+        )
 
     return {"result": shells}
 

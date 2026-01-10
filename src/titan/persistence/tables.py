@@ -118,6 +118,9 @@ class SubmodelTable(Base):
     # Extracted semantic ID for efficient queries
     semantic_id: Mapped[str | None] = mapped_column(Text, nullable=True, index=True)
 
+    # Extracted kind for template filtering (SSP-003/004)
+    kind: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
+
     # JSONB for queries and filters
     doc: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
 

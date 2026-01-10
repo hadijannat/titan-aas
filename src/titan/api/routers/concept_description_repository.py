@@ -31,6 +31,8 @@ from titan.core.model import ConceptDescription
 from titan.events import EventType, get_event_bus, publish_concept_description_event
 from titan.persistence.db import get_session
 from titan.persistence.repositories import ConceptDescriptionRepository
+from titan.security.deps import require_permission
+from titan.security.rbac import Permission
 
 router = APIRouter(prefix="/concept-descriptions", tags=["Concept Description Repository"])
 
@@ -73,7 +75,10 @@ def _data_spec_contains_value(specs: list[dict[str, object]] | None, value: str)
     return False
 
 
-@router.get("")
+@router.get(
+    "",
+    dependencies=[Depends(require_permission(Permission.READ_CONCEPT_DESCRIPTION))],
+)
 async def get_all_concept_descriptions(
     request: Request,
     limit: LimitParam = DEFAULT_LIMIT,
@@ -139,7 +144,11 @@ async def get_all_concept_descriptions(
     return json_bytes_response(canonical_bytes(response_data))
 
 
-@router.post("", status_code=201)
+@router.post(
+    "",
+    status_code=201,
+    dependencies=[Depends(require_permission(Permission.CREATE_CONCEPT_DESCRIPTION))],
+)
 async def post_concept_description(
     concept_description: ConceptDescription,
     repo: ConceptDescriptionRepository = Depends(get_concept_description_repo),
@@ -176,7 +185,17 @@ async def post_concept_description(
     )
 
 
-@router.get("/{cd_identifier}")
+@router.get(
+    "/{cd_identifier}",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_CONCEPT_DESCRIPTION,
+                resource_id_params=["cd_identifier"],
+            )
+        )
+    ],
+)
 async def get_concept_description_by_id(
     cd_identifier: str,
     if_none_match: str | None = Header(None, alias="If-None-Match"),
@@ -217,7 +236,17 @@ async def get_concept_description_by_id(
     )
 
 
-@router.put("/{cd_identifier}")
+@router.put(
+    "/{cd_identifier}",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.UPDATE_CONCEPT_DESCRIPTION,
+                resource_id_params=["cd_identifier"],
+            )
+        )
+    ],
+)
 async def put_concept_description_by_id(
     cd_identifier: str,
     concept_description: ConceptDescription,
@@ -264,7 +293,18 @@ async def put_concept_description_by_id(
     )
 
 
-@router.delete("/{cd_identifier}", status_code=204)
+@router.delete(
+    "/{cd_identifier}",
+    status_code=204,
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.DELETE_CONCEPT_DESCRIPTION,
+                resource_id_params=["cd_identifier"],
+            )
+        )
+    ],
+)
 async def delete_concept_description_by_id(
     cd_identifier: str,
     repo: ConceptDescriptionRepository = Depends(get_concept_description_repo),

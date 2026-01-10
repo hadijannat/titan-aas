@@ -67,6 +67,9 @@ from titan.core.projection import (
 from titan.events import EventType, get_event_bus, publish_submodel_deleted, publish_submodel_event
 from titan.persistence.db import get_session
 from titan.persistence.repositories import SubmodelRepository
+from titan.security.abac import ResourceType
+from titan.security.deps import require_permission
+from titan.security.rbac import Permission
 
 router = APIRouter(prefix="/submodels", tags=["Submodel Repository"])
 
@@ -86,7 +89,10 @@ async def get_cache() -> RedisCache:
     return RedisCache(redis)
 
 
-@router.get("")
+@router.get(
+    "",
+    dependencies=[Depends(require_permission(Permission.READ_SUBMODEL))],
+)
 async def get_all_submodels(
     request: Request,
     limit: LimitParam = DEFAULT_LIMIT,
@@ -156,7 +162,11 @@ async def get_all_submodels(
         return json_bytes_response(canonical_bytes(response_data))
 
 
-@router.post("", status_code=201)
+@router.post(
+    "",
+    status_code=201,
+    dependencies=[Depends(require_permission(Permission.CREATE_SUBMODEL))],
+)
 async def post_submodel(
     submodel: Submodel,
     repo: SubmodelRepository = Depends(get_submodel_repo),
@@ -203,7 +213,17 @@ async def post_submodel(
     )
 
 
-@router.get("/{submodel_identifier}")
+@router.get(
+    "/{submodel_identifier}",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_SUBMODEL,
+                resource_id_params=["submodel_identifier"],
+            )
+        )
+    ],
+)
 async def get_submodel_by_id(
     submodel_identifier: str,
     request: Request,
@@ -264,7 +284,17 @@ async def get_submodel_by_id(
         )
 
 
-@router.put("/{submodel_identifier}")
+@router.put(
+    "/{submodel_identifier}",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.UPDATE_SUBMODEL,
+                resource_id_params=["submodel_identifier"],
+            )
+        )
+    ],
+)
 async def put_submodel_by_id(
     submodel_identifier: str,
     submodel: Submodel,
@@ -322,7 +352,18 @@ async def put_submodel_by_id(
     )
 
 
-@router.delete("/{submodel_identifier}", status_code=204)
+@router.delete(
+    "/{submodel_identifier}",
+    status_code=204,
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.DELETE_SUBMODEL,
+                resource_id_params=["submodel_identifier"],
+            )
+        )
+    ],
+)
 async def delete_submodel_by_id(
     submodel_identifier: str,
     repo: SubmodelRepository = Depends(get_submodel_repo),
@@ -354,7 +395,17 @@ async def delete_submodel_by_id(
     return Response(status_code=204)
 
 
-@router.get("/{submodel_identifier}/submodel-elements")
+@router.get(
+    "/{submodel_identifier}/submodel-elements",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_SUBMODEL,
+                resource_id_params=["submodel_identifier"],
+            )
+        )
+    ],
+)
 async def get_submodel_elements(
     submodel_identifier: str,
     request: Request,
@@ -396,7 +447,18 @@ async def get_submodel_elements(
     return json_bytes_response(canonical_bytes(response_data))
 
 
-@router.get("/{submodel_identifier}/submodel-elements/{id_short_path:path}")
+@router.get(
+    "/{submodel_identifier}/submodel-elements/{id_short_path:path}",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_SUBMODEL,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier", "id_short_path"],
+            )
+        )
+    ],
+)
 async def get_submodel_element_by_path(
     submodel_identifier: str,
     id_short_path: str,
@@ -442,7 +504,17 @@ async def get_submodel_element_by_path(
     return json_bytes_response(canonical_bytes(element))
 
 
-@router.get("/{submodel_identifier}/$value")
+@router.get(
+    "/{submodel_identifier}/$value",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_SUBMODEL,
+                resource_id_params=["submodel_identifier"],
+            )
+        )
+    ],
+)
 async def get_submodel_value(
     submodel_identifier: str,
     repo: SubmodelRepository = Depends(get_submodel_repo),
@@ -480,7 +552,18 @@ async def get_submodel_value(
     return json_bytes_response(canonical_bytes(values))
 
 
-@router.get("/{submodel_identifier}/submodel-elements/{id_short_path:path}/$value")
+@router.get(
+    "/{submodel_identifier}/submodel-elements/{id_short_path:path}/$value",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_SUBMODEL,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier", "id_short_path"],
+            )
+        )
+    ],
+)
 async def get_element_value(
     submodel_identifier: str,
     id_short_path: str,
@@ -529,7 +612,17 @@ async def get_element_value(
     return Response(content=value_bytes, media_type="application/json")
 
 
-@router.get("/{submodel_identifier}/$metadata")
+@router.get(
+    "/{submodel_identifier}/$metadata",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_SUBMODEL,
+                resource_id_params=["submodel_identifier"],
+            )
+        )
+    ],
+)
 async def get_submodel_metadata(
     submodel_identifier: str,
     repo: SubmodelRepository = Depends(get_submodel_repo),
@@ -560,7 +653,18 @@ async def get_submodel_metadata(
     return json_bytes_response(canonical_bytes(metadata))
 
 
-@router.get("/{submodel_identifier}/submodel-elements/{id_short_path:path}/$metadata")
+@router.get(
+    "/{submodel_identifier}/submodel-elements/{id_short_path:path}/$metadata",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_SUBMODEL,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier", "id_short_path"],
+            )
+        )
+    ],
+)
 async def get_element_metadata(
     submodel_identifier: str,
     id_short_path: str,
@@ -597,7 +701,18 @@ async def get_element_metadata(
     return json_bytes_response(canonical_bytes(metadata))
 
 
-@router.get("/{submodel_identifier}/submodel-elements/{id_short_path:path}/$reference")
+@router.get(
+    "/{submodel_identifier}/submodel-elements/{id_short_path:path}/$reference",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_SUBMODEL,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier", "id_short_path"],
+            )
+        )
+    ],
+)
 async def get_element_reference(
     submodel_identifier: str,
     id_short_path: str,
@@ -635,7 +750,18 @@ async def get_element_reference(
     return json_bytes_response(canonical_bytes(reference))
 
 
-@router.get("/{submodel_identifier}/submodel-elements/{id_short_path:path}/$path")
+@router.get(
+    "/{submodel_identifier}/submodel-elements/{id_short_path:path}/$path",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_SUBMODEL,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier", "id_short_path"],
+            )
+        )
+    ],
+)
 async def get_element_path(
     submodel_identifier: str,
     id_short_path: str,
@@ -677,7 +803,19 @@ async def get_element_path(
 # ============================================================================
 
 
-@router.post("/{submodel_identifier}/submodel-elements", status_code=201)
+@router.post(
+    "/{submodel_identifier}/submodel-elements",
+    status_code=201,
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.UPDATE_SUBMODEL,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier"],
+            )
+        )
+    ],
+)
 async def post_submodel_element(
     submodel_identifier: str,
     element: dict,
@@ -750,7 +888,19 @@ async def post_submodel_element(
     )
 
 
-@router.post("/{submodel_identifier}/submodel-elements/{id_short_path:path}", status_code=201)
+@router.post(
+    "/{submodel_identifier}/submodel-elements/{id_short_path:path}",
+    status_code=201,
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.UPDATE_SUBMODEL,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier", "id_short_path"],
+            )
+        )
+    ],
+)
 async def post_nested_submodel_element(
     submodel_identifier: str,
     id_short_path: str,
@@ -833,7 +983,18 @@ async def post_nested_submodel_element(
     )
 
 
-@router.put("/{submodel_identifier}/submodel-elements/{id_short_path:path}")
+@router.put(
+    "/{submodel_identifier}/submodel-elements/{id_short_path:path}",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.UPDATE_SUBMODEL,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier", "id_short_path"],
+            )
+        )
+    ],
+)
 async def put_submodel_element(
     submodel_identifier: str,
     id_short_path: str,
@@ -911,7 +1072,18 @@ async def put_submodel_element(
     )
 
 
-@router.patch("/{submodel_identifier}/submodel-elements/{id_short_path:path}")
+@router.patch(
+    "/{submodel_identifier}/submodel-elements/{id_short_path:path}",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.UPDATE_SUBMODEL,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier", "id_short_path"],
+            )
+        )
+    ],
+)
 async def patch_submodel_element(
     submodel_identifier: str,
     id_short_path: str,
@@ -992,7 +1164,18 @@ async def patch_submodel_element(
     )
 
 
-@router.patch("/{submodel_identifier}/submodel-elements/{id_short_path:path}/$value")
+@router.patch(
+    "/{submodel_identifier}/submodel-elements/{id_short_path:path}/$value",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.UPDATE_SUBMODEL,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier", "id_short_path"],
+            )
+        )
+    ],
+)
 async def patch_element_value(
     submodel_identifier: str,
     id_short_path: str,
@@ -1070,7 +1253,19 @@ async def patch_element_value(
     )
 
 
-@router.delete("/{submodel_identifier}/submodel-elements/{id_short_path:path}", status_code=204)
+@router.delete(
+    "/{submodel_identifier}/submodel-elements/{id_short_path:path}",
+    status_code=204,
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.UPDATE_SUBMODEL,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier", "id_short_path"],
+            )
+        )
+    ],
+)
 async def delete_submodel_element(
     submodel_identifier: str,
     id_short_path: str,
