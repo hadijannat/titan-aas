@@ -1,18 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Settings, Database, Server, HardDrive, CheckCircle, XCircle } from 'lucide-react';
-import { api } from '../api/client';
-
-interface HealthComponent {
-  status: string;
-  error?: string;
-  type?: string;
-}
-
-interface HealthData {
-  status: string;
-  components: Record<string, HealthComponent>;
-  timestamp: string;
-}
+import { api, HealthData, HealthComponent } from '../api/client';
 
 export default function SettingsPage() {
   const { data: health, isLoading } = useQuery<HealthData>({

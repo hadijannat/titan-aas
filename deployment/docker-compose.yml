@@ -49,7 +49,7 @@ services:
     image: eclipse-mosquitto:2
     container_name: titan-mosquitto
     ports:
-      - "1883:1883"
+      - "${MOSQUITTO_PORT:-1883}:1883"
       - "9001:9001"
     volumes:
       - mosquitto_data:/mosquitto/data

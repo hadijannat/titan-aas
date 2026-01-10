@@ -1,6 +1,7 @@
 """E2E test fixtures using Docker Compose."""
 
 import os
+import socket
 import subprocess
 import time
 from pathlib import Path
@@ -20,6 +21,21 @@ BASE_URL = os.environ.get("E2E_BASE_URL", "http://localhost:8080")
 STARTUP_TIMEOUT = 120  # seconds
 
 
+def _is_port_available(port: int) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        try:
+            sock.bind(("127.0.0.1", port))
+        except OSError:
+            return False
+        return True
+
+
+def _pick_free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return sock.getsockname()[1]
+
+
 @pytest.fixture(scope="session")
 def docker_compose_up() -> Generator[None, None, None]:
     """Start Docker Compose stack for E2E tests.
@@ -32,12 +48,19 @@ def docker_compose_up() -> Generator[None, None, None]:
         yield
         return
 
+    compose_env = os.environ.copy()
+    if "MOSQUITTO_PORT" not in compose_env and not _is_port_available(1883):
+        fallback_port = _pick_free_port()
+        compose_env["MOSQUITTO_PORT"] = str(fallback_port)
+        print(f"⚠️  Port 1883 in use; using MOSQUITTO_PORT={fallback_port} for E2E stack.")
+
     # Start Docker Compose
     print(f"\n📦 Starting Docker Compose stack from {COMPOSE_FILE}...")
     subprocess.run(
         ["docker", "compose", "-f", str(COMPOSE_FILE), "up", "-d", "--build"],
         check=True,
         capture_output=True,
+        env=compose_env,
     )
 
     # Wait for services to be ready
@@ -60,6 +83,7 @@ def docker_compose_up() -> Generator[None, None, None]:
             ["docker", "compose", "-f", str(COMPOSE_FILE), "logs", "--tail=50"],
             capture_output=True,
             text=True,
+            env=compose_env,
         )
         pytest.fail(
             f"Stack failed to start in {STARTUP_TIMEOUT}s.\nLogs:\n{logs.stdout}\n{logs.stderr}"
@@ -73,6 +97,7 @@ def docker_compose_up() -> Generator[None, None, None]:
         ["docker", "compose", "-f", str(COMPOSE_FILE), "down", "-v"],
         check=True,
         capture_output=True,
+        env=compose_env,
     )
 
 

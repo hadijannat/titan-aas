@@ -118,6 +118,39 @@ async def check_redis() -> ComponentHealth:
         )
 
 
+@router.get("/health")
+async def full_health() -> JSONResponse:
+    """Full health report for external checks.
+
+    Returns 200 when all dependencies are healthy, 503 otherwise.
+    """
+    db_result, redis_result = await asyncio.gather(
+        check_database(),
+        check_redis(),
+        return_exceptions=False,
+    )
+
+    checks: dict[str, dict[str, Any]] = {}
+    overall_status = HealthStatus.HEALTHY
+
+    for component in (db_result, redis_result):
+        is_healthy = component.status == HealthStatus.HEALTHY
+        if not is_healthy:
+            overall_status = HealthStatus.UNHEALTHY
+        checks[component.name] = {
+            "status": "up" if is_healthy else "down",
+            "latency_ms": round(component.latency_ms, 2),
+        }
+        if component.message:
+            checks[component.name]["message"] = component.message
+
+    status_code = 200 if overall_status == HealthStatus.HEALTHY else 503
+    return JSONResponse(
+        content={"status": overall_status.value, "checks": checks},
+        status_code=status_code,
+    )
+
+
 @router.get("/health/live")
 async def live() -> dict[str, str]:
     """Liveness probe.

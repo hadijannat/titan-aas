@@ -6,7 +6,7 @@ Enables reading and writing AAS data from/to OPC UA servers.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 

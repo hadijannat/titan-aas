@@ -7,7 +7,7 @@ Enables:
 - Data sovereignty
 """
 
-from titan.integrations.catenax.connector import CatenaXConnector, CatenaXConfig
+from titan.integrations.catenax.connector import CatenaXConfig, CatenaXConnector
 from titan.integrations.catenax.registry import DtrClient
 
 __all__ = [

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Package, Upload, Download, Play, Trash2, FileCheck } from 'lucide-react';
+import { Package, Upload, Download, Play, Trash2 } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { api, Package as PackageType } from '../api/client';
 

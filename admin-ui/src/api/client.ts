@@ -28,6 +28,18 @@ export interface Stats {
   timestamp: string;
 }
 
+export interface HealthComponent {
+  status: string;
+  error?: string;
+  type?: string;
+}
+
+export interface HealthData {
+  status: string;
+  components: Record<string, HealthComponent>;
+  timestamp: string;
+}
+
 export interface Activity {
   type: string;
   action: string;
@@ -97,7 +109,7 @@ class ApiClient {
     return this.fetch(`/admin/activity?limit=${limit}`);
   }
 
-  async getHealth(): Promise<Record<string, unknown>> {
+  async getHealth(): Promise<HealthData> {
     return this.fetch('/admin/health');
   }
 
