@@ -311,13 +311,15 @@ async def get_asset_links_by_id(
     asset_links: list[dict[str, str]] = []
 
     # Add global asset ID (per AASd-116)
-    asset_info = doc.get("assetInformation", {})
-    global_asset_id = asset_info.get("globalAssetId")
+    asset_info = doc.get("assetInformation")
+    if not isinstance(asset_info, dict):
+        asset_info = {}
+    global_asset_id = asset_info.get("globalAssetId") or doc.get("globalAssetId")
     if global_asset_id:
         asset_links.append({"name": "globalAssetId", "value": global_asset_id})
 
     # Add specific asset IDs
-    specific_asset_ids = asset_info.get("specificAssetIds", [])
+    specific_asset_ids = asset_info.get("specificAssetIds") or doc.get("specificAssetIds") or []
     for specific_id in specific_asset_ids:
         name = specific_id.get("name")
         value = specific_id.get("value")
@@ -382,14 +384,25 @@ async def post_asset_links_by_id(
         doc["assetInformation"] = {}
 
     # Process the asset links
-    new_specific_ids = []
+    new_specific_ids: list[dict[str, str]] = []
+    new_global_asset_id: str | None = None
     for link in asset_links:
         if link.name == "globalAssetId":
-            doc["assetInformation"]["globalAssetId"] = link.value
+            new_global_asset_id = link.value
         else:
             new_specific_ids.append({"name": link.name, "value": link.value})
 
-    doc["assetInformation"]["specificAssetIds"] = new_specific_ids
+    # Replace asset IDs (top-level fields)
+    doc["globalAssetId"] = new_global_asset_id
+    doc["specificAssetIds"] = new_specific_ids
+
+    # Keep assetInformation in sync for compatibility
+    asset_info = doc.get("assetInformation")
+    if not isinstance(asset_info, dict):
+        asset_info = {}
+    asset_info["globalAssetId"] = new_global_asset_id
+    asset_info["specificAssetIds"] = new_specific_ids
+    doc["assetInformation"] = asset_info
 
     # Update the descriptor in the database
     from titan.core.model.registry import AssetAdministrationShellDescriptor
@@ -449,6 +462,9 @@ async def delete_asset_links_by_id(
     doc = orjson.loads(doc_bytes)
 
     # Clear asset information (but keep the structure)
+    doc["globalAssetId"] = None
+    doc["specificAssetIds"] = []
+
     if "assetInformation" in doc:
         doc["assetInformation"]["globalAssetId"] = None
         doc["assetInformation"]["specificAssetIds"] = []

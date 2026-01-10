@@ -10,9 +10,10 @@ from __future__ import annotations
 from enum import Enum
 from typing import Annotated
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from titan.core.model import StrictModel
+from titan.core.model.aas import AssetInformation
 from titan.core.model.administrative import AdministrativeInformation
 from titan.core.model.descriptions import LangStringTextType
 from titan.core.model.identifiers import Identifier, IdShort
@@ -152,6 +153,11 @@ class AssetAdministrationShellDescriptor(StrictModel):
         alias="specificAssetIds",
         description="Domain-specific identifiers of the asset",
     )
+    asset_information: AssetInformation | None = Field(
+        default=None,
+        alias="assetInformation",
+        description="Asset information (compatibility with AAS-style payloads)",
+    )
     endpoints: list[Endpoint] | None = Field(
         default=None, description="Endpoints for accessing the AAS"
     )
@@ -160,3 +166,23 @@ class AssetAdministrationShellDescriptor(StrictModel):
         alias="submodelDescriptors",
         description="Descriptors of Submodels associated with this AAS",
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _normalize_asset_information(cls, data: object) -> object:
+        """Map assetInformation payloads onto descriptor fields for compatibility."""
+        if not isinstance(data, dict):
+            return data
+
+        asset_info = data.get("assetInformation")
+        if isinstance(asset_info, dict):
+            if "assetKind" not in data and "assetKind" in asset_info:
+                data["assetKind"] = asset_info["assetKind"]
+            if "assetType" not in data and "assetType" in asset_info:
+                data["assetType"] = asset_info["assetType"]
+            if "globalAssetId" not in data and "globalAssetId" in asset_info:
+                data["globalAssetId"] = asset_info["globalAssetId"]
+            if "specificAssetIds" not in data and "specificAssetIds" in asset_info:
+                data["specificAssetIds"] = asset_info["specificAssetIds"]
+
+        return data

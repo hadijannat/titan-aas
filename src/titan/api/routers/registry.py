@@ -94,10 +94,16 @@ async def get_all_shell_descriptors(
             continue
 
         if asset_kind or asset_type:
-            asset_info = doc.get("assetInformation", {})
-            if asset_kind and asset_info.get("assetKind") != asset_kind:
+            asset_info = doc.get("assetInformation")
+            if not isinstance(asset_info, dict):
+                asset_info = {}
+
+            asset_kind_value = asset_info.get("assetKind", doc.get("assetKind"))
+            asset_type_value = asset_info.get("assetType", doc.get("assetType"))
+
+            if asset_kind and asset_kind_value != asset_kind:
                 continue
-            if asset_type and asset_info.get("assetType") != asset_type:
+            if asset_type and asset_type_value != asset_type:
                 continue
 
         items.append(doc)
