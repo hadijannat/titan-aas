@@ -263,15 +263,17 @@ def generate_report(
         for r in test_results
     }
 
-    # Compute summary
+    # Compute summary (exclude skips from conformance denominator)
     total = len(test_results)
     passed = sum(1 for r in test_results if r.status == "pass")
     failed = sum(1 for r in test_results if r.status in ("fail", "error"))
     skipped = sum(1 for r in test_results if r.status == "skip")
-    conformance_rate = passed / total if total > 0 else 0.0
+    eligible = total - skipped
+    conformance_rate = passed / eligible if eligible > 0 else 0.0
 
     summary = {
         "total_tests": total,
+        "eligible_tests": eligible,
         "passed": passed,
         "failed": failed,
         "skipped": skipped,
@@ -366,6 +368,7 @@ def main() -> int:
     print("\n=== Conformance Summary ===")
     print(f"Version: {report.version}")
     print(f"Total Tests: {report.summary['total_tests']}")
+    print(f"Eligible Tests: {report.summary['eligible_tests']}")
     print(f"Passed: {report.summary['passed']}")
     print(f"Failed: {report.summary['failed']}")
     print(f"Skipped: {report.summary['skipped']}")
