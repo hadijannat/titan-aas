@@ -15,7 +15,7 @@ SQL-Level Pagination (The "Pagination Paradox" Fix):
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 from uuid import uuid4
 
 import orjson
@@ -50,6 +50,12 @@ class PagedResult:
     next_cursor: str | None
     # Total count of items in this page
     count: int
+
+
+def _doc_bytes_and_etag(doc: dict[str, Any]) -> tuple[bytes, str]:
+    """Compute canonical bytes and ETag from a JSON document."""
+    doc_bytes = canonical_bytes(doc)
+    return doc_bytes, generate_etag(doc_bytes)
 
 
 class BaseRepository(Generic[T, TableT]):
@@ -235,7 +241,7 @@ class AasRepository(BaseRepository[AssetAdministrationShell, AasTable]):
             WITH page AS (
                 SELECT doc, created_at
                 FROM aas
-                WHERE (:cursor IS NULL OR created_at > CAST(:cursor AS timestamptz))
+                WHERE (CAST(:cursor AS text) IS NULL OR created_at > CAST(:cursor AS timestamptz))
                 ORDER BY created_at
                 LIMIT :limit
             ),
@@ -555,8 +561,8 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
             WITH page AS (
                 SELECT doc, created_at
                 FROM submodels
-                WHERE (:cursor IS NULL OR created_at > CAST(:cursor AS timestamptz))
-                  AND (:semantic_id IS NULL OR semantic_id = :semantic_id)
+                WHERE (CAST(:cursor AS text) IS NULL OR created_at > CAST(:cursor AS timestamptz))
+                  AND (CAST(:semantic_id AS text) IS NULL OR semantic_id = :semantic_id)
                 ORDER BY created_at
                 LIMIT :limit
             ),
@@ -570,7 +576,7 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
                 SELECT EXISTS(
                     SELECT 1 FROM submodels
                     WHERE created_at > (SELECT MAX(created_at) FROM page)
-                      AND (:semantic_id IS NULL OR semantic_id = :semantic_id)
+                      AND (CAST(:semantic_id AS text) IS NULL OR semantic_id = :semantic_id)
                 ) as more
             )
             SELECT json_build_object(
