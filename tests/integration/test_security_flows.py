@@ -109,7 +109,7 @@ class TestAuthenticationFlows:
             async def validate_token(self, token: str) -> User:
                 return User(sub="test", name="Test", roles=["reader"])
 
-        monkeypatch.setattr(oidc_module, "_TOKEN_VALIDATOR", MockValidator())
+        monkeypatch.setattr(oidc_module, "_validator", MockValidator())
 
         # Test without "Bearer " prefix
         response = await test_client.get(
@@ -132,7 +132,7 @@ class TestAuthenticationFlows:
             async def validate_token(self, token: str) -> User:
                 return User(sub="reader-user", name="Reader", roles=["reader"])
 
-        monkeypatch.setattr(oidc_module, "_TOKEN_VALIDATOR", MockValidator())
+        monkeypatch.setattr(oidc_module, "_validator", MockValidator())
 
         response = await test_client.get(
             "/shells",
@@ -157,7 +157,7 @@ class TestRBACEnforcement:
             async def validate_token(self, token: str) -> User:
                 return User(sub="reader-user", name="Reader", roles=["reader"])
 
-        monkeypatch.setattr(oidc_module, "_TOKEN_VALIDATOR", MockValidator())
+        monkeypatch.setattr(oidc_module, "_validator", MockValidator())
 
         aas_data = {
             "id": "urn:example:aas:test-reader-create",
@@ -188,7 +188,7 @@ class TestRBACEnforcement:
             async def validate_token(self, token: str) -> User:
                 return User(sub="writer-user", name="Writer", roles=["writer"])
 
-        monkeypatch.setattr(oidc_module, "_TOKEN_VALIDATOR", MockValidator())
+        monkeypatch.setattr(oidc_module, "_validator", MockValidator())
 
         # Writer can create
         aas_data = {
@@ -228,7 +228,7 @@ class TestRBACEnforcement:
             async def validate_token(self, token: str) -> User:
                 return User(sub="admin-user", name="Admin", roles=["admin"])
 
-        monkeypatch.setattr(oidc_module, "_TOKEN_VALIDATOR", MockValidator())
+        monkeypatch.setattr(oidc_module, "_validator", MockValidator())
 
         # Admin can create
         aas_data = {
