@@ -85,13 +85,9 @@ async def _externalize_elements(
 
         model_type = element.get("modelType")
         if model_type == "Blob":
-            await _externalize_blob(
-                element, element_path, submodel_id, storage, result
-            )
+            await _externalize_blob(element, element_path, submodel_id, storage, result)
         elif model_type == "File":
-            await _externalize_file(
-                element, element_path, submodel_id, storage, result
-            )
+            await _externalize_file(element, element_path, submodel_id, storage, result)
 
         # Recurse into nested structures
         if model_type in ("SubmodelElementCollection", "SubmodelElementList"):

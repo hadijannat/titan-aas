@@ -482,6 +482,25 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
         if row is None:
             return False
 
+        storage = get_blob_storage()
+        existing_assets = await self._load_blob_assets(row.id)
+        for asset in existing_assets:
+            metadata = BlobMetadata(
+                id=asset.id,
+                submodel_id=asset.submodel_id,
+                id_short_path=asset.id_short_path,
+                storage_type=asset.storage_type,
+                storage_uri=asset.storage_uri,
+                content_type=asset.content_type,
+                filename=asset.filename,
+                size_bytes=asset.size_bytes,
+                content_hash=asset.content_hash,
+            )
+            try:
+                await storage.delete(metadata)
+            except Exception:
+                pass
+
         await self.session.delete(row)
         await self.session.flush()
         return True

@@ -12,6 +12,7 @@ The "Binary Blob Trap" fix:
 """
 
 from titan.storage.base import BlobMetadata, BlobStorage
+from titan.storage.factory import get_blob_storage
 from titan.storage.local import LocalBlobStorage
 from titan.storage.s3 import S3BlobStorage
 
@@ -20,4 +21,5 @@ __all__ = [
     "BlobMetadata",
     "LocalBlobStorage",
     "S3BlobStorage",
+    "get_blob_storage",
 ]
