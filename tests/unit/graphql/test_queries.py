@@ -98,7 +98,9 @@ class TestShellQueries:
         assert result.data["shells"]["edges"] == []
 
     @pytest.mark.asyncio
-    async def test_query_shells_with_asset_kind_filter(self, mock_context: DataLoaderContext) -> None:
+    async def test_query_shells_with_asset_kind_filter(
+        self, mock_context: DataLoaderContext
+    ) -> None:
         """Query shells with asset kind filter."""
         query = """
             query {
@@ -187,7 +189,9 @@ class TestSubmodelQueries:
         assert result.data["submodels"]["totalCount"] == 0
 
     @pytest.mark.asyncio
-    async def test_query_submodels_with_semantic_id_filter(self, mock_context: DataLoaderContext) -> None:
+    async def test_query_submodels_with_semantic_id_filter(
+        self, mock_context: DataLoaderContext
+    ) -> None:
         """Query submodels with semantic ID filter."""
         query = """
             query {
@@ -206,7 +210,9 @@ class TestSubmodelQueries:
         assert result.errors is None
 
     @pytest.mark.asyncio
-    async def test_query_submodels_with_id_short_filter(self, mock_context: DataLoaderContext) -> None:
+    async def test_query_submodels_with_id_short_filter(
+        self, mock_context: DataLoaderContext
+    ) -> None:
         """Query submodels with id_short filter."""
         query = """
             query {

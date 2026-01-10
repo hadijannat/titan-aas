@@ -13,6 +13,10 @@ from titan.graphql.dataloaders import (
 )
 
 
+def _empty_scalars_result() -> MagicMock:
+    return MagicMock(scalars=lambda: MagicMock(all=lambda: []))
+
+
 class TestLoadFunctions:
     """Tests for batch load functions with mocked session."""
 
@@ -30,7 +34,7 @@ class TestLoadFunctions:
         keys = ["id1", "id2", "id3"]
 
         # Mock the repository to return empty dict
-        mock_session.execute = AsyncMock(return_value=MagicMock(scalars=lambda: MagicMock(all=lambda: [])))
+        mock_session.execute = AsyncMock(return_value=_empty_scalars_result())
 
         result = await load_shells(keys, mock_session)
 
@@ -51,7 +55,7 @@ class TestLoadFunctions:
         keys = ["sub1", "sub2"]
 
         # Mock the repository to return empty dict
-        mock_session.execute = AsyncMock(return_value=MagicMock(scalars=lambda: MagicMock(all=lambda: [])))
+        mock_session.execute = AsyncMock(return_value=_empty_scalars_result())
 
         result = await load_submodels(keys, mock_session)
 
@@ -72,7 +76,7 @@ class TestLoadFunctions:
         shell_ids = ["shell1", "shell2", "shell3"]
 
         # Mock both AAS and Submodel repository calls
-        mock_session.execute = AsyncMock(return_value=MagicMock(scalars=lambda: MagicMock(all=lambda: [])))
+        mock_session.execute = AsyncMock(return_value=_empty_scalars_result())
 
         result = await load_submodels_by_shell(shell_ids, mock_session)
 
@@ -132,7 +136,7 @@ class TestDataLoaderContext:
     def mock_session(self) -> MagicMock:
         """Create a mock async session."""
         session = MagicMock()
-        session.execute = AsyncMock(return_value=MagicMock(scalars=lambda: MagicMock(all=lambda: [])))
+        session.execute = AsyncMock(return_value=_empty_scalars_result())
         return session
 
     def test_context_creation(self, mock_session: MagicMock) -> None:
@@ -212,7 +216,7 @@ class TestDataLoaderBatching:
     def mock_session(self) -> MagicMock:
         """Create a mock async session."""
         session = MagicMock()
-        session.execute = AsyncMock(return_value=MagicMock(scalars=lambda: MagicMock(all=lambda: [])))
+        session.execute = AsyncMock(return_value=_empty_scalars_result())
         return session
 
     @pytest.mark.asyncio
