@@ -8,9 +8,6 @@ from redis.asyncio import Redis
 
 from titan.api.middleware.rate_limit import RateLimitConfig, RateLimitMiddleware
 
-# Skip if testcontainers not available
-pytest.importorskip("testcontainers")
-
 
 @pytest.mark.asyncio
 async def test_rate_limit_enforced(redis_client: Redis, monkeypatch: pytest.MonkeyPatch) -> None:

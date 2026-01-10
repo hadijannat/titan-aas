@@ -1,10 +1,12 @@
-"""Integration test fixtures using testcontainers.
+"""Integration test fixtures using Docker.
 
 Provides containerized PostgreSQL and Redis for realistic testing.
 """
 
 from __future__ import annotations
 
+import asyncio
+import time
 from typing import AsyncIterator, Iterator
 
 import pytest
@@ -12,36 +14,39 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-# Import conditionally to allow unit tests to run without testcontainers
-try:
-    from testcontainers.postgres import PostgresContainer
-    from testcontainers.redis import RedisContainer
-
-    TESTCONTAINERS_AVAILABLE = True
-except ImportError:
-    TESTCONTAINERS_AVAILABLE = False
-    PostgresContainer = None
-    RedisContainer = None
-
-
-# Skip all integration tests if testcontainers not available
-pytestmark = pytest.mark.skipif(
-    not TESTCONTAINERS_AVAILABLE,
-    reason="testcontainers not installed",
-)
+from tests.integration.docker_utils import DockerService, get_docker_client, run_container
 
 
 @pytest.fixture(scope="session")
-def postgres_container() -> Iterator[PostgresContainer]:
+def docker_client():
+    """Create a Docker client or skip if Docker is unavailable."""
+    try:
+        client = get_docker_client()
+        client.ping()
+    except Exception as exc:
+        pytest.skip(f"Docker not available: {exc}")
+    yield client
+    client.close()
+
+
+@pytest.fixture(scope="session")
+def postgres_container(docker_client) -> Iterator[DockerService]:
     """Start PostgreSQL container for the test session."""
-    with PostgresContainer("postgres:16-alpine") as postgres:
+    env = {
+        "POSTGRES_USER": "titan",
+        "POSTGRES_PASSWORD": "titan",
+        "POSTGRES_DB": "titan",
+    }
+    ports = {"5432/tcp": None}
+    with run_container(docker_client, "postgres:16-alpine", env=env, ports=ports) as postgres:
         yield postgres
 
 
 @pytest.fixture(scope="session")
-def redis_container() -> Iterator[RedisContainer]:
+def redis_container(docker_client) -> Iterator[DockerService]:
     """Start Redis container for the test session."""
-    with RedisContainer("redis:7-alpine") as redis:
+    ports = {"6379/tcp": None}
+    with run_container(docker_client, "redis:7-alpine", ports=ports) as redis:
         yield redis
 
 
@@ -62,18 +67,18 @@ def event_bus_backend() -> Iterator[None]:
 
 
 @pytest.fixture(scope="session")
-def database_url(postgres_container: PostgresContainer) -> str:
+def database_url(postgres_container: DockerService) -> str:
     """Get the database URL for the test container."""
-    # testcontainers provides psycopg2 URL, convert to asyncpg
-    url = postgres_container.get_connection_url()
-    return url.replace("postgresql://", "postgresql+asyncpg://").replace("psycopg2", "asyncpg")
+    host = postgres_container.host
+    port = postgres_container.port(5432)
+    return f"postgresql+asyncpg://titan:titan@{host}:{port}/titan"
 
 
 @pytest.fixture(scope="session")
-def redis_url(redis_container: RedisContainer) -> str:
+def redis_url(redis_container: DockerService) -> str:
     """Get the Redis URL for the test container."""
-    host = redis_container.get_container_host_ip()
-    port = redis_container.get_exposed_port(6379)
+    host = redis_container.host
+    port = redis_container.port(6379)
     return f"redis://{host}:{port}/0"
 
 
@@ -83,6 +88,7 @@ async def db_engine(database_url: str):
     from titan.persistence.tables import Base
 
     engine = create_async_engine(database_url, echo=False)
+    await _wait_for_engine(engine)
 
     # Create all tables
     async with engine.begin() as conn:
@@ -113,6 +119,7 @@ async def redis_client(redis_url: str):
     import redis.asyncio as redis
 
     client = redis.from_url(redis_url)
+    await _wait_for_redis(client)
     yield client
     await client.flushdb()  # Clean up after each test
     await client.aclose()
@@ -210,3 +217,29 @@ async def test_client(
         yield client
 
     await test_redis.aclose()
+
+
+async def _wait_for_engine(engine, timeout: float = 30.0) -> None:
+    """Wait for the database engine to accept connections."""
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            async with engine.connect():
+                return
+        except Exception:
+            if time.monotonic() >= deadline:
+                raise
+            await asyncio.sleep(0.5)
+
+
+async def _wait_for_redis(client, timeout: float = 30.0) -> None:
+    """Wait for Redis to accept connections."""
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            await client.ping()
+            return
+        except Exception:
+            if time.monotonic() >= deadline:
+                raise
+            await asyncio.sleep(0.5)

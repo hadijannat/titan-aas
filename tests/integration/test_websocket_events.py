@@ -17,9 +17,6 @@ from titan.core.ids import encode_id_to_b64url as encode_id
 from titan.events import AnyEvent, InMemoryEventBus
 from titan.events.schemas import AasEvent, SubmodelEvent
 
-# Skip if testcontainers not available
-pytest.importorskip("testcontainers")
-
 
 class MockWebSocket:
     """Mock WebSocket for testing event broadcasts."""

@@ -127,10 +127,6 @@ packages = ["src/titan"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-filterwarnings = [
-    "ignore:The @wait_container_is_ready decorator is deprecated:DeprecationWarning",
-    "ignore:Cannot update undefined schema for \\$ref=.*\\[skipped-discriminator\\]:pydantic.json_schema.PydanticJsonSchemaWarning",
-]
 
 [dependency-groups]
 dev = [

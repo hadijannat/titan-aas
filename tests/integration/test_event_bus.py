@@ -11,9 +11,6 @@ from redis.asyncio import Redis
 from titan.events.redis_bus import RedisStreamEventBus
 from titan.events.schemas import AasEvent, EventType
 
-# Skip if testcontainers not available
-pytest.importorskip("testcontainers")
-
 
 class TestRedisStreamEventBus:
     """Tests for RedisStreamEventBus with a real Redis instance."""

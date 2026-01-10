@@ -17,9 +17,6 @@ from titan.persistence.tables import (
     generate_etag,
 )
 
-# Skip if testcontainers not available
-pytest.importorskip("testcontainers")
-
 
 class TestAasRepository:
     """Tests for AAS repository operations."""

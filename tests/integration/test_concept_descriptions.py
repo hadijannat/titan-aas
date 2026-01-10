@@ -9,9 +9,6 @@ from httpx import AsyncClient
 
 from titan.core.ids import encode_id_to_b64url as encode_id
 
-# Skip if testcontainers not available
-pytest.importorskip("testcontainers")
-
 
 class TestConceptDescriptionEndpoints:
     """Tests for Concept Description Repository endpoints."""

@@ -10,9 +10,6 @@ from redis.asyncio import Redis
 
 from titan.cache.keys import CacheKeys
 
-# Skip if testcontainers not available
-pytest.importorskip("testcontainers")
-
 
 class TestCacheOperations:
     """Tests for Redis cache operations."""

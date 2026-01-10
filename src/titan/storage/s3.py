@@ -187,11 +187,19 @@ class S3BlobStorage(BlobStorage):
                     Key=key,
                 )
                 async with response["Body"] as stream:
-                    while True:
-                        chunk = await stream.read(self.chunk_size)
-                        if not chunk:
-                            break
-                        yield chunk
+                    if hasattr(stream, "iter_chunks"):
+                        async for chunk in stream.iter_chunks(self.chunk_size):
+                            if chunk:
+                                yield chunk
+                        return
+                    if hasattr(stream, "content") and hasattr(stream.content, "iter_chunked"):
+                        async for chunk in stream.content.iter_chunked(self.chunk_size):
+                            if chunk:
+                                yield chunk
+                        return
+                    data = await stream.read()
+                    if isinstance(data, (bytes, bytearray)) and data:
+                        yield bytes(data)
             except s3.exceptions.NoSuchKey:
                 raise FileNotFoundError(f"Blob not found: {metadata.storage_uri}")
 

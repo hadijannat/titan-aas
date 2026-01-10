@@ -11,9 +11,9 @@ The discriminated union pattern ensures that:
 
 from __future__ import annotations
 
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal, Mapping, Union
 
-from pydantic import Field
+from pydantic import Discriminator, Field, Tag
 
 from titan.core.model import StrictModel
 from titan.core.model.administrative import HasDataSpecificationMixin
@@ -430,23 +430,34 @@ class Capability(SubmodelElementBase):
 # Discriminated Union
 # -----------------------------------------------------------------------------
 
+
+def _submodel_element_discriminator(value: Any) -> str | None:
+    """Resolve modelType for discriminated union, supporting aliases in input payloads."""
+    if isinstance(value, Mapping):
+        model_type = value.get("modelType") or value.get("model_type")
+        return model_type if isinstance(model_type, str) else None
+    return getattr(value, "model_type", None)
+
+
 # Forward reference for recursive types
 SubmodelElementUnion = Annotated[
-    Property
-    | MultiLanguageProperty
-    | Range
-    | Blob
-    | File
-    | ReferenceElement
-    | RelationshipElement
-    | AnnotatedRelationshipElement
-    | SubmodelElementCollection
-    | SubmodelElementList
-    | Entity
-    | BasicEventElement
-    | Operation
-    | Capability,
-    Field(discriminator="model_type"),
+    Union[
+        Annotated[Property, Tag("Property")],
+        Annotated[MultiLanguageProperty, Tag("MultiLanguageProperty")],
+        Annotated[Range, Tag("Range")],
+        Annotated[Blob, Tag("Blob")],
+        Annotated[File, Tag("File")],
+        Annotated[ReferenceElement, Tag("ReferenceElement")],
+        Annotated[RelationshipElement, Tag("RelationshipElement")],
+        Annotated[AnnotatedRelationshipElement, Tag("AnnotatedRelationshipElement")],
+        Annotated[SubmodelElementCollection, Tag("SubmodelElementCollection")],
+        Annotated[SubmodelElementList, Tag("SubmodelElementList")],
+        Annotated[Entity, Tag("Entity")],
+        Annotated[BasicEventElement, Tag("BasicEventElement")],
+        Annotated[Operation, Tag("Operation")],
+        Annotated[Capability, Tag("Capability")],
+    ],
+    Discriminator(_submodel_element_discriminator),
 ]
 
 # Update forward references for recursive models
