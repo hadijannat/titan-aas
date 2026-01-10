@@ -223,6 +223,71 @@ class AasRepository(BaseRepository[AssetAdministrationShell, AasTable]):
         result = await self.session.execute(stmt)
         return [_doc_bytes_and_etag(row.doc) for row in result.all()]
 
+    # -------------------------------------------------------------------------
+    # Batch operations (for GraphQL DataLoaders)
+    # -------------------------------------------------------------------------
+
+    async def get_models_batch(
+        self, identifiers: list[str]
+    ) -> dict[str, AssetAdministrationShell | None]:
+        """Batch load shells by identifier.
+
+        Efficient batch loading for GraphQL DataLoaders to prevent N+1 queries.
+
+        Args:
+            identifiers: List of shell identifiers to load
+
+        Returns:
+            Dict mapping identifier to model (or None if not found)
+        """
+        if not identifiers:
+            return {}
+
+        stmt = select(AasTable).where(AasTable.identifier.in_(identifiers))
+        result = await self.session.execute(stmt)
+        rows = {row.identifier: row for row in result.scalars().all()}
+
+        return {
+            id: AssetAdministrationShell.model_validate(rows[id].doc)
+            if id in rows
+            else None
+            for id in identifiers
+        }
+
+    async def list_models(
+        self,
+        limit: int = 100,
+        cursor: str | None = None,
+    ) -> tuple[list[AssetAdministrationShell], str | None]:
+        """List AAS models with cursor-based pagination.
+
+        Args:
+            limit: Maximum items per page
+            cursor: Cursor from previous page (created_at timestamp)
+
+        Returns:
+            Tuple of (list of models, next cursor or None)
+        """
+        stmt = select(AasTable).order_by(AasTable.created_at).limit(limit + 1)
+        if cursor:
+            from datetime import datetime
+
+            cursor_dt = datetime.fromisoformat(cursor.replace("Z", "+00:00"))
+            stmt = stmt.where(AasTable.created_at > cursor_dt)
+
+        result = await self.session.execute(stmt)
+        rows = result.scalars().all()
+
+        # Determine if there's a next page
+        has_more = len(rows) > limit
+        if has_more:
+            rows = rows[:limit]
+
+        models = [AssetAdministrationShell.model_validate(row.doc) for row in rows]
+        next_cursor = rows[-1].created_at.isoformat() if rows and has_more else None
+
+        return models, next_cursor
+
     async def list_paged_zero_copy(
         self,
         limit: int = 100,
@@ -562,6 +627,131 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
         stmt = select(SubmodelTable.doc).where(SubmodelTable.kind == kind).limit(limit)
         result = await self.session.execute(stmt)
         return [_doc_bytes_and_etag(row.doc) for row in result.all()]
+
+    # -------------------------------------------------------------------------
+    # Batch operations (for GraphQL DataLoaders)
+    # -------------------------------------------------------------------------
+
+    async def get_models_batch(
+        self, identifiers: list[str]
+    ) -> dict[str, Submodel | None]:
+        """Batch load submodels by identifier.
+
+        Efficient batch loading for GraphQL DataLoaders to prevent N+1 queries.
+
+        Args:
+            identifiers: List of submodel identifiers to load
+
+        Returns:
+            Dict mapping identifier to model (or None if not found)
+        """
+        if not identifiers:
+            return {}
+
+        stmt = select(SubmodelTable).where(SubmodelTable.identifier.in_(identifiers))
+        result = await self.session.execute(stmt)
+        rows = {row.identifier: row for row in result.scalars().all()}
+
+        return {
+            id: Submodel.model_validate(rows[id].doc) if id in rows else None
+            for id in identifiers
+        }
+
+    async def get_submodels_for_shells_batch(
+        self, shell_ids: list[str]
+    ) -> dict[str, list[Submodel]]:
+        """Batch load submodels for multiple shells.
+
+        Loads shells first, extracts submodel references, then batch loads submodels.
+        Used by GraphQL DataLoaders for nested Shell.submodels queries.
+
+        Args:
+            shell_ids: List of shell identifiers
+
+        Returns:
+            Dict mapping shell_id to list of Submodel objects
+        """
+        if not shell_ids:
+            return {}
+
+        # First, load all shells to get their submodel references
+        stmt = select(AasTable).where(AasTable.identifier.in_(shell_ids))
+        result = await self.session.execute(stmt)
+        shells = {row.identifier: row for row in result.scalars().all()}
+
+        # Extract all submodel references from shells
+        submodel_ids: set[str] = set()
+        shell_to_submodel_ids: dict[str, list[str]] = {}
+
+        for shell_id in shell_ids:
+            shell_row = shells.get(shell_id)
+            if shell_row is None:
+                shell_to_submodel_ids[shell_id] = []
+                continue
+
+            # Extract submodel references from the shell doc
+            submodel_refs = shell_row.doc.get("submodels", [])
+            ids_for_shell: list[str] = []
+            for ref in submodel_refs:
+                # Extract Submodel key value from ModelReference
+                keys = ref.get("keys", [])
+                for key in keys:
+                    if key.get("type") == "Submodel":
+                        sm_id = key.get("value")
+                        if sm_id:
+                            submodel_ids.add(sm_id)
+                            ids_for_shell.append(sm_id)
+            shell_to_submodel_ids[shell_id] = ids_for_shell
+
+        # Batch load all submodels
+        submodels_by_id = await self.get_models_batch(list(submodel_ids))
+
+        # Build result mapping
+        result_map: dict[str, list[Submodel]] = {}
+        for shell_id in shell_ids:
+            sm_ids = shell_to_submodel_ids.get(shell_id, [])
+            submodels: list[Submodel] = []
+            for sm_id in sm_ids:
+                sm = submodels_by_id.get(sm_id)
+                if sm is not None:
+                    submodels.append(sm)
+            result_map[shell_id] = submodels
+
+        return result_map
+
+    async def list_models(
+        self,
+        limit: int = 100,
+        cursor: str | None = None,
+    ) -> tuple[list[Submodel], str | None]:
+        """List submodel models with cursor-based pagination.
+
+        Args:
+            limit: Maximum items per page
+            cursor: Cursor from previous page (created_at timestamp)
+
+        Returns:
+            Tuple of (list of models, next cursor or None)
+        """
+        stmt = select(SubmodelTable).order_by(SubmodelTable.created_at).limit(limit + 1)
+        if cursor:
+            from datetime import datetime
+
+            cursor_dt = datetime.fromisoformat(cursor.replace("Z", "+00:00"))
+            stmt = stmt.where(SubmodelTable.created_at > cursor_dt)
+
+        result = await self.session.execute(stmt)
+        rows = result.scalars().all()
+
+        # Determine if there's a next page
+        has_more = len(rows) > limit
+        if has_more:
+            rows = rows[:limit]
+
+        models = [Submodel.model_validate(row.doc) for row in rows]
+        next_cursor = rows[-1].created_at.isoformat() if rows and has_more else None
+
+        return models, next_cursor
 
     async def list_paged_zero_copy(
         self,

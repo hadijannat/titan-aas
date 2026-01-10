@@ -15,10 +15,13 @@ Example:
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 import strawberry
 from strawberry.types import Info
+
+if TYPE_CHECKING:
+    from titan.graphql.dataloaders import DataLoaderContext
 
 
 @strawberry.enum
@@ -212,8 +215,8 @@ class Shell:
     @strawberry.field
     async def submodels(self, info: Info) -> list[Submodel]:
         """Get submodels referenced by this shell."""
-        # In a real implementation, this would fetch from database
-        return []
+        ctx: DataLoaderContext = info.context
+        return await ctx.submodels_by_shell_loader.load(self.id)
 
 
 @strawberry.type
@@ -277,14 +280,30 @@ class Query:
         after: str | None = None,
     ) -> ShellConnection:
         """Query shells with optional filtering."""
-        # Placeholder - would fetch from repository
+        from titan.graphql.converters import shell_to_graphql
+        from titan.persistence.repositories import AasRepository
+
+        ctx: DataLoaderContext = info.context
+        repo = AasRepository(ctx.session)
+
+        # Query shells with pagination
+        shells_list, cursor = await repo.list_models(limit=first, cursor=after)
+
+        # Convert to GraphQL types
+        edges = [
+            gql_shell
+            for shell in shells_list
+            if (gql_shell := shell_to_graphql(shell)) is not None
+        ]
+
         return ShellConnection(
-            edges=[],
+            edges=edges,
             page_info=PageInfo(
-                has_next_page=False,
-                has_previous_page=False,
+                has_next_page=cursor is not None,
+                has_previous_page=after is not None,
+                end_cursor=cursor,
             ),
-            total_count=0,
+            total_count=len(edges),
         )
 
     @strawberry.field
@@ -294,8 +313,8 @@ class Query:
         id: str,
     ) -> Shell | None:
         """Get a shell by identifier."""
-        # Placeholder - would fetch from repository
-        return None
+        ctx: DataLoaderContext = info.context
+        return await ctx.shell_loader.load(id)
 
     @strawberry.field
     async def submodels(
@@ -307,14 +326,30 @@ class Query:
         after: str | None = None,
     ) -> SubmodelConnection:
         """Query submodels with optional filtering."""
-        # Placeholder - would fetch from repository
+        from titan.graphql.converters import submodel_to_graphql
+        from titan.persistence.repositories import SubmodelRepository
+
+        ctx: DataLoaderContext = info.context
+        repo = SubmodelRepository(ctx.session)
+
+        # Query submodels with pagination
+        submodels_list, cursor = await repo.list_models(limit=first, cursor=after)
+
+        # Convert to GraphQL types
+        edges = [
+            gql_sm
+            for sm in submodels_list
+            if (gql_sm := submodel_to_graphql(sm)) is not None
+        ]
+
         return SubmodelConnection(
-            edges=[],
+            edges=edges,
             page_info=PageInfo(
-                has_next_page=False,
-                has_previous_page=False,
+                has_next_page=cursor is not None,
+                has_previous_page=after is not None,
+                end_cursor=cursor,
             ),
-            total_count=0,
+            total_count=len(edges),
         )
 
     @strawberry.field
@@ -324,8 +359,8 @@ class Query:
         id: str,
     ) -> Submodel | None:
         """Get a submodel by identifier."""
-        # Placeholder - would fetch from repository
-        return None
+        ctx: DataLoaderContext = info.context
+        return await ctx.submodel_loader.load(id)
 
 
 @strawberry.type
