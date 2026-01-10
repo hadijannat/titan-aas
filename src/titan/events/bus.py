@@ -2,7 +2,7 @@
 
 Provides pub/sub for entity change events:
 - InMemoryEventBus: for single-instance deployments
-- (Future) RedisStreamEventBus: for multi-instance with Redis Streams
+- RedisStreamEventBus: for multi-instance with Redis Streams
 
 The bus is consumed by the SingleWriter worker.
 """
