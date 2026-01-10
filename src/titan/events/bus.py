@@ -10,6 +10,7 @@ The bus is consumed by the SingleWriter worker.
 from __future__ import annotations
 
 import asyncio
+import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Awaitable, Callable
 
@@ -17,6 +18,8 @@ from titan.events.schemas import AnyEvent
 
 if TYPE_CHECKING:
     pass
+
+logger = logging.getLogger(__name__)
 
 
 EventHandler = Callable[[AnyEvent], Awaitable[None]]
@@ -106,10 +109,9 @@ class InMemoryEventBus(EventBus):
                 for handler in self._handlers:
                     try:
                         await handler(event)
-                    except Exception as e:
+                    except Exception:
                         # Log error but continue processing
-                        # In production, use proper logging
-                        print(f"Error in event handler: {e}")
+                        logger.exception("Error in event handler")
 
                 self._queue.task_done()
 

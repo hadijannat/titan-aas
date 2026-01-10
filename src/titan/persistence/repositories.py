@@ -736,7 +736,6 @@ class ConceptDescriptionRepository:
         doc = concept.model_dump(mode="json", by_alias=True, exclude_none=True)
         doc_bytes, etag = _doc_bytes_and_etag(doc)
 
-        row.id_short = concept.id_short
         row.doc = doc
         row.doc_bytes = doc_bytes
         row.etag = etag
