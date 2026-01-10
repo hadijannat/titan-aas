@@ -50,8 +50,11 @@ class TestSecurityHeadersMiddleware:
         assert response.headers["X-XSS-Protection"] == "1; mode=block"
         assert response.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
 
-    def test_hsts_disabled_by_default(self, app: FastAPI) -> None:
-        """HSTS is not added when disabled (default)."""
+    def test_hsts_disabled_by_default(self, app: FastAPI, monkeypatch: pytest.MonkeyPatch) -> None:
+        """HSTS is not added when disabled in settings."""
+        from titan.config import settings
+
+        monkeypatch.setattr(settings, "enable_hsts", False)
         app.add_middleware(SecurityHeadersMiddleware)
         client = TestClient(app)
 
