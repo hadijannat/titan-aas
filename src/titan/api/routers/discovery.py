@@ -413,7 +413,8 @@ async def post_asset_links_by_id(
 
     # Return the new asset links
     return json_bytes_response(
-        canonical_bytes([{"name": link.name, "value": link.value} for link in asset_links])
+        canonical_bytes([{"name": link.name, "value": link.value} for link in asset_links]),
+        status_code=status.HTTP_201_CREATED,
     )
 
 
