@@ -31,9 +31,7 @@ def get_blob_storage() -> BlobStorage:
     elif storage_type == "local":
         _storage = LocalBlobStorage(base_path=settings.blob_storage_path)
     else:
-        raise ValueError(
-            "Unsupported blob_storage_type. Supported values: local, s3, minio."
-        )
+        raise ValueError("Unsupported blob_storage_type. Supported values: local, s3, minio.")
 
     # Configure inline threshold from settings
     BlobStorage.INLINE_THRESHOLD = settings.blob_inline_threshold

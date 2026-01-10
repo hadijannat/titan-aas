@@ -18,6 +18,7 @@ For high-throughput scenarios, use MicroBatchWriter:
 
 from titan.events.batch_writer import BatchWriterConfig, MicroBatchWriter
 from titan.events.bus import EventBus, InMemoryEventBus
+from titan.events.redis_bus import RedisStreamEventBus
 from titan.events.schemas import (
     AasEvent,
     AnyEvent,
@@ -37,6 +38,7 @@ __all__ = [
     # Bus
     "EventBus",
     "InMemoryEventBus",
+    "RedisStreamEventBus",
     # Workers
     "SingleWriter",
     "MicroBatchWriter",

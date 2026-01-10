@@ -167,7 +167,7 @@ observability:
 
 # Blob storage configuration
 blobStorage:
-  # -- Storage type: local, s3, gcs, azure
+  # -- Storage type: local, s3, minio (gcs/azure not supported yet)
   type: local
 
   # -- Local storage configuration
