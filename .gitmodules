@@ -1,0 +1,3 @@
+[submodule "specs/aas-specs-api"]
+	path = specs/aas-specs-api
+	url = https://github.com/admin-shell-io/aas-specs-api

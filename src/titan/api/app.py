@@ -37,12 +37,14 @@ from titan.api.routers import (
 )
 from titan.api.routers import metrics as metrics_router
 from titan.api.routers import websocket as ws_router
+from titan.api.routers.websocket import WebSocketEventHandler, get_ws_manager
 from titan.api.v1 import create_v1_app
 from titan.api.versioning import ApiVersion
 from titan.cache import close_redis, get_redis
 from titan.config import settings
 from titan.connectors.mqtt import close_mqtt, get_mqtt_publisher
-from titan.events.runtime import start_event_bus, stop_event_bus
+from titan.events import AasEvent, AnyEvent, SubmodelEvent
+from titan.events.runtime import get_event_bus, start_event_bus, stop_event_bus
 from titan.observability.metrics import MetricsMiddleware, get_metrics
 from titan.observability.tracing import (
     TracingMiddleware,
@@ -64,6 +66,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     - Initialize database connection pool
     - Initialize Redis connection
     - Initialize MQTT connection (if configured)
+    - Wire WebSocket event handler to event bus
 
     On shutdown:
     - Close MQTT connection
@@ -81,6 +84,20 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await get_redis()  # Initialize Redis connection
     await start_event_bus()
     await get_mqtt_publisher()  # Initialize MQTT connection (optional)
+
+    # Wire WebSocket event handler to event bus for real-time broadcasts
+    ws_handler = WebSocketEventHandler(get_ws_manager())
+
+    async def broadcast_handler(event: AnyEvent) -> None:
+        """Route events to appropriate WebSocket handlers."""
+        if isinstance(event, AasEvent):
+            await ws_handler.handle_aas_event(event)
+        elif isinstance(event, SubmodelEvent):
+            await ws_handler.handle_submodel_event(event)
+
+    await get_event_bus().subscribe(broadcast_handler)
+    logger.info("WebSocket event broadcast handler subscribed")
+
     logger.info("Titan-AAS startup complete")
 
     yield

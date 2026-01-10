@@ -48,6 +48,7 @@ from titan.core.projection import (
     extract_value,
     navigate_id_short_path,
 )
+from titan.events import EventType, get_event_bus, publish_submodel_deleted, publish_submodel_event
 from titan.persistence.db import get_session
 from titan.persistence.repositories import SubmodelRepository
 
@@ -138,6 +139,22 @@ async def post_submodel(
 
     identifier_b64 = encode_id_to_b64url(submodel.id)
     await cache.set_submodel(identifier_b64, doc_bytes, etag)
+
+    # Extract semantic_id for event filtering
+    semantic_id = None
+    if submodel.semantic_id and submodel.semantic_id.keys:
+        semantic_id = submodel.semantic_id.keys[0].value
+
+    # Publish event for real-time subscribers
+    await publish_submodel_event(
+        event_bus=get_event_bus(),
+        event_type=EventType.CREATED,
+        identifier=submodel.id,
+        identifier_b64=identifier_b64,
+        doc_bytes=doc_bytes,
+        etag=etag,
+        semantic_id=semantic_id,
+    )
 
     return Response(
         content=doc_bytes,
@@ -243,6 +260,22 @@ async def put_submodel_by_id(
     await cache.set_submodel(submodel_identifier, doc_bytes, etag)
     await cache.invalidate_submodel_elements(submodel_identifier)
 
+    # Extract semantic_id for event filtering
+    semantic_id = None
+    if submodel.semantic_id and submodel.semantic_id.keys:
+        semantic_id = submodel.semantic_id.keys[0].value
+
+    # Publish event for real-time subscribers
+    await publish_submodel_event(
+        event_bus=get_event_bus(),
+        event_type=EventType.UPDATED,
+        identifier=identifier,
+        identifier_b64=submodel_identifier,
+        doc_bytes=doc_bytes,
+        etag=etag,
+        semantic_id=semantic_id,
+    )
+
     return Response(
         content=doc_bytes,
         media_type="application/json",
@@ -271,6 +304,13 @@ async def delete_submodel_by_id(
 
     await cache.delete_submodel(submodel_identifier)
     await cache.invalidate_submodel_elements(submodel_identifier)
+
+    # Publish event for real-time subscribers
+    await publish_submodel_deleted(
+        event_bus=get_event_bus(),
+        identifier=identifier,
+        identifier_b64=submodel_identifier,
+    )
 
     return Response(status_code=204)
 

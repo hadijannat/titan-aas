@@ -7,7 +7,7 @@ requires-python = ">=3.11"
 authors = [
   { name = "Titan AAS" }
 ]
-license = { text = "Proprietary" }
+license = { file = "LICENSE" }
 
 dependencies = [
   "fastapi>=0.111",

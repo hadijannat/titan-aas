@@ -39,6 +39,7 @@ from titan.core.canonicalize import canonical_bytes
 from titan.core.ids import InvalidBase64Url, decode_id_from_b64url, encode_id_to_b64url
 from titan.core.model import AssetAdministrationShell
 from titan.core.projection import ProjectionModifiers, apply_projection
+from titan.events import EventType, get_event_bus, publish_aas_deleted, publish_aas_event
 from titan.persistence.db import get_session
 from titan.persistence.repositories import AasRepository
 
@@ -123,6 +124,16 @@ async def post_shell(
     # Update cache
     identifier_b64 = encode_id_to_b64url(aas.id)
     await cache.set_aas(identifier_b64, doc_bytes, etag)
+
+    # Publish event for real-time subscribers
+    await publish_aas_event(
+        event_bus=get_event_bus(),
+        event_type=EventType.CREATED,
+        identifier=aas.id,
+        identifier_b64=identifier_b64,
+        doc_bytes=doc_bytes,
+        etag=etag,
+    )
 
     # Return the created AAS
     return Response(
@@ -245,6 +256,16 @@ async def put_shell_by_id(
     # Update cache
     await cache.set_aas(aas_identifier, doc_bytes, etag)
 
+    # Publish event for real-time subscribers
+    await publish_aas_event(
+        event_bus=get_event_bus(),
+        event_type=EventType.UPDATED,
+        identifier=identifier,
+        identifier_b64=aas_identifier,
+        doc_bytes=doc_bytes,
+        etag=etag,
+    )
+
     return Response(
         content=doc_bytes,
         media_type="application/json",
@@ -278,5 +299,12 @@ async def delete_shell_by_id(
 
     # Invalidate cache
     await cache.delete_aas(aas_identifier)
+
+    # Publish event for real-time subscribers
+    await publish_aas_deleted(
+        event_bus=get_event_bus(),
+        identifier=identifier,
+        identifier_b64=aas_identifier,
+    )
 
     return Response(status_code=204)

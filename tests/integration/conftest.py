@@ -46,6 +46,22 @@ def redis_container() -> Iterator[RedisContainer]:
 
 
 @pytest.fixture(scope="session")
+def event_bus_backend() -> Iterator[None]:
+    """Force in-memory event bus for integration tests."""
+    from titan.config import settings
+    from titan.events import runtime as runtime_module
+
+    original_backend = settings.event_bus_backend
+    settings.event_bus_backend = "memory"
+    runtime_module._event_bus = None
+
+    yield
+
+    settings.event_bus_backend = original_backend
+    runtime_module._event_bus = None
+
+
+@pytest.fixture(scope="session")
 def database_url(postgres_container: PostgresContainer) -> str:
     """Get the database URL for the test container."""
     # testcontainers provides psycopg2 URL, convert to asyncpg
@@ -107,6 +123,7 @@ async def test_client(
     database_url: str,
     redis_url: str,
     db_engine,
+    event_bus_backend,
 ) -> AsyncIterator[AsyncClient]:
     """Create a test client with real database and Redis."""
     from contextlib import asynccontextmanager

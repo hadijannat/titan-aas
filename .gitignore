@@ -30,5 +30,5 @@ build/
 *.log
 AGENTS.md
 
-# Vendored specs (if fetched as submodule, keep .gitmodules)
-specs/aas-specs-api/
+# Vendored specs (tracked as submodule)
+# specs/aas-specs-api/

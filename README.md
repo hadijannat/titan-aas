@@ -7,7 +7,7 @@
 ![Hero Banner](docs/images/hero_banner.png)
 
 [![CI](https://github.com/hadijannat/titan-aas/actions/workflows/ci.yml/badge.svg)](https://github.com/hadijannat/titan-aas/actions/workflows/ci.yml)
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![IDTA Compliant](https://img.shields.io/badge/IDTA-Release%2025--01-orange.svg)](https://industrialdigitaltwin.org)
 
@@ -39,7 +39,7 @@
 | Feature | Description |
 |---------|-------------|
 | ⚡ **Blazing Fast Reads** | Stream raw bytes from Redis cache—sub-millisecond response times |
-| 🛡️ **IDTA Compliant** | Full implementation of Part 1 Metamodel + Part 2 API |
+| 🛡️ **IDTA Compliant** | Core repository, registry, discovery, serialization (see conformance matrix) |
 | 🔐 **Enterprise Security** | OIDC authentication, RBAC authorization, rate limiting |
 | 📊 **Observable** | OpenTelemetry tracing + Prometheus metrics built-in |
 | 🐳 **Cloud Native** | Helm charts, Terraform modules for AWS/Azure/GCP |
@@ -98,10 +98,10 @@ flowchart LR
 
 | Specification | Version | Status |
 |--------------|---------|--------|
-| IDTA-01001 Part 1 Metamodel | v3.1.2 | ✅ Implemented |
-| IDTA-01002 Part 2 API | v3.1.1 | ✅ Implemented |
-| IDTA-01003-a Data Specification IEC 61360 | v3.1.1 | ✅ Implemented |
-| IDTA-01004 Security | v3.0.1 | ✅ Implemented |
+| IDTA-01001 Part 1 Metamodel | v3.1.2 | ✅ Core models implemented |
+| IDTA-01002 Part 2 API | v3.1.1 | ⚠️ Partial (see conformance matrix) |
+| IDTA-01003-a Data Specification IEC 61360 | v3.1.1 | ⚠️ Partial |
+| IDTA-01004 Security | v3.0.1 | ⚠️ Partial |
 
 ---
 
@@ -109,7 +109,7 @@ flowchart LR
 
 ### Prerequisites
 
-- Python 3.12+
+- Python 3.11+
 - [uv](https://github.com/astral-sh/uv) (recommended) or pip
 - PostgreSQL 15+ and Redis 7+ (for production)
 
@@ -118,6 +118,8 @@ flowchart LR
 ```bash
 # Clone the repository
 git clone https://github.com/hadijannat/titan-aas.git
+cd titan-aas
+git submodule update --init --recursive
 cd titan-aas
 
 # Install dependencies with uv
@@ -392,7 +394,12 @@ Titan-AAS is configured via environment variables:
 
 - [API Guide](docs/api-guide.md) - Complete API reference
 - [Deployment Runbook](docs/deployment-runbook.md) - Production deployment guide
+- [Conformance Matrix](docs/conformance-matrix.md) - IDTA service profile coverage
+- [Benchmarks](docs/benchmarks.md) - Reproducible performance runs
 - [Architecture Decision Records](docs/adr/) - Design decisions
+- [Security Overview](docs/security.md) - Authentication and rate limiting
+- [Security Policy](SECURITY.md) - Vulnerability reporting
+- [Changelog](CHANGELOG.md) - Release history
 
 ---
 

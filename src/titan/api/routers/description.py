@@ -17,21 +17,44 @@ router = APIRouter(tags=["description"])
 
 
 # IDTA-01002 Service Specification Profiles
-SERVICE_PROFILES = {
+PROFILE_IDS = {
     # AAS Repository
-    "aas_repository_read": "https://admin-shell.io/aas/API/3/1/AssetAdministrationShellRepositoryServiceSpecification/SSP-001",
-    "aas_repository_crud": "https://admin-shell.io/aas/API/3/1/AssetAdministrationShellRepositoryServiceSpecification/SSP-002",
+    "aas_repository_full": "https://admin-shell.io/aas/API/3/1/AssetAdministrationShellRepositoryServiceSpecification/SSP-001",
+    "aas_repository_read": "https://admin-shell.io/aas/API/3/1/AssetAdministrationShellRepositoryServiceSpecification/SSP-002",
+    "aas_repository_query": "https://admin-shell.io/aas/API/3/1/AssetAdministrationShellRepositoryServiceSpecification/SSP-003",
     # Submodel Repository
-    "submodel_repository_read": "https://admin-shell.io/aas/API/3/1/SubmodelRepositoryServiceSpecification/SSP-001",
-    "submodel_repository_crud": "https://admin-shell.io/aas/API/3/1/SubmodelRepositoryServiceSpecification/SSP-002",
+    "submodel_repository_full": "https://admin-shell.io/aas/API/3/1/SubmodelRepositoryServiceSpecification/SSP-001",
+    "submodel_repository_read": "https://admin-shell.io/aas/API/3/1/SubmodelRepositoryServiceSpecification/SSP-002",
+    "submodel_repository_template": "https://admin-shell.io/aas/API/3/1/SubmodelRepositoryServiceSpecification/SSP-003",
+    "submodel_repository_template_read": "https://admin-shell.io/aas/API/3/1/SubmodelRepositoryServiceSpecification/SSP-004",
+    "submodel_repository_query": "https://admin-shell.io/aas/API/3/1/SubmodelRepositoryServiceSpecification/SSP-005",
     # Registry
-    "aas_registry_read": "https://admin-shell.io/aas/API/3/1/AssetAdministrationShellRegistryServiceSpecification/SSP-001",
-    "aas_registry_crud": "https://admin-shell.io/aas/API/3/1/AssetAdministrationShellRegistryServiceSpecification/SSP-002",
-    "submodel_registry_read": "https://admin-shell.io/aas/API/3/1/SubmodelRegistryServiceSpecification/SSP-001",
-    "submodel_registry_crud": "https://admin-shell.io/aas/API/3/1/SubmodelRegistryServiceSpecification/SSP-002",
+    "aas_registry_full": "https://admin-shell.io/aas/API/3/1/AssetAdministrationShellRegistryServiceSpecification/SSP-001",
+    "aas_registry_read": "https://admin-shell.io/aas/API/3/1/AssetAdministrationShellRegistryServiceSpecification/SSP-002",
+    "aas_registry_bulk": "https://admin-shell.io/aas/API/3/1/AssetAdministrationShellRegistryServiceSpecification/SSP-003",
+    "aas_registry_query": "https://admin-shell.io/aas/API/3/1/AssetAdministrationShellRegistryServiceSpecification/SSP-004",
+    "aas_registry_min_read": "https://admin-shell.io/aas/API/3/1/AssetAdministrationShellRegistryServiceSpecification/SSP-005",
+    "submodel_registry_full": "https://admin-shell.io/aas/API/3/1/SubmodelRegistryServiceSpecification/SSP-001",
+    "submodel_registry_read": "https://admin-shell.io/aas/API/3/1/SubmodelRegistryServiceSpecification/SSP-002",
+    "submodel_registry_bulk": "https://admin-shell.io/aas/API/3/1/SubmodelRegistryServiceSpecification/SSP-003",
+    "submodel_registry_query": "https://admin-shell.io/aas/API/3/1/SubmodelRegistryServiceSpecification/SSP-004",
     # Discovery
-    "discovery": "https://admin-shell.io/aas/API/3/1/DiscoveryServiceSpecification/SSP-001",
+    "discovery_full": "https://admin-shell.io/aas/API/3/1/DiscoveryServiceSpecification/SSP-001",
+    "discovery_read": "https://admin-shell.io/aas/API/3/1/DiscoveryServiceSpecification/SSP-002",
+    # Concept Description Repository
+    "concept_description_full": "https://admin-shell.io/aas/API/3/1/ConceptDescriptionRepositoryServiceSpecification/SSP-001",
+    "concept_description_query": "https://admin-shell.io/aas/API/3/1/ConceptDescriptionRepositoryServiceSpecification/SSP-002",
+    # AASX File Server
+    "aasx_file_server": "https://admin-shell.io/aas/API/3/1/AasxFileServerServiceSpecification/SSP-001",
 }
+
+SUPPORTED_PROFILE_KEYS = [
+    "aas_repository_full",
+    "submodel_repository_full",
+    "aas_registry_full",
+    "submodel_registry_full",
+    "discovery_read",
+]
 
 
 @router.get(
@@ -68,15 +91,15 @@ async def get_description() -> dict[str, Any]:
     """
     return {
         "profiles": [
-            # AAS Repository (full CRUD)
-            SERVICE_PROFILES["aas_repository_crud"],
-            # Submodel Repository (full CRUD)
-            SERVICE_PROFILES["submodel_repository_crud"],
-            # Registry (full CRUD)
-            SERVICE_PROFILES["aas_registry_crud"],
-            SERVICE_PROFILES["submodel_registry_crud"],
-            # Discovery
-            SERVICE_PROFILES["discovery"],
+            # AAS Repository (full profile)
+            PROFILE_IDS["aas_repository_full"],
+            # Submodel Repository (full profile)
+            PROFILE_IDS["submodel_repository_full"],
+            # Registry (full profiles)
+            PROFILE_IDS["aas_registry_full"],
+            PROFILE_IDS["submodel_registry_full"],
+            # Discovery (read profile)
+            PROFILE_IDS["discovery_read"],
         ],
         "features": {
             # Serialization formats
@@ -127,4 +150,4 @@ async def get_description() -> dict[str, Any]:
 )
 async def list_profiles() -> list[str]:
     """Return list of all supported service specification profiles."""
-    return list(SERVICE_PROFILES.values())
+    return [PROFILE_IDS[key] for key in SUPPORTED_PROFILE_KEYS]
