@@ -120,7 +120,6 @@ flowchart LR
 git clone https://github.com/hadijannat/titan-aas.git
 cd titan-aas
 git submodule update --init --recursive
-cd titan-aas
 
 # Install dependencies with uv
 uv sync
@@ -140,6 +139,22 @@ docker compose -f deployment/docker-compose.yml up -d
 # Swagger UI: http://localhost:8080/docs
 # Grafana:    http://localhost:3000 (admin/admin)
 ```
+
+### 🖥️ API Explorer
+
+Once running, access the interactive Swagger UI at `http://localhost:8080/docs`:
+
+![Swagger UI](docs/images/swagger_ui.png)
+
+The API is organized into these main sections:
+
+| Section | Description | Key Endpoints |
+|---------|-------------|---------------|
+| **AAS Repository** | CRUD for Asset Administration Shells | `GET/POST /shells`, `GET/PUT/DELETE /shells/{id}` |
+| **Submodel Repository** | CRUD for Submodels and Elements | `GET/POST /submodels`, `GET /submodels/{id}/submodel-elements` |
+| **Registry** | Service discovery and descriptors | `GET/POST /shell-descriptors`, `GET /submodel-descriptors` |
+| **Discovery** | Asset lookup by globalAssetId | `GET /lookup/shells`, `GET /lookup/submodels` |
+| **Health** | Liveness and readiness probes | `GET /health/live`, `GET /health/ready` |
 
 ---
 
