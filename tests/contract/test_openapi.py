@@ -23,6 +23,7 @@ class TestHealthEndpoints:
         assert data["status"] == "ok"
 
     @pytest.mark.asyncio
+    @pytest.mark.skip(reason="Requires Redis/Database - run with integration tests")
     async def test_health_ready_returns_ok(self, api_client: AsyncClient) -> None:
         """Test /health/ready returns status ok."""
         response = await api_client.get("/health/ready")
