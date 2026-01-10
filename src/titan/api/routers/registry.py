@@ -478,9 +478,7 @@ async def put_nested_submodel_descriptor(
     found = False
     for idx, sm_desc in enumerate(submodel_descriptors):
         if sm_desc.get("id") == sm_id:
-            submodel_descriptors[idx] = descriptor.model_dump(
-                by_alias=True, exclude_none=True
-            )
+            submodel_descriptors[idx] = descriptor.model_dump(by_alias=True, exclude_none=True)
             found = True
             break
 
