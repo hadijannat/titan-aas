@@ -1,0 +1,161 @@
+groups:
+  - name: titan-aas.availability
+    rules:
+      - alert: TitanAASDown
+        expr: up{job="titan-aas"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Titan-AAS is down"
+          description: "Titan-AAS instance {{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: TitanAASHighErrorRate
+        expr: |
+          sum(rate(http_requests_total{job="titan-aas", status=~"5.."}[5m]))
+          / sum(rate(http_requests_total{job="titan-aas"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate on Titan-AAS"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%)."
+
+      - alert: TitanAASHealthCheckFailing
+        expr: titan_aas_health_status != 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Titan-AAS health check failing"
+          description: "Health check for {{ $labels.instance }} is failing."
+
+  - name: titan-aas.latency
+    rules:
+      - alert: TitanAASHighLatencyP50
+        expr: |
+          histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job="titan-aas"}[5m])) by (le)) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High p50 latency on Titan-AAS"
+          description: "p50 latency is {{ $value | humanizeDuration }} (threshold: 100ms)."
+
+      - alert: TitanAASHighLatencyP99
+        expr: |
+          histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job="titan-aas"}[5m])) by (le)) > 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High p99 latency on Titan-AAS"
+          description: "p99 latency is {{ $value | humanizeDuration }} (threshold: 1s)."
+
+      - alert: TitanAASSlowQueries
+        expr: |
+          histogram_quantile(0.95, sum(rate(db_query_duration_seconds_bucket{job="titan-aas"}[5m])) by (le)) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow database queries on Titan-AAS"
+          description: "p95 query latency is {{ $value | humanizeDuration }} (threshold: 500ms)."
+
+  - name: titan-aas.cache
+    rules:
+      - alert: TitanAASLowCacheHitRate
+        expr: |
+          sum(rate(cache_hits_total{job="titan-aas"}[5m]))
+          / (sum(rate(cache_hits_total{job="titan-aas"}[5m])) + sum(rate(cache_misses_total{job="titan-aas"}[5m]))) < 0.8
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low cache hit rate on Titan-AAS"
+          description: "Cache hit rate is {{ $value | humanizePercentage }} (threshold: 80%)."
+
+      - alert: TitanAASRedisConnectionError
+        expr: redis_up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis connection error"
+          description: "Cannot connect to Redis."
+
+  - name: titan-aas.database
+    rules:
+      - alert: TitanAASPostgresConnectionError
+        expr: pg_up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL connection error"
+          description: "Cannot connect to PostgreSQL."
+
+      - alert: TitanAASDbConnectionPoolExhausted
+        expr: |
+          db_pool_connections_active{job="titan-aas"}
+          / db_pool_connections_max{job="titan-aas"} > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database connection pool near exhaustion"
+          description: "Connection pool is {{ $value | humanizePercentage }} utilized."
+
+      - alert: TitanAASDbConnectionPoolExhaustedCritical
+        expr: |
+          db_pool_connections_active{job="titan-aas"}
+          / db_pool_connections_max{job="titan-aas"} >= 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection pool exhausted"
+          description: "No available database connections."
+
+  - name: titan-aas.resources
+    rules:
+      - alert: TitanAASHighMemoryUsage
+        expr: |
+          process_resident_memory_bytes{job="titan-aas"}
+          / (1024 * 1024 * 1024) > 1.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on Titan-AAS"
+          description: "Memory usage is {{ $value | humanize1024 }}B."
+
+      - alert: TitanAASHighCPUUsage
+        expr: |
+          rate(process_cpu_seconds_total{job="titan-aas"}[5m]) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on Titan-AAS"
+          description: "CPU usage is {{ $value | humanizePercentage }}."
+
+  - name: titan-aas.events
+    rules:
+      - alert: TitanAASEventQueueBacklog
+        expr: event_queue_size{job="titan-aas"} > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Event queue backlog on Titan-AAS"
+          description: "Event queue has {{ $value }} pending events."
+
+      - alert: TitanAASEventQueueBacklogCritical
+        expr: event_queue_size{job="titan-aas"} > 10000
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical event queue backlog"
+          description: "Event queue has {{ $value }} pending events. System may be overwhelmed."

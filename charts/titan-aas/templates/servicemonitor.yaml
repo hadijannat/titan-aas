@@ -1,0 +1,20 @@
+{{- if and .Values.observability.metrics.enabled .Values.observability.metrics.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "titan-aas.fullname" . }}
+  labels:
+    {{- include "titan-aas.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "titan-aas.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: {{ .Values.observability.metrics.serviceMonitor.interval }}
+      scrapeTimeout: 10s
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+{{- end }}

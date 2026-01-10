@@ -1,0 +1,37 @@
+apiVersion: v2
+name: titan-aas
+description: Industrial-grade Asset Administration Shell runtime
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+
+keywords:
+  - aas
+  - asset-administration-shell
+  - industry4.0
+  - digital-twin
+  - idta
+
+home: https://github.com/your-org/titan-aas
+sources:
+  - https://github.com/your-org/titan-aas
+
+maintainers:
+  - name: Titan AAS Team
+    email: titan@example.com
+
+dependencies:
+  - name: postgresql
+    version: "15.x.x"
+    repository: "oci://registry-1.docker.io/bitnamicharts"
+    condition: postgresql.enabled
+
+  - name: redis
+    version: "19.x.x"
+    repository: "oci://registry-1.docker.io/bitnamicharts"
+    condition: redis.enabled
+
+  - name: mosquitto
+    version: "2.x.x"
+    repository: "https://k8s-at-home.com/charts/"
+    condition: mqtt.enabled

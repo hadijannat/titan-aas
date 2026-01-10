@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+*.egg-info/
+.dist/
+build/
+.eggs/
+
+# Virtual envs
+.venv/
+.venv*/
+.env
+
+# Testing
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Local artifacts
+uv.lock
+*.log
+AGENTS.md
+
+# Vendored specs (if fetched as submodule, keep .gitmodules)
+specs/aas-specs-api/

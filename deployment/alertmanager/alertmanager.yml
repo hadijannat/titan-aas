@@ -1,0 +1,180 @@
+# Alertmanager Configuration for Titan-AAS
+# Docs: https://prometheus.io/docs/alerting/latest/configuration/
+
+global:
+  # Default SMTP settings (override in receivers)
+  smtp_smarthost: 'smtp.example.com:587'
+  smtp_from: 'alertmanager@example.com'
+  smtp_auth_username: 'alertmanager@example.com'
+  smtp_auth_password: '${SMTP_PASSWORD}'
+  smtp_require_tls: true
+
+  # Slack API URL (set via environment variable)
+  slack_api_url: '${SLACK_WEBHOOK_URL}'
+
+  # PagerDuty integration key
+  pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
+
+  # Default timeout for HTTP requests
+  resolve_timeout: 5m
+
+# Route tree for alert matching
+route:
+  # Default receiver
+  receiver: 'default-receiver'
+
+  # Group alerts by these labels
+  group_by: ['alertname', 'severity', 'job']
+
+  # Wait before sending first notification for a new group
+  group_wait: 30s
+
+  # Wait before sending notification about new alerts in existing group
+  group_interval: 5m
+
+  # Wait before resending notification
+  repeat_interval: 4h
+
+  # Child routes (processed in order, first match wins)
+  routes:
+    # Critical alerts go to PagerDuty
+    - match:
+        severity: critical
+      receiver: 'pagerduty-critical'
+      group_wait: 10s
+      repeat_interval: 1h
+      continue: true  # Also send to Slack
+
+    # Critical alerts also go to Slack #incidents
+    - match:
+        severity: critical
+      receiver: 'slack-critical'
+
+    # Warning alerts go to Slack #alerts
+    - match:
+        severity: warning
+      receiver: 'slack-warnings'
+      repeat_interval: 12h
+
+    # Database alerts to DBA team
+    - match_re:
+        alertname: '^TitanAAS(Postgres|Db).*'
+      receiver: 'dba-team'
+
+    # Cache alerts to platform team
+    - match_re:
+        alertname: '^TitanAAS(Redis|Cache).*'
+      receiver: 'platform-team'
+
+# Inhibition rules to suppress notifications
+inhibit_rules:
+  # If TitanAASDown fires, suppress all other Titan alerts
+  - source_match:
+      alertname: 'TitanAASDown'
+      severity: 'critical'
+    target_match_re:
+      alertname: '^TitanAAS.*'
+    equal: ['job', 'instance']
+
+  # If Postgres is down, suppress DB-related alerts
+  - source_match:
+      alertname: 'TitanAASPostgresConnectionError'
+    target_match_re:
+      alertname: '^TitanAASDb.*'
+    equal: ['job']
+
+  # If Redis is down, suppress cache alerts
+  - source_match:
+      alertname: 'TitanAASRedisConnectionError'
+    target_match_re:
+      alertname: '^TitanAAS(Cache|LowCacheHitRate).*'
+    equal: ['job']
+
+# Notification receivers
+receivers:
+  # Default receiver (email)
+  - name: 'default-receiver'
+    email_configs:
+      - to: 'ops-team@example.com'
+        send_resolved: true
+        headers:
+          Subject: '[{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}'
+
+  # PagerDuty for critical alerts
+  - name: 'pagerduty-critical'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY}'
+        severity: critical
+        description: '{{ .CommonAnnotations.summary }}'
+        details:
+          alertname: '{{ .CommonLabels.alertname }}'
+          description: '{{ .CommonAnnotations.description }}'
+          severity: '{{ .CommonLabels.severity }}'
+          instance: '{{ .CommonLabels.instance }}'
+        links:
+          - href: 'http://grafana.example.com/d/titan-aas'
+            text: 'Grafana Dashboard'
+          - href: 'http://prometheus.example.com/alerts'
+            text: 'Prometheus Alerts'
+
+  # Slack for critical alerts
+  - name: 'slack-critical'
+    slack_configs:
+      - channel: '#incidents'
+        send_resolved: true
+        icon_emoji: ':fire:'
+        username: 'Titan Alertmanager'
+        title: '{{ if eq .Status "firing" }}:rotating_light: CRITICAL{{ else }}:white_check_mark: Resolved{{ end }}'
+        text: |
+          *Alert:* {{ .CommonLabels.alertname }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Summary:* {{ .CommonAnnotations.summary }}
+          *Description:* {{ .CommonAnnotations.description }}
+          *Instance:* {{ .CommonLabels.instance }}
+          {{ if eq .Status "firing" }}
+          *Started:* {{ .StartsAt.Format "2006-01-02 15:04:05 MST" }}
+          {{ else }}
+          *Resolved:* {{ .EndsAt.Format "2006-01-02 15:04:05 MST" }}
+          {{ end }}
+        actions:
+          - type: button
+            text: 'View in Grafana'
+            url: 'http://grafana.example.com/d/titan-aas'
+          - type: button
+            text: 'Runbook'
+            url: 'https://docs.example.com/runbooks/titan-aas'
+
+  # Slack for warning alerts
+  - name: 'slack-warnings'
+    slack_configs:
+      - channel: '#alerts'
+        send_resolved: true
+        icon_emoji: ':warning:'
+        username: 'Titan Alertmanager'
+        title: '{{ if eq .Status "firing" }}:warning: Warning{{ else }}:white_check_mark: Resolved{{ end }}'
+        text: |
+          *Alert:* {{ .CommonLabels.alertname }}
+          *Summary:* {{ .CommonAnnotations.summary }}
+          *Description:* {{ .CommonAnnotations.description }}
+
+  # DBA team for database alerts
+  - name: 'dba-team'
+    email_configs:
+      - to: 'dba-team@example.com'
+        send_resolved: true
+    slack_configs:
+      - channel: '#dba-alerts'
+        send_resolved: true
+
+  # Platform team for infrastructure alerts
+  - name: 'platform-team'
+    email_configs:
+      - to: 'platform-team@example.com'
+        send_resolved: true
+    slack_configs:
+      - channel: '#platform-alerts'
+        send_resolved: true
+
+# Templates for notifications (optional)
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'

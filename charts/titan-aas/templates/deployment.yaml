@@ -1,0 +1,190 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "titan-aas.fullname" . }}
+  labels:
+    {{- include "titan-aas.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "titan-aas.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "titan-aas.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "titan-aas.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "titan-aas.fullname" . }}-config
+            - secretRef:
+                name: {{ include "titan-aas.fullname" . }}-secret
+          env:
+            # External Database Secrets
+            {{- if and .Values.externalDatabase.enabled .Values.externalDatabase.existingSecret }}
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalDatabase.existingSecret }}
+                  key: {{ .Values.externalDatabase.existingSecretHostKey }}
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalDatabase.existingSecret }}
+                  key: {{ .Values.externalDatabase.existingSecretPortKey }}
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalDatabase.existingSecret }}
+                  key: {{ .Values.externalDatabase.existingSecretDatabaseKey }}
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalDatabase.existingSecret }}
+                  key: {{ .Values.externalDatabase.existingSecretUserKey }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalDatabase.existingSecret }}
+                  key: {{ .Values.externalDatabase.existingSecretPasswordKey }}
+            {{- end }}
+            # External Redis Secrets
+            {{- if and .Values.externalRedis.enabled .Values.externalRedis.existingSecret }}
+            - name: REDIS_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalRedis.existingSecret }}
+                  key: {{ .Values.externalRedis.existingSecretHostKey }}
+            - name: REDIS_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalRedis.existingSecret }}
+                  key: {{ .Values.externalRedis.existingSecretPortKey }}
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalRedis.existingSecret }}
+                  key: {{ .Values.externalRedis.existingSecretPasswordKey }}
+            {{- end }}
+            # Azure Blob Storage Secrets
+            {{- if and (eq .Values.blobStorage.type "azure") .Values.blobStorage.azure.existingSecret }}
+            - name: AZURE_STORAGE_ACCOUNT_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.blobStorage.azure.existingSecret }}
+                  key: {{ .Values.blobStorage.azure.existingSecretAccountNameKey }}
+            - name: AZURE_STORAGE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.blobStorage.azure.existingSecret }}
+                  key: {{ .Values.blobStorage.azure.existingSecretAccountKeyKey }}
+            - name: AZURE_STORAGE_CONTAINER_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.blobStorage.azure.existingSecret }}
+                  key: {{ .Values.blobStorage.azure.existingSecretContainerKey }}
+            {{- end }}
+            # GCS Blob Storage Secrets
+            {{- if and (eq .Values.blobStorage.type "gcs") .Values.blobStorage.gcs.existingSecret }}
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /var/secrets/gcs/gcs-key.json
+            {{- end }}
+            # S3 Blob Storage Secrets
+            {{- if and (eq .Values.blobStorage.type "s3") .Values.blobStorage.s3.existingSecret }}
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.blobStorage.s3.existingSecret }}
+                  key: {{ .Values.blobStorage.s3.existingSecretAccessKeyId }}
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.blobStorage.s3.existingSecret }}
+                  key: {{ .Values.blobStorage.s3.existingSecretSecretAccessKey }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            {{- if eq .Values.blobStorage.type "local" }}
+            - name: blob-storage
+              mountPath: {{ .Values.blobStorage.local.path }}
+            {{- end }}
+            {{- if and (eq .Values.blobStorage.type "gcs") .Values.blobStorage.gcs.existingSecret }}
+            - name: gcs-credentials
+              mountPath: /var/secrets/gcs
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        {{- if eq .Values.blobStorage.type "local" }}
+        - name: blob-storage
+          persistentVolumeClaim:
+            claimName: {{ include "titan-aas.fullname" . }}-blobs
+        {{- end }}
+        {{- if and (eq .Values.blobStorage.type "gcs") .Values.blobStorage.gcs.existingSecret }}
+        - name: gcs-credentials
+          secret:
+            secretName: {{ .Values.blobStorage.gcs.existingSecret }}
+            items:
+              - key: {{ .Values.blobStorage.gcs.existingSecretKeyFile }}
+                path: gcs-key.json
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

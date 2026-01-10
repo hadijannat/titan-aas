@@ -1,0 +1,269 @@
+# Titan-AAS Helm Chart Values
+# Override these values for your deployment
+
+# -- Number of replicas
+replicaCount: 2
+
+image:
+  # -- Container image repository
+  repository: ghcr.io/your-org/titan-aas
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+  # -- Image tag (defaults to chart appVersion)
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # -- Create service account
+  create: true
+  # -- Annotations for service account
+  annotations: {}
+  # -- Service account name
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/metrics"
+
+# -- Pod labels (for Workload Identity etc.)
+podLabels: {}
+
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+  hosts:
+    - host: titan-aas.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: titan-aas-tls
+  #    hosts:
+  #      - titan-aas.example.com
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - titan-aas
+          topologyKey: kubernetes.io/hostname
+
+# -- Environment configuration
+env:
+  TITAN_ENV: production
+  TITAN_LOG_LEVEL: INFO
+  ENABLE_TRACING: "true"
+  ENABLE_METRICS: "true"
+
+# -- Secrets configuration (use external secrets in production)
+secrets:
+  # -- Database connection string
+  databaseUrl: ""
+  # -- Redis connection string
+  redisUrl: ""
+  # -- OIDC client secret
+  oidcClientSecret: ""
+
+# -- External secrets (for production)
+externalSecrets:
+  enabled: false
+  # -- Secret store reference
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+
+# PostgreSQL subchart configuration
+postgresql:
+  enabled: true
+  auth:
+    username: titan
+    password: titan
+    database: titan
+  primary:
+    persistence:
+      size: 10Gi
+
+# Redis subchart configuration
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: false
+  master:
+    persistence:
+      size: 1Gi
+
+# MQTT configuration
+mqtt:
+  enabled: false
+  broker: ""
+  port: 1883
+
+# OIDC configuration
+oidc:
+  enabled: false
+  issuer: ""
+  audience: ""
+  clientId: ""
+
+# Observability configuration
+observability:
+  tracing:
+    enabled: true
+    otlpEndpoint: ""
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: false
+      interval: 30s
+
+# Blob storage configuration
+blobStorage:
+  # -- Storage type: local, s3, gcs, azure
+  type: local
+
+  # -- Local storage configuration
+  local:
+    path: /data/aasx
+
+  # -- AWS S3 configuration
+  s3:
+    bucket: ""
+    region: us-east-1
+    endpoint: ""
+    # Use existing secret for S3 credentials
+    existingSecret: ""
+    existingSecretAccessKeyId: access_key_id
+    existingSecretSecretAccessKey: secret_access_key
+
+  # -- Google Cloud Storage configuration
+  gcs:
+    bucket: ""
+    projectId: ""
+    # Use existing secret for GCS credentials (JSON key file)
+    existingSecret: ""
+    existingSecretKeyFile: gcs_key_json
+
+  # -- Azure Blob Storage configuration
+  azure:
+    accountName: ""
+    containerName: ""
+    # Use existing secret for Azure credentials
+    existingSecret: ""
+    existingSecretAccountNameKey: account_name
+    existingSecretAccountKeyKey: account_key
+    existingSecretContainerKey: container_name
+
+# Network policy configuration
+networkPolicy:
+  # -- Enable network policies
+  enabled: false
+  # -- Namespace where ingress controller is deployed
+  ingressNamespace: ingress-nginx
+  # -- Pod selector for ingress controller
+  ingressPodSelector:
+    app.kubernetes.io/name: ingress-nginx
+  # -- Namespace where Prometheus is deployed
+  prometheusNamespace: monitoring
+  # -- Pod selector for Prometheus
+  prometheusPodSelector:
+    app.kubernetes.io/name: prometheus
+  # -- Namespace where tracing collector is deployed
+  tracingNamespace: monitoring
+
+# Tracing configuration (used by network policy)
+tracing:
+  enabled: true
+
+# External database configuration (when postgresql.enabled=false)
+externalDatabase:
+  enabled: false
+  host: ""
+  port: 5432
+  database: titan
+  username: titan
+  password: ""
+  sslMode: require
+  # Use existing secret for database credentials
+  existingSecret: ""
+  existingSecretHostKey: host
+  existingSecretPortKey: port
+  existingSecretDatabaseKey: database
+  existingSecretUserKey: username
+  existingSecretPasswordKey: password
+
+# External Redis configuration (when redis.enabled=false)
+externalRedis:
+  enabled: false
+  host: ""
+  port: 6379
+  password: ""
+  tls: false
+  # Use existing secret for Redis credentials
+  existingSecret: ""
+  existingSecretHostKey: host
+  existingSecretPortKey: port
+  existingSecretPasswordKey: password
+
+# External MQTT configuration (when mqtt.enabled=false)
+externalMqtt:
+  enabled: false
+  host: ""
+  port: 1883
+  username: ""
+  password: ""
+  tls: false
+  # Use existing secret for MQTT credentials
+  existingSecret: ""
+  existingSecretHostKey: host
+  existingSecretPortKey: port
+  existingSecretUsernameKey: username
+  existingSecretPasswordKey: password

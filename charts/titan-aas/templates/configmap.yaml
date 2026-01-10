@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "titan-aas.fullname" . }}-config
+  labels:
+    {{- include "titan-aas.labels" . | nindent 4 }}
+data:
+  TITAN_ENV: {{ .Values.env.TITAN_ENV | quote }}
+  TITAN_HOST: "0.0.0.0"
+  TITAN_PORT: "8080"
+  TITAN_LOG_LEVEL: {{ .Values.env.TITAN_LOG_LEVEL | quote }}
+  ENABLE_TRACING: {{ .Values.env.ENABLE_TRACING | quote }}
+  ENABLE_METRICS: {{ .Values.env.ENABLE_METRICS | quote }}
+  {{- if .Values.observability.tracing.otlpEndpoint }}
+  OTLP_ENDPOINT: {{ .Values.observability.tracing.otlpEndpoint | quote }}
+  {{- end }}
+  {{- if .Values.mqtt.enabled }}
+  MQTT_BROKER: {{ .Values.mqtt.broker | quote }}
+  MQTT_PORT: {{ .Values.mqtt.port | quote }}
+  {{- end }}
+  {{- if .Values.oidc.enabled }}
+  OIDC_ISSUER: {{ .Values.oidc.issuer | quote }}
+  OIDC_AUDIENCE: {{ .Values.oidc.audience | quote }}
+  OIDC_CLIENT_ID: {{ .Values.oidc.clientId | quote }}
+  {{- end }}
+  # Blob Storage Configuration
+  BLOB_STORAGE_TYPE: {{ .Values.blobStorage.type | quote }}
+  {{- if eq .Values.blobStorage.type "local" }}
+  BLOB_STORAGE_PATH: {{ .Values.blobStorage.local.path | quote }}
+  {{- end }}
+  {{- if eq .Values.blobStorage.type "s3" }}
+  S3_BUCKET: {{ .Values.blobStorage.s3.bucket | quote }}
+  S3_REGION: {{ .Values.blobStorage.s3.region | quote }}
+  {{- if .Values.blobStorage.s3.endpoint }}
+  S3_ENDPOINT_URL: {{ .Values.blobStorage.s3.endpoint | quote }}
+  {{- end }}
+  {{- end }}
+  {{- if eq .Values.blobStorage.type "gcs" }}
+  GCS_BUCKET: {{ .Values.blobStorage.gcs.bucket | quote }}
+  {{- if .Values.blobStorage.gcs.projectId }}
+  GCS_PROJECT_ID: {{ .Values.blobStorage.gcs.projectId | quote }}
+  {{- end }}
+  {{- end }}
+  {{- if eq .Values.blobStorage.type "azure" }}
+  AZURE_STORAGE_ACCOUNT_NAME: {{ .Values.blobStorage.azure.accountName | quote }}
+  AZURE_STORAGE_CONTAINER_NAME: {{ .Values.blobStorage.azure.containerName | quote }}
+  {{- end }}
+  # External Database Configuration
+  {{- if .Values.externalDatabase.enabled }}
+  {{- if not .Values.externalDatabase.existingSecret }}
+  DB_HOST: {{ .Values.externalDatabase.host | quote }}
+  DB_PORT: {{ .Values.externalDatabase.port | quote }}
+  DB_NAME: {{ .Values.externalDatabase.database | quote }}
+  DB_USER: {{ .Values.externalDatabase.username | quote }}
+  DB_SSLMODE: {{ .Values.externalDatabase.sslMode | quote }}
+  {{- end }}
+  {{- end }}
+  # External Redis Configuration
+  {{- if .Values.externalRedis.enabled }}
+  {{- if not .Values.externalRedis.existingSecret }}
+  REDIS_HOST: {{ .Values.externalRedis.host | quote }}
+  REDIS_PORT: {{ .Values.externalRedis.port | quote }}
+  REDIS_TLS: {{ .Values.externalRedis.tls | quote }}
+  {{- end }}
+  {{- end }}
+  # External MQTT Configuration
+  {{- if .Values.externalMqtt.enabled }}
+  {{- if not .Values.externalMqtt.existingSecret }}
+  MQTT_HOST: {{ .Values.externalMqtt.host | quote }}
+  MQTT_PORT: {{ .Values.externalMqtt.port | quote }}
+  MQTT_TLS: {{ .Values.externalMqtt.tls | quote }}
+  {{- end }}
+  {{- end }}

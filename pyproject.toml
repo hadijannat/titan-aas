@@ -1,0 +1,82 @@
+[project]
+name = "titan-aas"
+version = "0.1.0"
+description = "Industrial Asset Administration Shell runtime optimized for read-heavy workloads"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+  { name = "Titan AAS" }
+]
+license = { text = "Proprietary" }
+
+dependencies = [
+  "fastapi>=0.111",
+  "uvicorn[standard]>=0.30",
+  "pydantic>=2.9",
+  "pydantic-settings>=2.5",
+  "orjson>=3.10",
+  "sqlalchemy[asyncio]>=2.0",
+  "asyncpg>=0.29",
+  "redis>=5.0",
+  "aiomqtt>=2.0",
+  "python-dotenv>=1.0",
+  "typer>=0.12",
+  "opentelemetry-api>=1.25",
+  "opentelemetry-sdk>=1.25",
+  "opentelemetry-exporter-otlp>=1.25",
+  "opentelemetry-instrumentation-fastapi>=0.46b0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "ruff>=0.6",
+  "mypy>=1.10",
+  "pytest>=8.2",
+  "pytest-asyncio>=0.23",
+  "schemathesis>=3.32",
+  "httpx>=0.27",
+]
+compression = [
+  "brotli>=1.1",
+]
+
+[project.scripts]
+titan = "titan.main:app"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unreachable = true
+warn_unused_ignores = true
+
+[tool.uv]
+package = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/titan"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[dependency-groups]
+dev = [
+    "aiofiles>=25.1.0",
+    "testcontainers>=4.14.0",
+    "httpx>=0.27",
+    "pytest>=8.2",
+    "pytest-asyncio>=0.23",
+    "schemathesis>=3.32",
+    "locust>=2.29",
+    "boto3>=1.34",
+    "aioboto3>=13.0",
+]

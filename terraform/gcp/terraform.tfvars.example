@@ -1,0 +1,46 @@
+# Titan-AAS GCP Terraform Variables Example
+# Copy this file to terraform.tfvars and fill in your values
+
+# ============================================
+# General (REQUIRED)
+# ============================================
+gcp_project = "your-gcp-project-id"
+gcp_region  = "us-central1"
+
+project_name = "titan-aas"
+environment  = "production"  # development, staging, production
+
+# ============================================
+# Networking
+# ============================================
+private_subnet_cidr = "10.0.0.0/20"
+pods_cidr           = "10.4.0.0/14"
+services_cidr       = "10.8.0.0/20"
+master_cidr         = "172.16.0.0/28"
+
+# ============================================
+# GKE
+# ============================================
+cluster_name      = "titan-aas-prod"
+node_machine_type = "e2-standard-4"  # 4 vCPU, 16GB RAM
+node_min_size     = 3
+node_max_size     = 20
+node_desired_size = 5
+
+# ============================================
+# Cloud SQL
+# ============================================
+db_tier      = "db-custom-4-16384"  # 4 vCPU, 16GB RAM for production
+db_disk_size = 100
+
+# ============================================
+# Memorystore Redis
+# ============================================
+redis_memory_size_gb = 4  # 4GB for production
+
+# ============================================
+# Application
+# ============================================
+titan_image_repository = "ghcr.io/your-org/titan-aas"
+titan_image_tag        = "v1.0.0"
+domain_name            = "aas.yourdomain.com"

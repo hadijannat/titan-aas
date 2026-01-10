@@ -1,0 +1,57 @@
+# Titan-AAS Azure Terraform Variables Example
+# Copy this file to terraform.tfvars and fill in your values
+
+# ============================================
+# General (REQUIRED)
+# ============================================
+azure_region = "eastus"
+
+project_name = "titan-aas"
+environment  = "production"  # development, staging, production
+
+# ============================================
+# Networking
+# ============================================
+vnet_cidr                     = "10.0.0.0/16"
+aks_subnet_cidr               = "10.0.0.0/20"
+postgresql_subnet_cidr        = "10.0.16.0/24"
+private_endpoints_subnet_cidr = "10.0.17.0/24"
+
+# ============================================
+# AKS
+# ============================================
+cluster_name       = "titan-aas-prod"
+kubernetes_version = "1.29"
+node_vm_size       = "Standard_D4s_v3"  # 4 vCPU, 16GB RAM
+node_min_size      = 3
+node_max_size      = 20
+node_desired_size  = 5
+
+# ============================================
+# PostgreSQL Flexible Server
+# ============================================
+db_sku_name   = "GP_Standard_D4s_v3"  # 4 vCPU, 16GB RAM for production
+db_storage_mb = 65536                  # 64GB
+
+# ============================================
+# Azure Cache for Redis
+# ============================================
+redis_capacity = 1         # P1 = 6GB
+redis_family   = "P"       # Premium
+redis_sku_name = "Premium" # Required for private endpoint
+
+# ============================================
+# Application
+# ============================================
+titan_image_repository = "ghcr.io/your-org/titan-aas"
+titan_image_tag        = "v1.0.0"
+domain_name            = "aas.yourdomain.com"
+
+# ============================================
+# Kubernetes / Helm
+# ============================================
+kubernetes_namespace  = "titan"
+helm_chart_path       = "../../charts/titan-aas"
+helm_chart_version    = "0.1.0"
+install_nginx_ingress = true
+install_cert_manager  = true
