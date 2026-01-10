@@ -15,21 +15,26 @@ SQL-Level Pagination (The "Pagination Paradox" Fix):
 from __future__ import annotations
 
 from dataclasses import dataclass
+from uuid import uuid4
 from typing import Generic, TypeVar
 
 import orjson
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from titan.core.canonicalize import canonical_bytes_from_model
+from titan.core.canonicalize import canonical_bytes, canonical_bytes_from_model
 from titan.core.ids import encode_id_to_b64url
 from titan.core.model import AssetAdministrationShell, Submodel
 from titan.persistence.tables import (
     AasTable,
+    BlobAssetTable,
     ConceptDescriptionTable,
     SubmodelTable,
     generate_etag,
 )
+from titan.storage.base import BlobMetadata
+from titan.storage.externalize import externalize_submodel_doc
+from titan.storage.factory import get_blob_storage
 
 T = TypeVar("T")
 TableT = TypeVar("TableT")
@@ -223,18 +228,14 @@ class AasRepository(BaseRepository[AssetAdministrationShell, AasTable]):
         Returns:
             PagedResult with response_bytes ready to stream
         """
-        # Build cursor condition
-        cursor_condition = ""
-        if cursor:
-            cursor_condition = f"WHERE created_at > '{cursor}'"
-
-        # Use raw SQL for the aggregation query
-        # PostgreSQL builds the complete JSON response
-        query = text(f"""
+        # Use parameterized SQL to avoid injection and keep parsing in Postgres.
+        # PostgreSQL builds the complete JSON response.
+        query = text(
+            """
             WITH page AS (
                 SELECT doc, created_at
                 FROM aas
-                {cursor_condition}
+                WHERE (:cursor IS NULL OR created_at > CAST(:cursor AS timestamptz))
                 ORDER BY created_at
                 LIMIT :limit
             ),
@@ -258,9 +259,10 @@ class AasRepository(BaseRepository[AssetAdministrationShell, AasTable]):
                     ELSE NULL
                 END
             )::text as response
-        """)
+            """
+        )
 
-        result = await self.session.execute(query, {"limit": limit})
+        result = await self.session.execute(query, {"limit": limit, "cursor": cursor})
         row = result.scalar_one_or_none()
 
         if row is None:
@@ -295,6 +297,12 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
     # -------------------------------------------------------------------------
     # Fast path: bytes operations
     # -------------------------------------------------------------------------
+
+    async def _load_blob_assets(self, submodel_row_id: str) -> list[BlobAssetTable]:
+        """Load blob asset rows for a submodel."""
+        stmt = select(BlobAssetTable).where(BlobAssetTable.submodel_id == submodel_row_id)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
 
     async def get_bytes(self, identifier_b64: str) -> tuple[bytes, str] | None:
         """Fast path: get raw canonical bytes and etag."""
@@ -451,25 +459,13 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
         Returns:
             PagedResult with response_bytes ready to stream
         """
-        # Build WHERE conditions
-        conditions = []
-        if cursor:
-            conditions.append(f"created_at > '{cursor}'")
-        if semantic_id:
-            conditions.append(f"semantic_id = '{semantic_id}'")
-
-        where_clause = ""
-        if conditions:
-            where_clause = "WHERE " + " AND ".join(conditions)
-
-        # Same condition for has_more check
-        base_condition = f"semantic_id = '{semantic_id}'" if semantic_id else "1=1"
-
-        query = text(f"""
+        query = text(
+            """
             WITH page AS (
                 SELECT doc, created_at
                 FROM submodels
-                {where_clause}
+                WHERE (:cursor IS NULL OR created_at > CAST(:cursor AS timestamptz))
+                  AND (:semantic_id IS NULL OR semantic_id = :semantic_id)
                 ORDER BY created_at
                 LIMIT :limit
             ),
@@ -483,7 +479,7 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
                 SELECT EXISTS(
                     SELECT 1 FROM submodels
                     WHERE created_at > (SELECT MAX(created_at) FROM page)
-                    AND {base_condition}
+                      AND (:semantic_id IS NULL OR semantic_id = :semantic_id)
                 ) as more
             )
             SELECT json_build_object(
@@ -494,9 +490,13 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
                     ELSE NULL
                 END
             )::text as response
-        """)
+            """
+        )
 
-        result = await self.session.execute(query, {"limit": limit})
+        result = await self.session.execute(
+            query,
+            {"limit": limit, "cursor": cursor, "semantic_id": semantic_id},
+        )
         row = result.scalar_one_or_none()
 
         if row is None:
