@@ -135,6 +135,7 @@ async def test_client(
     from titan.api.errors import AasApiError, aas_api_exception_handler, generic_exception_handler
     from titan.api.routers import (
         aas_repository,
+        admin,
         concept_description_repository,
         description,
         discovery,
@@ -193,6 +194,7 @@ async def test_client(
     # Include routers
     app.include_router(health.router)
     app.include_router(system.router)
+    app.include_router(admin.router)
     app.include_router(aas_repository.router)
     app.include_router(submodel_repository.router)
     app.include_router(concept_description_repository.router)

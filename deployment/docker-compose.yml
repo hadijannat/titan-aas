@@ -129,6 +129,25 @@ services:
   #   restart: unless-stopped
 
   # ============================================
+  # Admin Dashboard UI
+  # ============================================
+  admin-ui:
+    build:
+      context: ../admin-ui
+      dockerfile: ../deployment/Dockerfile.admin
+    container_name: titan-admin-ui
+    ports:
+      - "3001:80"
+    depends_on:
+      - titan
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ============================================
   # Prometheus (Metrics)
   # ============================================
   prometheus:

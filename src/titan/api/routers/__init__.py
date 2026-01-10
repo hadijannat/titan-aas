@@ -5,6 +5,7 @@ Provides modular endpoint organization per IDTA-01002 Part 2.
 
 from titan.api.routers import (
     aas_repository,
+    admin,
     blobs,
     concept_description_repository,
     description,
@@ -20,6 +21,7 @@ from titan.api.routers import (
 
 __all__ = [
     "aas_repository",
+    "admin",
     "blobs",
     "concept_description_repository",
     "description",
