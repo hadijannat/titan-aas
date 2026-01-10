@@ -35,20 +35,45 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app,
-        enable_hsts: bool = False,
-        hsts_max_age: int = 31536000,  # 1 year
-        hsts_include_subdomains: bool = True,
-        hsts_preload: bool = False,
+        enable_hsts: bool | None = None,
+        hsts_max_age: int | None = None,  # 1 year
+        hsts_include_subdomains: bool | None = None,
+        hsts_preload: bool | None = None,
         csp_policy: str | None = None,
         permissions_policy: str | None = None,
         x_frame_options: str = "DENY",
         referrer_policy: str = "strict-origin-when-cross-origin",
     ):
         super().__init__(app)
-        self.enable_hsts = enable_hsts
-        self.hsts_max_age = hsts_max_age
-        self.hsts_include_subdomains = hsts_include_subdomains
-        self.hsts_preload = hsts_preload
+        if (
+            enable_hsts is None
+            or hsts_max_age is None
+            or hsts_include_subdomains is None
+            or hsts_preload is None
+            or csp_policy is None
+            or permissions_policy is None
+        ):
+            from titan.config import settings
+
+            if enable_hsts is None:
+                enable_hsts = settings.enable_hsts
+            if hsts_max_age is None:
+                hsts_max_age = settings.hsts_max_age
+            if hsts_include_subdomains is None:
+                hsts_include_subdomains = settings.hsts_include_subdomains
+            if hsts_preload is None:
+                hsts_preload = settings.hsts_preload
+            if csp_policy is None:
+                csp_policy = settings.csp_policy
+            if permissions_policy is None:
+                permissions_policy = settings.permissions_policy
+
+        self.enable_hsts = bool(enable_hsts)
+        self.hsts_max_age = hsts_max_age if hsts_max_age is not None else 31536000
+        self.hsts_include_subdomains = (
+            hsts_include_subdomains if hsts_include_subdomains is not None else True
+        )
+        self.hsts_preload = hsts_preload if hsts_preload is not None else False
         self.csp_policy = csp_policy
         self.permissions_policy = permissions_policy
         self.x_frame_options = x_frame_options

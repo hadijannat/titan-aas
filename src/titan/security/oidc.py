@@ -197,17 +197,19 @@ def get_token_validator() -> TokenValidator | None:
     """
     global _validator
 
+    if _validator is not None:
+        return _validator
+
     if not settings.oidc_issuer:
         return None
 
-    if _validator is None:
-        config = OIDCConfig(
-            issuer=settings.oidc_issuer,
-            audience=settings.oidc_audience or settings.app_name,
-            roles_claim=settings.oidc_roles_claim or "roles",
-            client_id=settings.oidc_client_id,
-            jwks_cache_seconds=settings.oidc_jwks_cache_seconds,
-        )
-        _validator = TokenValidator(config)
+    config = OIDCConfig(
+        issuer=settings.oidc_issuer,
+        audience=settings.oidc_audience or settings.app_name,
+        roles_claim=settings.oidc_roles_claim or "roles",
+        client_id=settings.oidc_client_id,
+        jwks_cache_seconds=settings.oidc_jwks_cache_seconds,
+    )
+    _validator = TokenValidator(config)
 
     return _validator

@@ -140,6 +140,7 @@ async def test_client(
     from fastapi.responses import ORJSONResponse
 
     from titan.api.errors import AasApiError, aas_api_exception_handler, generic_exception_handler
+    from titan.api.middleware import CorrelationMiddleware, SecurityHeadersMiddleware
     from titan.api.routers import (
         aas_repository,
         admin,
@@ -167,6 +168,10 @@ async def test_client(
         default_response_class=ORJSONResponse,
         lifespan=test_lifespan,
     )
+
+    # Add middleware required by integration tests
+    app.add_middleware(CorrelationMiddleware)
+    app.add_middleware(SecurityHeadersMiddleware)
 
     # Create test session factory
     test_session_factory = async_sessionmaker(

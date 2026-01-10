@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from titan.core.ids import encode_id_to_b64url
 from titan.security.oidc import User
 
 # Marker for tests that require full OIDC and middleware stack
@@ -211,7 +212,7 @@ class TestRBACEnforcement:
         assert response.status_code in (200, 201)
 
         # Writer cannot delete
-        aas_id_b64 = base64.urlsafe_b64encode(b"urn:example:aas:test-writer").decode()
+        aas_id_b64 = encode_id_to_b64url("urn:example:aas:test-writer")
         response = await test_client.delete(
             f"/shells/{aas_id_b64}",
             headers={"Authorization": "Bearer writer-token"},
@@ -251,7 +252,7 @@ class TestRBACEnforcement:
         assert response.status_code in (200, 201)
 
         # Admin can delete
-        aas_id_b64 = base64.urlsafe_b64encode(b"urn:example:aas:test-admin").decode()
+        aas_id_b64 = encode_id_to_b64url("urn:example:aas:test-admin")
         response = await test_client.delete(
             f"/shells/{aas_id_b64}",
             headers={"Authorization": "Bearer admin-token"},
@@ -597,7 +598,7 @@ class TestErrorResponseFormat:
         test_client: AsyncClient,
     ) -> None:
         """Error responses include timestamp."""
-        fake_id = base64.urlsafe_b64encode(b"urn:example:aas:test-ts").decode()
+        fake_id = encode_id_to_b64url("urn:example:aas:test-ts")
         response = await test_client.get(f"/shells/{fake_id}")
 
         assert response.status_code == 404

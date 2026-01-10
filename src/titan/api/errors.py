@@ -6,6 +6,7 @@ for consistent error handling across all API endpoints.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from enum import Enum
 
 from fastapi import HTTPException, Request
@@ -64,6 +65,7 @@ class AasApiError(HTTPException):
                     code=self.code,
                     message_type=self.message_type,
                     text=self.text,
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
             ]
         )
@@ -154,6 +156,7 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
                     code="InternalServerError",
                     message_type=MessageType.EXCEPTION,
                     text="An unexpected error occurred",
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
             ]
         ).model_dump(by_alias=True),
