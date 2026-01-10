@@ -32,9 +32,40 @@ class Settings(BaseSettings):
     # Redis
     redis_url: str = Field(default="redis://localhost:6379/0", validation_alias="REDIS_URL")
 
-    # MQTT
+    # MQTT Connection
     mqtt_broker: str | None = Field(default=None, validation_alias="MQTT_BROKER")
     mqtt_port: int = Field(default=1883, validation_alias="MQTT_PORT")
+    mqtt_username: str | None = Field(default=None, validation_alias="MQTT_USERNAME")
+    mqtt_password: str | None = Field(default=None, validation_alias="MQTT_PASSWORD")
+    mqtt_use_tls: bool = Field(default=False, validation_alias="MQTT_TLS")
+    mqtt_client_id_prefix: str = Field(
+        default="titan-aas", validation_alias="MQTT_CLIENT_ID_PREFIX"
+    )
+
+    # MQTT Reconnection
+    mqtt_reconnect_delay_initial: float = Field(
+        default=1.0, validation_alias="MQTT_RECONNECT_DELAY_INITIAL"
+    )
+    mqtt_reconnect_delay_max: float = Field(
+        default=60.0, validation_alias="MQTT_RECONNECT_DELAY_MAX"
+    )
+    mqtt_reconnect_delay_multiplier: float = Field(
+        default=2.0, validation_alias="MQTT_RECONNECT_MULTIPLIER"
+    )
+    mqtt_max_reconnect_attempts: int = Field(
+        default=10, validation_alias="MQTT_MAX_RECONNECT_ATTEMPTS"
+    )
+
+    # MQTT Publishing
+    mqtt_default_qos: int = Field(default=1, validation_alias="MQTT_DEFAULT_QOS")
+    mqtt_retain_events: bool = Field(default=False, validation_alias="MQTT_RETAIN_EVENTS")
+
+    # MQTT Subscriber
+    mqtt_subscribe_enabled: bool = Field(default=True, validation_alias="MQTT_SUBSCRIBE_ENABLED")
+    mqtt_subscribe_topics: str = Field(
+        default="titan/+/+/command/#,titan/element/+/+/value",
+        validation_alias="MQTT_SUBSCRIBE_TOPICS",
+    )
 
     # Event Bus
     event_bus_backend: str = Field(default="redis", validation_alias="EVENT_BUS_BACKEND")

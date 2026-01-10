@@ -55,6 +55,7 @@ from titan.api.versioning import ApiVersion
 from titan.cache import close_redis, get_redis
 from titan.config import settings
 from titan.connectors.mqtt import MqttEventHandler, close_mqtt, get_mqtt_publisher
+from titan.connectors.mqtt_subscriber import close_mqtt_subscriber, get_mqtt_subscriber
 from titan.events import AasEvent, AnyEvent, SubmodelEvent
 from titan.events.runtime import get_event_bus, start_event_bus, stop_event_bus
 from titan.observability import configure_logging
@@ -133,12 +134,22 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await get_event_bus().subscribe(mqtt_broadcast_handler)
         logger.info("MQTT event handler subscribed")
 
+    # Wire MQTT subscriber (optional, bidirectional communication)
+    if settings.mqtt_broker is not None and settings.mqtt_subscribe_enabled:
+        mqtt_subscriber = await get_mqtt_subscriber()
+        if mqtt_subscriber is not None:
+            # Parse topics from settings (comma-separated)
+            topics = [t.strip() for t in settings.mqtt_subscribe_topics.split(",") if t.strip()]
+            await mqtt_subscriber.start(topics)
+            logger.info(f"MQTT subscriber started on {len(topics)} topics")
+
     logger.info("Titan-AAS startup complete")
 
     yield
 
     # Shutdown
     logger.info("Shutting down Titan-AAS")
+    await close_mqtt_subscriber()
     await close_mqtt()
     await stop_event_bus()
     await close_redis()
