@@ -196,9 +196,7 @@ class XmlSerializer:
 class XmlDeserializer:
     """Deserialize IDTA-compliant XML to Pydantic AAS models."""
 
-    SUBMODEL_ELEMENT_TAGS = frozenset(
-        value[0].lower() + value[1:] for value in AasSubmodelElements
-    )
+    SUBMODEL_ELEMENT_TAGS = frozenset(value[0].lower() + value[1:] for value in AasSubmodelElements)
 
     def __init__(self) -> None:
         self.ns = AAS_NS

@@ -2,7 +2,7 @@
 
 import pytest
 
-from titan.core.model import ConceptDescription, Reference, Key, KeyTypes, ReferenceTypes
+from titan.core.model import ConceptDescription, Key, KeyTypes, Reference, ReferenceTypes
 
 
 class TestConceptDescriptionBasic:
@@ -94,15 +94,11 @@ class TestConceptDescriptionIsCaseOf:
             is_case_of=[
                 Reference(
                     type=ReferenceTypes.EXTERNAL_REFERENCE,
-                    keys=[
-                        Key(type=KeyTypes.GLOBAL_REFERENCE, value="urn:external:ref:1")
-                    ],
+                    keys=[Key(type=KeyTypes.GLOBAL_REFERENCE, value="urn:external:ref:1")],
                 ),
                 Reference(
                     type=ReferenceTypes.EXTERNAL_REFERENCE,
-                    keys=[
-                        Key(type=KeyTypes.GLOBAL_REFERENCE, value="urn:external:ref:2")
-                    ],
+                    keys=[Key(type=KeyTypes.GLOBAL_REFERENCE, value="urn:external:ref:2")],
                 ),
             ],
         )

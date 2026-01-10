@@ -1,8 +1,6 @@
 """Tests for XML serialization following IDTA-01001 v3.1."""
 
-import pytest
-
-from titan.compat.xml_serializer import XmlSerializer, XmlDeserializer, AAS_NS
+from titan.compat.xml_serializer import AAS_NS, XmlDeserializer, XmlSerializer
 from titan.core.model import (
     AssetAdministrationShell,
     AssetInformation,

@@ -1,15 +1,14 @@
 """Tests for AASX package import/export."""
 
-import pytest
-from io import BytesIO
 import zipfile
+from io import BytesIO
+
+import pytest
 
 from titan.compat.aasx import (
     AasxExporter,
     AasxImporter,
     AasxPackage,
-    export_aasx,
-    import_aasx,
 )
 from titan.core.model import (
     AssetAdministrationShell,
