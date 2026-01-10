@@ -167,8 +167,7 @@ class OpcValidator:
     ) -> None:
         """Validate [Content_Types].xml structure."""
         try:
-            # nosec B314 - XML data from validated AASX package, not untrusted input
-            root = ET.fromstring(data)
+            root = ET.fromstring(data)  # nosec B314 - validated AASX package
 
             # Check namespace
             if root.tag != f"{{{self.CONTENT_TYPES_NS}}}Types":
@@ -236,8 +235,7 @@ class OpcValidator:
 
         try:
             rels_data = zf.read(rels_file)
-            # nosec B314 - XML data from validated AASX package, not untrusted input
-            root = ET.fromstring(rels_data)
+            root = ET.fromstring(rels_data)  # nosec B314 - validated AASX package
 
             # Check for AASX-origin relationship
             has_origin = False

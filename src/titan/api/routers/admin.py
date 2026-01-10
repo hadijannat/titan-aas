@@ -68,14 +68,10 @@ async def get_dashboard_stats(
     cutoff = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
 
     recent_aas = await session.scalar(
-        select(func.count())
-        .select_from(AasTable)
-        .where(AasTable.created_at >= cutoff)
+        select(func.count()).select_from(AasTable).where(AasTable.created_at >= cutoff)
     )
     recent_submodels = await session.scalar(
-        select(func.count())
-        .select_from(SubmodelTable)
-        .where(SubmodelTable.created_at >= cutoff)
+        select(func.count()).select_from(SubmodelTable).where(SubmodelTable.created_at >= cutoff)
     )
 
     return {
@@ -125,12 +121,14 @@ async def get_recent_activity(
     )
     result = await session.execute(stmt)
     for row in result.all():
-        activities.append({
-            "type": "shell",
-            "action": "updated" if row.updated_at != row.created_at else "created",
-            "identifier": row.identifier,
-            "timestamp": row.updated_at.isoformat(),
-        })
+        activities.append(
+            {
+                "type": "shell",
+                "action": "updated" if row.updated_at != row.created_at else "created",
+                "identifier": row.identifier,
+                "timestamp": row.updated_at.isoformat(),
+            }
+        )
 
     # Recent submodels
     stmt = (
@@ -140,12 +138,14 @@ async def get_recent_activity(
     )
     result = await session.execute(stmt)
     for row in result.all():
-        activities.append({
-            "type": "submodel",
-            "action": "updated" if row.updated_at != row.created_at else "created",
-            "identifier": row.identifier,
-            "timestamp": row.updated_at.isoformat(),
-        })
+        activities.append(
+            {
+                "type": "submodel",
+                "action": "updated" if row.updated_at != row.created_at else "created",
+                "identifier": row.identifier,
+                "timestamp": row.updated_at.isoformat(),
+            }
+        )
 
     # Recent packages
     stmt = (
@@ -155,13 +155,15 @@ async def get_recent_activity(
     )
     result = await session.execute(stmt)
     for row in result.all():
-        activities.append({
-            "type": "package",
-            "action": "uploaded",
-            "identifier": row.id,
-            "filename": row.filename,
-            "timestamp": row.created_at.isoformat(),
-        })
+        activities.append(
+            {
+                "type": "package",
+                "action": "uploaded",
+                "identifier": row.id,
+                "filename": row.filename,
+                "timestamp": row.created_at.isoformat(),
+            }
+        )
 
     # Sort by timestamp and limit
     activities.sort(key=lambda x: x["timestamp"], reverse=True)
@@ -242,10 +244,7 @@ async def get_semantic_ids(
     )
     result = await session.execute(stmt)
 
-    semantic_ids = [
-        {"semanticId": row.semantic_id, "count": row.count}
-        for row in result.all()
-    ]
+    semantic_ids = [{"semanticId": row.semantic_id, "count": row.count} for row in result.all()]
 
     return {
         "semanticIds": semantic_ids,
@@ -277,10 +276,7 @@ async def get_global_asset_ids(
     )
     result = await session.execute(stmt)
 
-    asset_ids = [
-        {"globalAssetId": row.global_asset_id, "count": row.count}
-        for row in result.all()
-    ]
+    asset_ids = [{"globalAssetId": row.global_asset_id, "count": row.count} for row in result.all()]
 
     return {
         "globalAssetIds": asset_ids,
