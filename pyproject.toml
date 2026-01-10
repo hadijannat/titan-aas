@@ -21,6 +21,7 @@ dependencies = [
   "aiomqtt>=2.0",
   "python-dotenv>=1.0",
   "typer>=0.12",
+  "python-jose[cryptography]>=3.3",
   "opentelemetry-api>=1.25",
   "opentelemetry-sdk>=1.25",
   "opentelemetry-exporter-otlp>=1.25",
