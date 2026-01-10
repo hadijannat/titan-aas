@@ -3,7 +3,8 @@
 Provides blob storage for large File/Blob elements:
 - Local filesystem storage (default)
 - S3-compatible storage (MinIO, AWS S3)
-- Azure Blob Storage (future)
+- Google Cloud Storage
+- Azure Blob Storage
 
 The "Binary Blob Trap" fix:
 - Large binaries are externalized from JSONB
@@ -11,8 +12,10 @@ The "Binary Blob Trap" fix:
 - Only metadata is stored in PostgreSQL
 """
 
+from titan.storage.azure import AzureBlobStorage
 from titan.storage.base import BlobMetadata, BlobStorage
 from titan.storage.factory import get_blob_storage
+from titan.storage.gcs import GcsBlobStorage
 from titan.storage.local import LocalBlobStorage
 from titan.storage.s3 import S3BlobStorage
 
@@ -21,5 +24,7 @@ __all__ = [
     "BlobMetadata",
     "LocalBlobStorage",
     "S3BlobStorage",
+    "GcsBlobStorage",
+    "AzureBlobStorage",
     "get_blob_storage",
 ]

@@ -261,9 +261,23 @@ kubectl port-forward svc/titan-titan-aas 8080:8080 -n titan
 | `EVENT_BUS_CONSUMER_ID` | - | Optional Redis consumer ID |
 | `OIDC_ISSUER` | - | OIDC issuer URL |
 | `OIDC_AUDIENCE` | titan-aas | OIDC audience |
-| `BLOB_STORAGE_TYPE` | local | Blob storage (local/s3/minio) |
+| `BLOB_STORAGE_TYPE` | local | Blob storage (local/s3/minio/gcs/azure) |
 | `S3_BUCKET` | - | S3 bucket for blobs |
 | `S3_ENDPOINT_URL` | - | S3-compatible endpoint (e.g., MinIO) |
+| `S3_PREFIX` | - | Optional S3 key prefix |
+| `S3_REGION` | us-east-1 | S3 region |
+| `AWS_ACCESS_KEY_ID` | - | S3 access key |
+| `AWS_SECRET_ACCESS_KEY` | - | S3 secret key |
+| `GCS_BUCKET` | - | GCS bucket for blobs |
+| `GCS_PREFIX` | - | Optional GCS key prefix |
+| `GCS_PROJECT` | - | GCS project ID |
+| `GCS_CREDENTIALS_PATH` | - | Path to GCS service account JSON |
+| `AZURE_CONTAINER` | - | Azure blob container |
+| `AZURE_PREFIX` | - | Optional Azure blob prefix |
+| `AZURE_STORAGE_CONNECTION_STRING` | - | Azure storage connection string |
+| `AZURE_ACCOUNT_URL` | - | Azure account URL (if not using connection string) |
+| `AZURE_ACCOUNT_KEY` | - | Azure account key |
+| `AZURE_SAS_TOKEN` | - | Azure SAS token |
 | `ENABLE_TRACING` | false | Enable OpenTelemetry tracing |
 | `OTLP_ENDPOINT` | - | OTLP collector endpoint |
 | `ENABLE_METRICS` | true | Enable Prometheus metrics |

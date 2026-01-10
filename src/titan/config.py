@@ -70,6 +70,24 @@ class Settings(BaseSettings):
     s3_access_key_id: str | None = Field(default=None, validation_alias="AWS_ACCESS_KEY_ID")
     s3_secret_access_key: str | None = Field(default=None, validation_alias="AWS_SECRET_ACCESS_KEY")
 
+    # GCS Blob Storage (when blob_storage_type="gcs")
+    gcs_bucket: str | None = Field(default=None, validation_alias="GCS_BUCKET")
+    gcs_prefix: str = Field(default="", validation_alias="GCS_PREFIX")
+    gcs_project: str | None = Field(default=None, validation_alias="GCS_PROJECT")
+    gcs_credentials_path: str | None = Field(
+        default=None, validation_alias="GCS_CREDENTIALS_PATH"
+    )
+
+    # Azure Blob Storage (when blob_storage_type="azure")
+    azure_container: str | None = Field(default=None, validation_alias="AZURE_CONTAINER")
+    azure_prefix: str = Field(default="", validation_alias="AZURE_PREFIX")
+    azure_connection_string: str | None = Field(
+        default=None, validation_alias="AZURE_STORAGE_CONNECTION_STRING"
+    )
+    azure_account_url: str | None = Field(default=None, validation_alias="AZURE_ACCOUNT_URL")
+    azure_account_key: str | None = Field(default=None, validation_alias="AZURE_ACCOUNT_KEY")
+    azure_sas_token: str | None = Field(default=None, validation_alias="AZURE_SAS_TOKEN")
+
     # HTTP Caching
     enable_http_caching: bool = Field(default=True, validation_alias="ENABLE_HTTP_CACHING")
     cache_max_age: int = Field(default=60, validation_alias="CACHE_MAX_AGE")

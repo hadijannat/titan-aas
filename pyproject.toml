@@ -41,6 +41,12 @@ dev = [
 compression = [
   "brotli>=1.1",
 ]
+gcs = [
+  "google-cloud-storage>=2.16",
+]
+azure = [
+  "azure-storage-blob>=12.19",
+]
 
 [project.scripts]
 titan = "titan.main:app"
@@ -60,9 +66,15 @@ warn_unused_ignores = true
 [[tool.mypy.overrides]]
 module = [
   "aioboto3",
+  "azure",
+  "azure.*",
   "alembic",
   "alembic.*",
   "brotli",
+  "google",
+  "google.*",
+  "google.cloud",
+  "google.cloud.*",
   "jose",
   "jose.*",
   "opentelemetry.instrumentation.httpx",
