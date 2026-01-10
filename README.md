@@ -36,21 +36,61 @@
 
 ![Features](docs/images/features.png)
 
+### Feature Status Matrix
+
+Features are classified as:
+- **Implemented**: Fully functional with test coverage
+- **Scaffolded**: Code structure exists, not fully functional
+- **Planned**: Roadmap item, not yet started
+
+| Feature | Status | Evidence |
+|---------|--------|----------|
+| **Core Runtime** | | |
+| AAS Repository CRUD | Implemented | `src/titan/api/routers/aas_repository.py` |
+| Submodel Repository CRUD | Implemented | `src/titan/api/routers/submodel_repository.py` |
+| Registry CRUD | Implemented | `src/titan/api/routers/registry.py` |
+| Discovery Lookup | Implemented | `src/titan/api/routers/discovery.py` |
+| ConceptDescription CRUD | Implemented | `src/titan/api/routers/concept_description_repository.py` |
+| Redis Cache Fast Path | Implemented | `src/titan/cache/redis.py`, `docs/benchmarks.md` |
+| **Security** | | |
+| OIDC Authentication | Implemented | `src/titan/security/oidc.py`, `tests/integration/test_security_flows.py` |
+| RBAC (reader/writer/admin) | Implemented | `src/titan/security/rbac.py`, `tests/unit/security/test_deps_abac.py` |
+| ABAC (tenant isolation) | Implemented | `src/titan/security/abac.py`, `tests/unit/security/test_abac.py` |
+| Rate Limiting | Implemented | `src/titan/api/middleware/rate_limit.py`, `tests/integration/test_rate_limit.py` |
+| Security Headers | Implemented | `src/titan/api/middleware/security_headers.py` |
+| **Observability** | | |
+| Prometheus Metrics | Implemented | `src/titan/observability/metrics.py` |
+| OpenTelemetry Tracing | Implemented | `src/titan/observability/tracing.py` |
+| Structured Logging | Implemented | `src/titan/observability/logging.py` |
+| **Events** | | |
+| WebSocket Events | Implemented | `src/titan/events/` |
+| MQTT Events | Scaffolded | Interface exists, not fully integrated |
+| **Packages** | | |
+| AASX Import/Export | Scaffolded | `src/titan/aasx/` - basic structure only |
+| **Federation** | | |
+| Multi-instance Sync | Scaffolded | `src/titan/federation/` - interface only |
+| Edge Offline-First | Planned | Roadmap for v0.3 |
+| **Integrations** | | |
+| Catena-X EDC Connector | Scaffolded | `src/titan/connectors/edc/` - interface only |
+| OPC-UA Connector | Scaffolded | `src/titan/connectors/opcua/` - interface only |
+| **Infrastructure** | | |
+| Helm Charts | Implemented | `charts/titan-aas/` |
+| Terraform (AWS/Azure/GCP) | Implemented | `terraform/` |
+| Multi-Cloud Blob Storage | Implemented | S3, Azure Blob, GCS supported |
+| **UI** | | |
+| Admin Dashboard | Scaffolded | `admin-ui/` - React app structure |
+| **Extensibility** | | |
+| Plugin System | Planned | Roadmap for v0.4 |
+
+### Feature Highlights
+
 | Feature | Description |
 |---------|-------------|
-| ⚡ **Blazing Fast Reads** | Stream raw bytes from Redis cache—sub-millisecond response times |
-| 🛡️ **IDTA Compliant** | Core repository, registry, discovery, serialization (see conformance matrix) |
-| 🔐 **Enterprise Security** | OIDC authentication, RBAC + ABAC authorization, rate limiting |
-| 📊 **Observable** | OpenTelemetry tracing + Prometheus metrics + structured JSON logs with correlation IDs |
-| 🐳 **Cloud Native** | Helm charts, Terraform modules for AWS/Azure/GCP |
-| 🔌 **Real-time Events** | WebSocket + MQTT for live asset updates |
-| 🤝 **Ecosystem Integrations** | Catena-X EDC/DTR connector scaffolds + Digital Product Passport generator (battery/PCF) |
-| 🌐 **Federation** | Multi-instance synchronization with peer discovery |
-| 📦 **AASX Packages** | Import/export with validation, versioning, conflict resolution |
-| ☁️ **Multi-Cloud Storage** | S3, Azure Blob, GCS for binary attachments |
-| 🖥️ **Admin UI** | React-based dashboard for monitoring and management |
-| 🔋 **Edge Deployment** | Offline-first with background sync when connected |
-| 🔌 **Plugin System** | Extensible with custom plugins and connectors |
+| **Blazing Fast Reads** | Stream raw bytes from Redis cache—sub-millisecond response times |
+| **IDTA Compliant** | 96% endpoint coverage for Part 2 API v3.1.1 (see [conformance matrix](docs/conformance-matrix.md)) |
+| **Enterprise Security** | OIDC authentication, RBAC + ABAC authorization, rate limiting |
+| **Observable** | OpenTelemetry tracing + Prometheus metrics + structured JSON logs |
+| **Cloud Native** | Helm charts, Terraform modules for AWS/Azure/GCP |
 
 ---
 
@@ -490,20 +530,35 @@ Titan-AAS is configured via environment variables:
 
 ## 📖 Documentation
 
+### Getting Started
 - **[🚀 Try It Yourself](docs/try-it-yourself.md)** - Hands-on guide to verify each claimed functionality
 - [API Guide](docs/api-guide.md) - Complete API reference
+
+### Deployment & Operations
 - [Deployment Runbook](docs/deployment-runbook.md) - Production deployment guide
 - [High Availability Guide](docs/ha-guidance.md) - Active-active deployment patterns
-- [Conformance Matrix](docs/conformance-matrix.md) - IDTA service profile coverage
+- [Capacity Planning](docs/capacity-planning.md) - Sizing and scaling guidance
+- [Runbook Quick Reference](docs/runbook-quickref.md) - Operational procedures
+
+### Conformance & Performance
+- [Conformance Matrix](docs/conformance-matrix.md) - IDTA service profile coverage with endpoint-level detail
 - [Interop Matrix](docs/interop-matrix.md) - Endpoint-level interoperability details
-- [Benchmarks](docs/benchmarks.md) - Reproducible performance runs
+- [Benchmarks](docs/benchmarks.md) - Reproducible performance runs with p50/p95/p99 metrics
+
+### Production Gates
+- [Production Gates](docs/production-gates.md) - Go/No-Go checklist with measurable criteria
 - [Production Readiness](docs/production-readiness.md) - Release gates and go-live checklist
 - [Release Process](docs/release-process.md) - Versioning and release workflow
-- [Architecture Decision Records](docs/adr/) - Design decisions
+
+### Security
+- [Security Assessment](docs/security-assessment.md) - Authentication, authorization, and controls
 - [Security Overview](docs/security.md) - Authentication and rate limiting
 - [Security Modes](docs/security-modes.md) - AuthN/AuthZ configuration matrix
 - [Security Policy](SECURITY.md) - Vulnerability reporting
 - [Security Advisories](docs/security-advisories.md) - Reviewed CVE exceptions
+
+### Architecture
+- [Architecture Decision Records](docs/adr/) - Design decisions
 - [Changelog](CHANGELOG.md) - Release history
 
 ---

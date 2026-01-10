@@ -59,6 +59,7 @@ jobs:
 
       - name: Run unit tests with coverage
         run: |
+          mkdir -p test-results
           uv run -- pytest tests/unit -v --tb=short \
             --cov=src/titan \
             --cov-report=xml \
@@ -127,7 +128,9 @@ jobs:
         env:
           DATABASE_URL: postgresql+asyncpg://titan:titan@localhost:5432/titan
           REDIS_URL: redis://localhost:6379/0
-        run: uv run -- pytest tests/integration -v --tb=short --junitxml=test-results/integration.xml
+        run: |
+          mkdir -p test-results
+          uv run -- pytest tests/integration -v --tb=short --junitxml=test-results/integration.xml
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -154,7 +157,9 @@ jobs:
         run: uv sync --group dev
 
       - name: Run contract tests
-        run: uv run -- pytest tests/contract -v --tb=short --junitxml=test-results/contract.xml
+        run: |
+          mkdir -p test-results
+          uv run -- pytest tests/contract -v --tb=short --junitxml=test-results/contract.xml
 
       - name: Generate conformance report
         if: always()
