@@ -57,23 +57,13 @@ def serve(
     """
     import uvicorn
 
-    # Configure uvicorn
-    config = {
-        "app": "titan.api.app:create_app",
-        "factory": True,
-        "host": host,
-        "port": port,
-        "reload": reload,
-        "workers": workers if not reload else 1,  # Reload requires single worker
-        "log_level": log_level.lower(),
-        "access_log": access_log,
-    }
+    workers_effective = workers if not reload else 1  # Reload requires single worker
 
     # Print startup info
     typer.echo("Starting Titan-AAS server...")
     typer.echo(f"  Host: {host}")
     typer.echo(f"  Port: {port}")
-    typer.echo(f"  Workers: {config['workers']}")
+    typer.echo(f"  Workers: {workers_effective}")
     typer.echo(f"  Log level: {log_level}")
     if reload:
         typer.echo("  Reload: enabled")
@@ -82,4 +72,13 @@ def serve(
     typer.echo()
 
     # Run server
-    uvicorn.run(**config)
+    uvicorn.run(
+        app="titan.api.app:create_app",
+        factory=True,
+        host=host,
+        port=port,
+        reload=reload,
+        workers=workers_effective,
+        log_level=log_level.lower(),
+        access_log=access_log,
+    )

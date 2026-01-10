@@ -1,14 +1,8 @@
 """Micro-batching writer for high-throughput scenarios.
 
-The "Single Writer Bottleneck" fix:
-1. Update Redis IMMEDIATELY (Real-time View)
-2. Buffer writes to PostgreSQL
-3. Flush to PostgreSQL every FLUSH_INTERVAL_MS OR when buffer > BATCH_SIZE
-
-This approach:
-- Reduces DB IOPS by up to 100x
-- Maintains "Live Twin" latency for reads (Redis is always current)
-- Handles 5,000+ writes/sec (factory with 50 machines at 100Hz)
+Updates Redis immediately and batches downstream persistence hooks.
+Persistence of the primary documents is expected to happen before publishing
+events; batched flushes are intended for auxiliary sinks (audit logs, analytics).
 """
 
 from __future__ import annotations

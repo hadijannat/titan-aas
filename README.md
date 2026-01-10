@@ -141,6 +141,186 @@ docker compose -f deployment/docker-compose.yml up -d
 
 ---
 
+## 🔬 Technical Demo
+
+> **Try these examples** against a running Titan-AAS instance to explore its capabilities.
+
+### 1. Create an Asset Administration Shell
+
+```bash
+# Create a new AAS for a robotic arm
+curl -X POST http://localhost:8080/shells \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "urn:titan:aas:robot-arm-001",
+    "idShort": "RobotArm001",
+    "assetInformation": {
+      "assetKind": "Instance",
+      "globalAssetId": "urn:titan:asset:kuka-kr-16"
+    },
+    "submodelRefs": []
+  }'
+```
+
+**Response** (201 Created):
+```json
+{
+  "id": "urn:titan:aas:robot-arm-001",
+  "idShort": "RobotArm001",
+  "assetInformation": {
+    "assetKind": "Instance",
+    "globalAssetId": "urn:titan:asset:kuka-kr-16"
+  }
+}
+```
+
+### 2. Create a Submodel with Real Sensor Data
+
+```bash
+# Create a Technical Data submodel
+curl -X POST http://localhost:8080/submodels \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "urn:titan:submodel:technical-data-001",
+    "idShort": "TechnicalData",
+    "semanticId": {
+      "type": "ExternalReference",
+      "keys": [{"type": "GlobalReference", "value": "https://admin-shell.io/ZVEI/TechnicalData/Submodel/1/2"}]
+    },
+    "submodelElements": [
+      {
+        "modelType": "Property",
+        "idShort": "MaxPayload",
+        "valueType": "xs:double",
+        "value": "16.0",
+        "semanticId": {
+          "type": "ExternalReference",
+          "keys": [{"type": "ConceptDescription", "value": "0173-1#02-AAB994#007"}]
+        }
+      },
+      {
+        "modelType": "Property",
+        "idShort": "ReachRadius",
+        "valueType": "xs:double",
+        "value": "1611.0"
+      },
+      {
+        "modelType": "SubmodelElementCollection",
+        "idShort": "OperationalLimits",
+        "value": [
+          {"modelType": "Property", "idShort": "MaxTemperature", "valueType": "xs:double", "value": "55.0"},
+          {"modelType": "Property", "idShort": "MinTemperature", "valueType": "xs:double", "value": "5.0"}
+        ]
+      }
+    ]
+  }'
+```
+
+### 3. Query with Projections (Slow Path)
+
+```bash
+# Get only the value of a specific property
+curl "http://localhost:8080/submodels/dXJuOnRpdGFuOnN1Ym1vZGVsOnRlY2huaWNhbC1kYXRhLTAwMQ/submodel-elements/MaxPayload/\$value"
+
+# Response: 16.0
+```
+
+```bash
+# Get submodel with level=core (minimal response)
+curl "http://localhost:8080/submodels/dXJuOnRpdGFuOnN1Ym1vZGVsOnRlY2huaWNhbC1kYXRhLTAwMQ?level=core"
+```
+
+### 4. Streaming Performance Demo
+
+```python
+import httpx
+import time
+
+# Benchmark: Fast path vs Slow path
+client = httpx.Client(base_url="http://localhost:8080")
+
+# Fast path: Direct byte streaming (no modifiers)
+start = time.perf_counter()
+for _ in range(1000):
+    client.get("/shells/dXJuOnRpdGFuOmFhczpyb2JvdC1hcm0tMDAx")
+fast_time = time.perf_counter() - start
+
+# Slow path: With projection modifier
+start = time.perf_counter()
+for _ in range(1000):
+    client.get("/shells/dXJuOnRpdGFuOmFhczpyb2JvdC1hcm0tMDAx?level=core")
+slow_time = time.perf_counter() - start
+
+print(f"Fast path: {fast_time*1000:.2f}ms for 1000 requests")
+print(f"Slow path: {slow_time*1000:.2f}ms for 1000 requests")
+print(f"Fast path is {slow_time/fast_time:.1f}x faster")
+```
+
+### 5. Real-time WebSocket Events
+
+```javascript
+// Subscribe to live asset updates
+const ws = new WebSocket('ws://localhost:8080/ws/events');
+
+ws.onmessage = (event) => {
+  const aasEvent = JSON.parse(event.data);
+  console.log(`[${aasEvent.type}] ${aasEvent.source}: ${aasEvent.payload.idShort}`);
+};
+
+// Output:
+// [CREATED] urn:titan:aas:robot-arm-001: RobotArm001
+// [UPDATED] urn:titan:submodel:technical-data-001: TechnicalData
+```
+
+### 6. Conditional Requests with ETags
+
+```bash
+# First request - get the ETag
+RESPONSE=$(curl -i http://localhost:8080/shells/dXJuOnRpdGFuOmFhczpyb2JvdC1hcm0tMDAx)
+ETAG=$(echo "$RESPONSE" | grep -i etag | cut -d'"' -f2)
+
+# Conditional update - only if resource hasn't changed
+curl -X PUT http://localhost:8080/shells/dXJuOnRpdGFuOmFhczpyb2JvdC1hcm0tMDAx \
+  -H "Content-Type: application/json" \
+  -H "If-Match: \"$ETAG\"" \
+  -d '{"id": "urn:titan:aas:robot-arm-001", "idShort": "RobotArm001-Updated", ...}'
+
+# Returns 200 OK if successful, 412 Precondition Failed if resource changed
+```
+
+### 7. Pagination with Cursors
+
+```bash
+# Get first page of submodels
+curl "http://localhost:8080/submodels?limit=10"
+
+# Response includes cursor for next page:
+# {
+#   "result": [...],
+#   "paging_metadata": {"cursor": "2024-01-10T12:00:00.000Z"}
+# }
+
+# Get next page
+curl "http://localhost:8080/submodels?limit=10&cursor=2024-01-10T12:00:00.000Z"
+```
+
+### 8. Health & Observability
+
+```bash
+# Liveness probe (always available)
+curl http://localhost:8080/health/live
+# {"status": "ok"}
+
+# Readiness probe (checks DB + Redis)
+curl http://localhost:8080/health/ready
+# {"status": "ok", "checks": {"database": "ok", "redis": "ok"}}
+
+# Prometheus metrics
+curl http://localhost:8080/metrics
+# titan_http_requests_total{method="GET",path="/shells",status="200"} 1234
+# titan_http_request_duration_seconds_bucket{...} 0.001
+```
+
 ## 📂 Repository Structure
 
 ```

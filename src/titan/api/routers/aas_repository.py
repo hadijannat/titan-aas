@@ -23,8 +23,8 @@ from titan.api.errors import (
     PreconditionFailedError,
 )
 from titan.api.pagination import (
-    DEFAULT_LIMIT,
     CursorParam,
+    DEFAULT_LIMIT,
     LimitParam,
 )
 from titan.api.responses import json_bytes_response

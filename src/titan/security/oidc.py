@@ -33,6 +33,7 @@ class OIDCConfig:
     jwks_uri: str | None = None
     roles_claim: str = "roles"
     client_id: str | None = None
+    jwks_cache_seconds: int = 3600
 
     def __post_init__(self) -> None:
         """Set JWKS URI from issuer if not provided."""
@@ -149,11 +150,11 @@ class TokenValidator:
 
     async def _get_jwks(self) -> dict[str, Any]:
         """Get JWKS keys, with caching."""
-        # Check if we need to refresh (cache for 1 hour)
+        # Check if we need to refresh (cache with configurable TTL)
         now = datetime.now(timezone.utc)
         if self._jwks is not None and self._jwks_fetched_at is not None:
             age = (now - self._jwks_fetched_at).total_seconds()
-            if age < 3600:  # 1 hour cache
+            if age < self.config.jwks_cache_seconds:
                 return self._jwks
 
         # Fetch JWKS
@@ -201,6 +202,7 @@ def get_token_validator() -> TokenValidator | None:
             audience=settings.oidc_audience or settings.app_name,
             roles_claim=settings.oidc_roles_claim or "roles",
             client_id=settings.oidc_client_id,
+            jwks_cache_seconds=settings.oidc_jwks_cache_seconds,
         )
         _validator = TokenValidator(config)
 

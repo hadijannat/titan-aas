@@ -1,16 +1,9 @@
 """Single Writer worker for Titan-AAS.
 
-Implements the Single Writer pattern:
-1. Receives events from the event bus
-2. Persists to PostgreSQL
-3. Updates Redis cache
-4. Broadcasts via MQTT (if configured)
-5. Notifies WebSocket subscribers
+Consumes events to update cache and broadcast downstream.
 
-This ensures:
-- Ordered writes (no race conditions)
-- Cache consistency (invalidate-on-write)
-- Reliable event propagation
+Note: Persistence is handled by repositories before events are published.
+The writer is responsible for cache consistency and event propagation.
 """
 
 from __future__ import annotations
