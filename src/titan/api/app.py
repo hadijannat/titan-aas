@@ -33,6 +33,7 @@ from titan.api.middleware.rate_limit import RateLimitConfig
 from titan.api.routers import (
     aas_repository,
     aasx,
+    admin,
     blobs,
     concept_description_repository,
     description,
@@ -231,6 +232,9 @@ def create_app() -> FastAPI:
 
     # AASX File Server (SSP-001)
     app.include_router(aasx.router)
+
+    # Admin Dashboard API
+    app.include_router(admin.router)
 
     # Real-time events
     app.include_router(ws_router.router)

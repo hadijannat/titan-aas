@@ -19,6 +19,8 @@ from titan.persistence.repositories import (
     ConceptDescriptionRepository,
     SubmodelRepository,
 )
+from titan.security.deps import require_permission
+from titan.security.rbac import Permission
 
 router = APIRouter(tags=["serialization"])
 
@@ -36,6 +38,7 @@ router = APIRouter(tags=["serialization"])
             },
         }
     },
+    dependencies=[Depends(require_permission(Permission.READ_AAS))],
 )
 async def get_serialization(
     aas_ids: Annotated[

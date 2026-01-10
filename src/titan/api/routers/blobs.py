@@ -10,13 +10,18 @@ from starlette.responses import StreamingResponse
 from titan.api.errors import NotFoundError
 from titan.persistence.db import get_session
 from titan.persistence.tables import BlobAssetTable
+from titan.security.deps import require_permission
+from titan.security.rbac import Permission
 from titan.storage.base import BlobMetadata
 from titan.storage.factory import get_blob_storage
 
 router = APIRouter(prefix="/blobs", tags=["Blob Storage"])
 
 
-@router.get("/{blob_id}")
+@router.get(
+    "/{blob_id}",
+    dependencies=[Depends(require_permission(Permission.READ_SUBMODEL))],
+)
 async def get_blob(
     blob_id: str,
     session: AsyncSession = Depends(get_session),

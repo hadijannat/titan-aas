@@ -18,7 +18,7 @@ Legend:
 | SubmodelRepositoryServiceSpecification/SSP-002 | Implemented | Read-only subset of SSP-001. |
 | SubmodelRepositoryServiceSpecification/SSP-003 | Planned | Template-only profile not implemented. |
 | SubmodelRepositoryServiceSpecification/SSP-004 | Planned | Template-only read profile not implemented. |
-| SubmodelRepositoryServiceSpecification/SSP-005 | Partial | Basic query filter (`semanticId`) in `src/titan/api/routers/submodel_repository.py`. |
+| SubmodelRepositoryServiceSpecification/SSP-005 | Partial | Basic query filters (`semanticId`, `idShort`, `kind`) in `src/titan/api/routers/submodel_repository.py`. |
 | AssetAdministrationShellRegistryServiceSpecification/SSP-001 | Implemented | CRUD for AAS descriptors in `src/titan/api/routers/registry.py`. |
 | AssetAdministrationShellRegistryServiceSpecification/SSP-002 | Implemented | Read-only subset of SSP-001. |
 | AssetAdministrationShellRegistryServiceSpecification/SSP-003 | Planned | Bulk operations not implemented. |
@@ -40,6 +40,6 @@ Legend:
 | --- | --- | --- |
 | OIDC Authentication | Implemented | `src/titan/security/oidc.py` with JWT validation, role extraction. |
 | RBAC Authorization | Implemented | `src/titan/security/rbac.py` with role-based permissions. |
-| ABAC Authorization | Partial | Policy engine available in `src/titan/security/abac.py`; not yet enforced in API deps. |
+| ABAC Authorization | Implemented (optional) | Enabled via `ENABLE_ABAC`; enforced in `src/titan/security/deps.py`. |
 | Security Headers | Implemented | `src/titan/api/middleware/security_headers.py` - X-Content-Type-Options, X-Frame-Options, HSTS, CSP. |
 | Rate Limiting | Implemented | `src/titan/api/middleware/rate_limit.py` with Redis-backed limiting. |

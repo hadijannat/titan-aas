@@ -8,7 +8,7 @@ Provides enhanced package lifecycle management including:
 """
 
 from titan.packages.manager import PackageManager, PackageVersion
-from titan.packages.validator import OpcValidator, ValidationResult, ValidationLevel
+from titan.packages.validator import OpcValidator, ValidationLevel, ValidationResult
 
 __all__ = [
     "PackageManager",
