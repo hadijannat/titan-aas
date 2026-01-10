@@ -16,6 +16,8 @@ Example:
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from strawberry.fastapi import GraphQLRouter
@@ -46,7 +48,7 @@ router = GraphQLRouter(
     schema,
     path="/graphql",
     graphql_ide="graphiql",
-    context_getter=get_context,
+    context_getter=cast(Any, get_context),
 )
 
 # Alternative configuration for production (no playground)
