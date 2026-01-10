@@ -11,7 +11,6 @@ from titan.events import (
     InMemoryEventBus,
     publish_aas_deleted,
     publish_aas_event,
-    publish_submodel_deleted,
     publish_submodel_event,
 )
 from titan.events.schemas import AasEvent, AnyEvent, SubmodelEvent
