@@ -9,6 +9,8 @@ Supports discovery queries by globalAssetId, specificAssetIds, and semanticId.
 
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,6 +27,12 @@ from titan.persistence.tables import (
 )
 
 
+def _doc_bytes_and_etag(doc: dict[str, Any]) -> tuple[bytes, str]:
+    """Compute canonical bytes and ETag from a JSON document."""
+    doc_bytes = canonical_bytes(doc)
+    return doc_bytes, generate_etag(doc_bytes)
+
+
 class AasDescriptorRepository:
     """Repository for AAS Descriptor operations."""
 
@@ -37,25 +45,35 @@ class AasDescriptorRepository:
 
     async def get_bytes(self, identifier_b64: str) -> tuple[bytes, str] | None:
         """Fast path: get raw canonical bytes and etag."""
-        stmt = select(AasDescriptorTable.doc_bytes, AasDescriptorTable.etag).where(
-            AasDescriptorTable.identifier_b64 == identifier_b64
-        )
+        stmt = select(AasDescriptorTable).where(AasDescriptorTable.identifier_b64 == identifier_b64)
         result = await self.session.execute(stmt)
-        row = result.first()
+        row = result.scalar_one_or_none()
         if row is None:
             return None
-        return (row.doc_bytes, row.etag)
+
+        doc_bytes, etag = _doc_bytes_and_etag(row.doc)
+        if row.doc_bytes != doc_bytes or row.etag != etag:
+            row.doc_bytes = doc_bytes
+            row.etag = etag
+            await self.session.flush()
+
+        return (doc_bytes, etag)
 
     async def get_bytes_by_id(self, identifier: str) -> tuple[bytes, str] | None:
         """Fast path: get by original identifier."""
-        stmt = select(AasDescriptorTable.doc_bytes, AasDescriptorTable.etag).where(
-            AasDescriptorTable.identifier == identifier
-        )
+        stmt = select(AasDescriptorTable).where(AasDescriptorTable.identifier == identifier)
         result = await self.session.execute(stmt)
-        row = result.first()
+        row = result.scalar_one_or_none()
         if row is None:
             return None
-        return (row.doc_bytes, row.etag)
+
+        doc_bytes, etag = _doc_bytes_and_etag(row.doc)
+        if row.doc_bytes != doc_bytes or row.etag != etag:
+            row.doc_bytes = doc_bytes
+            row.etag = etag
+            await self.session.flush()
+
+        return (doc_bytes, etag)
 
     # -------------------------------------------------------------------------
     # Slow path: model operations
@@ -139,13 +157,13 @@ class AasDescriptorRepository:
     async def list_all(self, limit: int = 100, offset: int = 0) -> list[tuple[bytes, str]]:
         """List all AAS descriptors (fast path)."""
         stmt = (
-            select(AasDescriptorTable.doc_bytes, AasDescriptorTable.etag)
+            select(AasDescriptorTable.doc)
             .order_by(AasDescriptorTable.created_at)
             .limit(limit)
             .offset(offset)
         )
         result = await self.session.execute(stmt)
-        return [(row.doc_bytes, row.etag) for row in result.all()]
+        return [_doc_bytes_and_etag(row.doc) for row in result.all()]
 
     # -------------------------------------------------------------------------
     # Discovery operations
@@ -156,12 +174,12 @@ class AasDescriptorRepository:
     ) -> list[tuple[bytes, str]]:
         """Find AAS descriptors by global asset ID."""
         stmt = (
-            select(AasDescriptorTable.doc_bytes, AasDescriptorTable.etag)
+            select(AasDescriptorTable.doc)
             .where(AasDescriptorTable.global_asset_id == global_asset_id)
             .limit(limit)
         )
         result = await self.session.execute(stmt)
-        return [(row.doc_bytes, row.etag) for row in result.all()]
+        return [_doc_bytes_and_etag(row.doc) for row in result.all()]
 
     async def find_by_specific_asset_id(
         self, name: str, value: str, limit: int = 100
@@ -169,7 +187,7 @@ class AasDescriptorRepository:
         """Find AAS descriptors by specific asset ID (name/value pair)."""
         # Use JSONB containment query
         stmt = (
-            select(AasDescriptorTable.doc_bytes, AasDescriptorTable.etag)
+            select(AasDescriptorTable.doc)
             .where(
                 AasDescriptorTable.doc["specificAssetIds"].contains(
                     [{"name": name, "value": value}]
@@ -178,7 +196,7 @@ class AasDescriptorRepository:
             .limit(limit)
         )
         result = await self.session.execute(stmt)
-        return [(row.doc_bytes, row.etag) for row in result.all()]
+        return [_doc_bytes_and_etag(row.doc) for row in result.all()]
 
 
 class SubmodelDescriptorRepository:
@@ -193,25 +211,39 @@ class SubmodelDescriptorRepository:
 
     async def get_bytes(self, identifier_b64: str) -> tuple[bytes, str] | None:
         """Fast path: get raw canonical bytes and etag."""
-        stmt = select(SubmodelDescriptorTable.doc_bytes, SubmodelDescriptorTable.etag).where(
+        stmt = select(SubmodelDescriptorTable).where(
             SubmodelDescriptorTable.identifier_b64 == identifier_b64
         )
         result = await self.session.execute(stmt)
-        row = result.first()
+        row = result.scalar_one_or_none()
         if row is None:
             return None
-        return (row.doc_bytes, row.etag)
+
+        doc_bytes, etag = _doc_bytes_and_etag(row.doc)
+        if row.doc_bytes != doc_bytes or row.etag != etag:
+            row.doc_bytes = doc_bytes
+            row.etag = etag
+            await self.session.flush()
+
+        return (doc_bytes, etag)
 
     async def get_bytes_by_id(self, identifier: str) -> tuple[bytes, str] | None:
         """Fast path: get by original identifier."""
-        stmt = select(SubmodelDescriptorTable.doc_bytes, SubmodelDescriptorTable.etag).where(
+        stmt = select(SubmodelDescriptorTable).where(
             SubmodelDescriptorTable.identifier == identifier
         )
         result = await self.session.execute(stmt)
-        row = result.first()
+        row = result.scalar_one_or_none()
         if row is None:
             return None
-        return (row.doc_bytes, row.etag)
+
+        doc_bytes, etag = _doc_bytes_and_etag(row.doc)
+        if row.doc_bytes != doc_bytes or row.etag != etag:
+            row.doc_bytes = doc_bytes
+            row.etag = etag
+            await self.session.flush()
+
+        return (doc_bytes, etag)
 
     # -------------------------------------------------------------------------
     # Slow path: model operations
@@ -311,13 +343,13 @@ class SubmodelDescriptorRepository:
     async def list_all(self, limit: int = 100, offset: int = 0) -> list[tuple[bytes, str]]:
         """List all Submodel descriptors (fast path)."""
         stmt = (
-            select(SubmodelDescriptorTable.doc_bytes, SubmodelDescriptorTable.etag)
+            select(SubmodelDescriptorTable.doc)
             .order_by(SubmodelDescriptorTable.created_at)
             .limit(limit)
             .offset(offset)
         )
         result = await self.session.execute(stmt)
-        return [(row.doc_bytes, row.etag) for row in result.all()]
+        return [_doc_bytes_and_etag(row.doc) for row in result.all()]
 
     # -------------------------------------------------------------------------
     # Discovery operations
@@ -328,9 +360,9 @@ class SubmodelDescriptorRepository:
     ) -> list[tuple[bytes, str]]:
         """Find Submodel descriptors by semantic ID."""
         stmt = (
-            select(SubmodelDescriptorTable.doc_bytes, SubmodelDescriptorTable.etag)
+            select(SubmodelDescriptorTable.doc)
             .where(SubmodelDescriptorTable.semantic_id == semantic_id)
             .limit(limit)
         )
         result = await self.session.execute(stmt)
-        return [(row.doc_bytes, row.etag) for row in result.all()]
+        return [_doc_bytes_and_etag(row.doc) for row in result.all()]

@@ -17,8 +17,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install uv for fast dependency resolution
 RUN pip install --no-cache-dir uv
 
-# Copy dependency files
-COPY pyproject.toml uv.lock ./
+# Copy dependency files and README (required by hatchling for metadata)
+COPY pyproject.toml uv.lock README.md ./
 
 # Create virtual environment and install dependencies
 RUN uv venv /opt/venv && \

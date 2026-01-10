@@ -81,23 +81,35 @@ class AasRepository(BaseRepository[AssetAdministrationShell, AasTable]):
         Returns:
             Tuple of (doc_bytes, etag) or None if not found.
         """
-        stmt = select(AasTable.doc_bytes, AasTable.etag).where(
-            AasTable.identifier_b64 == identifier_b64
-        )
+        stmt = select(AasTable).where(AasTable.identifier_b64 == identifier_b64)
         result = await self.session.execute(stmt)
-        row = result.first()
+        row = result.scalar_one_or_none()
         if row is None:
             return None
-        return (row.doc_bytes, row.etag)
+
+        doc_bytes, etag = _doc_bytes_and_etag(row.doc)
+        if row.doc_bytes != doc_bytes or row.etag != etag:
+            row.doc_bytes = doc_bytes
+            row.etag = etag
+            await self.session.flush()
+
+        return (doc_bytes, etag)
 
     async def get_bytes_by_id(self, identifier: str) -> tuple[bytes, str] | None:
         """Fast path: get by original identifier."""
-        stmt = select(AasTable.doc_bytes, AasTable.etag).where(AasTable.identifier == identifier)
+        stmt = select(AasTable).where(AasTable.identifier == identifier)
         result = await self.session.execute(stmt)
-        row = result.first()
+        row = result.scalar_one_or_none()
         if row is None:
             return None
-        return (row.doc_bytes, row.etag)
+
+        doc_bytes, etag = _doc_bytes_and_etag(row.doc)
+        if row.doc_bytes != doc_bytes or row.etag != etag:
+            row.doc_bytes = doc_bytes
+            row.etag = etag
+            await self.session.flush()
+
+        return (doc_bytes, etag)
 
     # -------------------------------------------------------------------------
     # Slow path: model operations (for projections/transformations)
@@ -207,14 +219,9 @@ class AasRepository(BaseRepository[AssetAdministrationShell, AasTable]):
         Returns:
             List of (doc_bytes, etag) tuples.
         """
-        stmt = (
-            select(AasTable.doc_bytes, AasTable.etag)
-            .order_by(AasTable.created_at)
-            .limit(limit)
-            .offset(offset)
-        )
+        stmt = select(AasTable.doc).order_by(AasTable.created_at).limit(limit).offset(offset)
         result = await self.session.execute(stmt)
-        return [(row.doc_bytes, row.etag) for row in result.all()]
+        return [_doc_bytes_and_etag(row.doc) for row in result.all()]
 
     async def list_paged_zero_copy(
         self,
@@ -312,25 +319,35 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
 
     async def get_bytes(self, identifier_b64: str) -> tuple[bytes, str] | None:
         """Fast path: get raw canonical bytes and etag."""
-        stmt = select(SubmodelTable.doc_bytes, SubmodelTable.etag).where(
-            SubmodelTable.identifier_b64 == identifier_b64
-        )
+        stmt = select(SubmodelTable).where(SubmodelTable.identifier_b64 == identifier_b64)
         result = await self.session.execute(stmt)
-        row = result.first()
+        row = result.scalar_one_or_none()
         if row is None:
             return None
-        return (row.doc_bytes, row.etag)
+
+        doc_bytes, etag = _doc_bytes_and_etag(row.doc)
+        if row.doc_bytes != doc_bytes or row.etag != etag:
+            row.doc_bytes = doc_bytes
+            row.etag = etag
+            await self.session.flush()
+
+        return (doc_bytes, etag)
 
     async def get_bytes_by_id(self, identifier: str) -> tuple[bytes, str] | None:
         """Fast path: get by original identifier."""
-        stmt = select(SubmodelTable.doc_bytes, SubmodelTable.etag).where(
-            SubmodelTable.identifier == identifier
-        )
+        stmt = select(SubmodelTable).where(SubmodelTable.identifier == identifier)
         result = await self.session.execute(stmt)
-        row = result.first()
+        row = result.scalar_one_or_none()
         if row is None:
             return None
-        return (row.doc_bytes, row.etag)
+
+        doc_bytes, etag = _doc_bytes_and_etag(row.doc)
+        if row.doc_bytes != doc_bytes or row.etag != etag:
+            row.doc_bytes = doc_bytes
+            row.etag = etag
+            await self.session.flush()
+
+        return (doc_bytes, etag)
 
     # -------------------------------------------------------------------------
     # Slow path: model operations
@@ -520,25 +537,20 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
     async def list_all(self, limit: int = 100, offset: int = 0) -> list[tuple[bytes, str]]:
         """List all Submodels (fast path)."""
         stmt = (
-            select(SubmodelTable.doc_bytes, SubmodelTable.etag)
-            .order_by(SubmodelTable.created_at)
-            .limit(limit)
-            .offset(offset)
+            select(SubmodelTable.doc).order_by(SubmodelTable.created_at).limit(limit).offset(offset)
         )
         result = await self.session.execute(stmt)
-        return [(row.doc_bytes, row.etag) for row in result.all()]
+        return [_doc_bytes_and_etag(row.doc) for row in result.all()]
 
     async def find_by_semantic_id(
         self, semantic_id: str, limit: int = 100
     ) -> list[tuple[bytes, str]]:
         """Find Submodels by semantic ID (fast path)."""
         stmt = (
-            select(SubmodelTable.doc_bytes, SubmodelTable.etag)
-            .where(SubmodelTable.semantic_id == semantic_id)
-            .limit(limit)
+            select(SubmodelTable.doc).where(SubmodelTable.semantic_id == semantic_id).limit(limit)
         )
         result = await self.session.execute(stmt)
-        return [(row.doc_bytes, row.etag) for row in result.all()]
+        return [_doc_bytes_and_etag(row.doc) for row in result.all()]
 
     async def list_paged_zero_copy(
         self,
@@ -626,22 +638,29 @@ class ConceptDescriptionRepository:
 
     async def get_bytes(self, identifier_b64: str) -> tuple[bytes, str] | None:
         """Fast path: get raw canonical bytes and etag."""
-        stmt = select(ConceptDescriptionTable.doc_bytes, ConceptDescriptionTable.etag).where(
+        stmt = select(ConceptDescriptionTable).where(
             ConceptDescriptionTable.identifier_b64 == identifier_b64
         )
         result = await self.session.execute(stmt)
-        row = result.first()
+        row = result.scalar_one_or_none()
         if row is None:
             return None
-        return (row.doc_bytes, row.etag)
+
+        doc_bytes, etag = _doc_bytes_and_etag(row.doc)
+        if row.doc_bytes != doc_bytes or row.etag != etag:
+            row.doc_bytes = doc_bytes
+            row.etag = etag
+            await self.session.flush()
+
+        return (doc_bytes, etag)
 
     async def list_all(self, limit: int = 100, offset: int = 0) -> list[tuple[bytes, str]]:
         """List all ConceptDescriptions (fast path)."""
         stmt = (
-            select(ConceptDescriptionTable.doc_bytes, ConceptDescriptionTable.etag)
+            select(ConceptDescriptionTable.doc)
             .order_by(ConceptDescriptionTable.created_at)
             .limit(limit)
             .offset(offset)
         )
         result = await self.session.execute(stmt)
-        return [(row.doc_bytes, row.etag) for row in result.all()]
+        return [_doc_bytes_and_etag(row.doc) for row in result.all()]
