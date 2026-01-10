@@ -27,9 +27,7 @@ class TestLoadFunctions:
         return session
 
     @pytest.mark.asyncio
-    async def test_load_shells_returns_correct_length(
-        self, mock_session: MagicMock
-    ) -> None:
+    async def test_load_shells_returns_correct_length(self, mock_session: MagicMock) -> None:
         """load_shells returns same length as input."""
         keys = ["id1", "id2", "id3"]
 
@@ -48,9 +46,7 @@ class TestLoadFunctions:
         assert len(result) == 0
 
     @pytest.mark.asyncio
-    async def test_load_submodels_returns_correct_length(
-        self, mock_session: MagicMock
-    ) -> None:
+    async def test_load_submodels_returns_correct_length(self, mock_session: MagicMock) -> None:
         """load_submodels returns same length as input."""
         keys = ["sub1", "sub2"]
 
@@ -85,9 +81,7 @@ class TestLoadFunctions:
         assert all(isinstance(item, list) for item in result)
 
     @pytest.mark.asyncio
-    async def test_load_submodels_by_shell_empty_input(
-        self, mock_session: MagicMock
-    ) -> None:
+    async def test_load_submodels_by_shell_empty_input(self, mock_session: MagicMock) -> None:
         """load_submodels_by_shell handles empty input."""
         result = await load_submodels_by_shell([], mock_session)
 
@@ -198,9 +192,7 @@ class TestDataLoaderContext:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_submodels_by_shell_loader_can_load(
-        self, mock_session: MagicMock
-    ) -> None:
+    async def test_submodels_by_shell_loader_can_load(self, mock_session: MagicMock) -> None:
         """submodels_by_shell_loader can load data."""
         context = DataLoaderContext(mock_session)
 

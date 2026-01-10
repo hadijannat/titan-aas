@@ -89,11 +89,7 @@ async def load_submodels_by_shell(
     result: list[list[Submodel]] = []
     for shell_id in shell_ids:
         pydantic_submodels = shell_to_submodels.get(shell_id, [])
-        graphql_submodels = [
-            submodel_to_graphql(sm)
-            for sm in pydantic_submodels
-            if sm is not None
-        ]
+        graphql_submodels = [submodel_to_graphql(sm) for sm in pydantic_submodels if sm is not None]
         # Filter out any None results from conversion
         result.append([sm for sm in graphql_submodels if sm is not None])
 
@@ -119,12 +115,8 @@ class DataLoaderContext:
     def _create_loaders(self) -> dict[str, DataLoader]:
         """Create dataloaders bound to this context's session."""
         return {
-            "shell_loader": DataLoader(
-                load_fn=lambda keys: load_shells(keys, self.session)
-            ),
-            "submodel_loader": DataLoader(
-                load_fn=lambda keys: load_submodels(keys, self.session)
-            ),
+            "shell_loader": DataLoader(load_fn=lambda keys: load_shells(keys, self.session)),
+            "submodel_loader": DataLoader(load_fn=lambda keys: load_submodels(keys, self.session)),
             "submodels_by_shell_loader": DataLoader(
                 load_fn=lambda keys: load_submodels_by_shell(keys, self.session)
             ),
@@ -157,6 +149,7 @@ def create_dataloaders() -> dict[str, DataLoader]:
     Returns:
         Dictionary of dataloaders that return empty results
     """
+
     async def stub_load_shells(keys: list[str]) -> Sequence[Shell | None]:
         return [None] * len(keys)
 

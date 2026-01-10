@@ -248,9 +248,7 @@ class AasRepository(BaseRepository[AssetAdministrationShell, AasTable]):
         rows = {row.identifier: row for row in result.scalars().all()}
 
         return {
-            id: AssetAdministrationShell.model_validate(rows[id].doc)
-            if id in rows
-            else None
+            id: AssetAdministrationShell.model_validate(rows[id].doc) if id in rows else None
             for id in identifiers
         }
 
@@ -632,9 +630,7 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
     # Batch operations (for GraphQL DataLoaders)
     # -------------------------------------------------------------------------
 
-    async def get_models_batch(
-        self, identifiers: list[str]
-    ) -> dict[str, Submodel | None]:
+    async def get_models_batch(self, identifiers: list[str]) -> dict[str, Submodel | None]:
         """Batch load submodels by identifier.
 
         Efficient batch loading for GraphQL DataLoaders to prevent N+1 queries.
@@ -653,8 +649,7 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
         rows = {row.identifier: row for row in result.scalars().all()}
 
         return {
-            id: Submodel.model_validate(rows[id].doc) if id in rows else None
-            for id in identifiers
+            id: Submodel.model_validate(rows[id].doc) if id in rows else None for id in identifiers
         }
 
     async def get_submodels_for_shells_batch(

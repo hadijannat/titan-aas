@@ -291,9 +291,7 @@ class Query:
 
         # Convert to GraphQL types
         edges = [
-            gql_shell
-            for shell in shells_list
-            if (gql_shell := shell_to_graphql(shell)) is not None
+            gql_shell for shell in shells_list if (gql_shell := shell_to_graphql(shell)) is not None
         ]
 
         return ShellConnection(
@@ -336,11 +334,7 @@ class Query:
         submodels_list, cursor = await repo.list_models(limit=first, cursor=after)
 
         # Convert to GraphQL types
-        edges = [
-            gql_sm
-            for sm in submodels_list
-            if (gql_sm := submodel_to_graphql(sm)) is not None
-        ]
+        edges = [gql_sm for sm in submodels_list if (gql_sm := submodel_to_graphql(sm)) is not None]
 
         return SubmodelConnection(
             edges=edges,
