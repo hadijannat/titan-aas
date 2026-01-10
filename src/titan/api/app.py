@@ -1,8 +1,9 @@
 """FastAPI application factory for Titan-AAS.
 
 Creates the application with:
-- IDTA-compliant API routers (/shells, /submodels, /concept-descriptions, /shell-descriptors, /submodel-descriptors)
-- Registry and Discovery endpoints
+- IDTA-compliant API routers (/shells, /submodels, /concept-descriptions)
+- Registry endpoints (/shell-descriptors, /submodel-descriptors)
+- Discovery endpoints
 - WebSocket for real-time events
 - Lifecycle management for database, cache, and MQTT connections
 - OIDC authentication and RBAC authorization

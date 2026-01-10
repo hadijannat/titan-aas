@@ -121,7 +121,9 @@ async def get_all_concept_descriptions(
         doc = orjson.loads(doc_bytes)
         if id_short and doc.get("idShort") != id_short:
             continue
-        if decoded_is_case_of and not _reference_contains_value(doc.get("isCaseOf"), decoded_is_case_of):
+        if decoded_is_case_of and not _reference_contains_value(
+            doc.get("isCaseOf"), decoded_is_case_of
+        ):
             continue
         if decoded_data_spec and not _data_spec_contains_value(
             doc.get("embeddedDataSpecifications"), decoded_data_spec

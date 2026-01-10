@@ -31,9 +31,7 @@ class TestConceptDescriptionEndpoints:
         self, test_client: AsyncClient, sample_concept_description: dict
     ) -> None:
         """Test POST /concept-descriptions creates a ConceptDescription."""
-        response = await test_client.post(
-            "/concept-descriptions", json=sample_concept_description
-        )
+        response = await test_client.post("/concept-descriptions", json=sample_concept_description)
 
         assert response.status_code == 201
         data = response.json()
@@ -115,14 +113,10 @@ class TestConceptDescriptionEndpoints:
         self, test_client: AsyncClient, sample_concept_description: dict
     ) -> None:
         """Test POST /concept-descriptions returns 409 for duplicate ID."""
-        response1 = await test_client.post(
-            "/concept-descriptions", json=sample_concept_description
-        )
+        response1 = await test_client.post("/concept-descriptions", json=sample_concept_description)
         assert response1.status_code == 201
 
-        response2 = await test_client.post(
-            "/concept-descriptions", json=sample_concept_description
-        )
+        response2 = await test_client.post("/concept-descriptions", json=sample_concept_description)
         assert response2.status_code == 409
 
     @pytest.mark.asyncio
