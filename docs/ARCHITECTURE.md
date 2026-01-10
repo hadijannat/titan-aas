@@ -9,15 +9,20 @@ Industrial-grade Asset Administration Shell runtime implementing IDTA-01001/0100
 ```
 src/titan/
 ├── core/           # Domain models (AAS, Submodel, SubmodelElements)
-├── api/            # REST API endpoints (/shells, /submodels)
+├── api/            # REST API endpoints (/shells, /submodels, /concept-descriptions)
 ├── persistence/    # PostgreSQL (JSONB + canonical bytes)
 ├── cache/          # Redis (cache-aside + distributed invalidation)
-├── events/         # Event bus (single-writer pattern)
-├── connectors/     # MQTT, WebSocket integrations
-├── security/       # OIDC auth + RBAC
-├── storage/        # Blob storage (S3/local)
+├── events/         # Event bus (single-writer + micro-batching)
+├── connectors/     # MQTT integrations
+├── security/       # OIDC auth + RBAC/ABAC + request signing
+├── storage/        # Blob storage (local/S3/GCS/Azure)
 ├── tenancy/        # Multi-tenant isolation
 ├── observability/  # Metrics, tracing, profiling
+├── compat/         # AASX import/export compatibility
+├── distributed/    # Leader election / coordination
+├── jobs/           # Background jobs
+├── plugins/        # Extension hooks
+├── graphql/        # GraphQL API (optional)
 └── cli/            # Command-line interface
 ```
 
@@ -45,6 +50,7 @@ src/titan/
 |------|---------|
 | `routers/aas_repository.py` | `/shells/*` CRUD |
 | `routers/submodel_repository.py` | `/submodels/*` CRUD |
+| `routers/concept_description_repository.py` | `/concept-descriptions/*` CRUD |
 | `routers/registry.py` | `/shell-descriptors/*`, `/submodel-descriptors/*` |
 | `routers/websocket.py` | Real-time event subscriptions |
 | `routing.py` | Fast/slow path detection |
@@ -86,6 +92,7 @@ src/titan/
 | `bus.py` | InMemoryEventBus interface |
 | `redis_bus.py` | RedisStreamEventBus for distributed mode |
 | `worker.py` | SingleWriter (sequential processing) |
+| `batch_writer.py` | MicroBatchWriter (windowed flush to downstream sinks) |
 
 ### security/ - Auth
 **What:** OIDC token validation, RBAC enforcement, audit logging.
@@ -94,8 +101,10 @@ src/titan/
 |------|---------|
 | `oidc.py` | TokenValidator, JWKS caching |
 | `rbac.py` | Role→Permission mapping (READER, WRITER, ADMIN) |
+| `abac.py` | ABAC policy engine (tenant isolation, time/IP policies) |
 | `deps.py` | FastAPI dependencies (require_read, require_write) |
 | `audit.py` | AuditLog for security events |
+| `signing.py` | Request signing helpers |
 
 ### connectors/ - Integrations
 **What:** External event broadcasting (MQTT for IoT, WebSocket for browsers).
@@ -112,6 +121,8 @@ src/titan/
 | `base.py` | BlobStorage interface |
 | `local.py` | LocalBlobStorage (filesystem) |
 | `s3.py` | S3BlobStorage (AWS/MinIO) |
+| `gcs.py` | GCSBlobStorage (Google Cloud Storage) |
+| `azure.py` | AzureBlobStorage (Azure Blob Storage) |
 
 ### Other Modules
 
@@ -124,6 +135,7 @@ src/titan/
 | `graphql/` | GraphQL API (alternative to REST) |
 | `cli/` | Command-line: serve, import, export, validate |
 | `compat/` | AASX import/export, XML serialization |
+| `distributed/` | Leader election and coordination |
 
 ---
 
@@ -219,9 +231,17 @@ Key environment variables (see `src/titan/config.py`):
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `DATABASE_URL` | required | PostgreSQL connection string |
-| `REDIS_URL` | `redis://localhost` | Redis connection |
+| `REDIS_URL` | `redis://localhost:6379/0` | Redis connection |
+| `EVENT_BUS_BACKEND` | `redis` | Event bus backend: `redis` or `memory` |
 | `MQTT_BROKER` | none | MQTT broker hostname (optional) |
 | `OIDC_ISSUER` | none | OIDC provider URL (optional) |
-| `STORAGE_BACKEND` | `local` | Blob storage: `local` or `s3` |
+| `BLOB_STORAGE_TYPE` | `local` | Blob storage: `local`, `s3`, `gcs`, `azure` |
+| `BLOB_STORAGE_PATH` | `/var/lib/titan/blobs` | Local blob storage root |
+| `BLOB_INLINE_THRESHOLD` | `65536` | Inline blob bytes threshold (bytes) |
+| `S3_BUCKET` | none | S3 bucket name |
+| `GCS_BUCKET` | none | GCS bucket name |
+| `AZURE_CONTAINER` | none | Azure blob container name |
+| `ENABLE_SECURITY_HEADERS` | `true` | Add OWASP security headers |
+| `ENABLE_HSTS` | `false` | Enable HSTS (HTTPS only) |
 | `ENABLE_METRICS` | `true` | Prometheus metrics |
-| `ENABLE_TRACING` | `false` | OpenTelemetry tracing |
+| `ENABLE_TRACING` | `true` | OpenTelemetry tracing |

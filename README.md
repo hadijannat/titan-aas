@@ -383,10 +383,10 @@ uv run -- locust -f tests/load/locustfile.py --headless -u 100 -r 10 -t 60s
 
 | Test Suite | Tests | Status |
 |------------|-------|--------|
-| Unit | 146 | ✅ Passing |
-| Integration | 32 | ✅ Passing |
-| Contract | 13 | ✅ Passing |
-| E2E | 15 | ✅ Passing |
+| Unit | 606 | ✅ Passing |
+| Integration | 91 | ✅ Passing |
+| Contract | 15 | ✅ Passing |
+| E2E | 17 | ✅ Passing |
 
 ---
 

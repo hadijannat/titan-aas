@@ -13,12 +13,12 @@ Legend:
 | --- | --- | --- |
 | AssetAdministrationShellRepositoryServiceSpecification/SSP-001 | Implemented | CRUD in `src/titan/api/routers/aas_repository.py`; serialization in `src/titan/api/routers/serialization.py`; self-description in `src/titan/api/routers/description.py`. |
 | AssetAdministrationShellRepositoryServiceSpecification/SSP-002 | Implemented | Read-only subset of SSP-001. |
-| AssetAdministrationShellRepositoryServiceSpecification/SSP-003 | Planned | Query profile not implemented. |
+| AssetAdministrationShellRepositoryServiceSpecification/SSP-003 | Partial | Basic query filters (`idShort`, `assetIds`) in `src/titan/api/routers/aas_repository.py`. |
 | SubmodelRepositoryServiceSpecification/SSP-001 | Implemented | CRUD in `src/titan/api/routers/submodel_repository.py`; serialization + self-description present. |
 | SubmodelRepositoryServiceSpecification/SSP-002 | Implemented | Read-only subset of SSP-001. |
 | SubmodelRepositoryServiceSpecification/SSP-003 | Planned | Template-only profile not implemented. |
 | SubmodelRepositoryServiceSpecification/SSP-004 | Planned | Template-only read profile not implemented. |
-| SubmodelRepositoryServiceSpecification/SSP-005 | Planned | Query profile not implemented. |
+| SubmodelRepositoryServiceSpecification/SSP-005 | Partial | Basic query filter (`semanticId`) in `src/titan/api/routers/submodel_repository.py`. |
 | AssetAdministrationShellRegistryServiceSpecification/SSP-001 | Implemented | CRUD for AAS descriptors in `src/titan/api/routers/registry.py`. |
 | AssetAdministrationShellRegistryServiceSpecification/SSP-002 | Implemented | Read-only subset of SSP-001. |
 | AssetAdministrationShellRegistryServiceSpecification/SSP-003 | Planned | Bulk operations not implemented. |
@@ -31,5 +31,15 @@ Legend:
 | DiscoveryServiceSpecification/SSP-002 | Implemented | Read operations in `src/titan/api/routers/discovery.py`. |
 | DiscoveryServiceSpecification/SSP-001 | Partial | Deprecated legacy read operation not implemented. |
 | ConceptDescriptionRepositoryServiceSpecification/SSP-001 | Implemented | CRUD endpoints for /concept-descriptions. |
-| ConceptDescriptionRepositoryServiceSpecification/SSP-002 | Planned | Query endpoint not implemented. |
+| ConceptDescriptionRepositoryServiceSpecification/SSP-002 | Implemented | Query endpoint with `idShort`, `isCaseOf`, and `dataSpecificationRef` filters. |
 | AasxFileServerServiceSpecification/SSP-001 | Planned | AASX file server not implemented. |
+
+## Security Conformance (IDTA-01004)
+
+| Feature | Status | Evidence / Notes |
+| --- | --- | --- |
+| OIDC Authentication | Implemented | `src/titan/security/oidc.py` with JWT validation, role extraction. |
+| RBAC Authorization | Implemented | `src/titan/security/rbac.py` with role-based permissions. |
+| ABAC Authorization | Partial | Policy engine available in `src/titan/security/abac.py`; not yet enforced in API deps. |
+| Security Headers | Implemented | `src/titan/api/middleware/security_headers.py` - X-Content-Type-Options, X-Frame-Options, HSTS, CSP. |
+| Rate Limiting | Implemented | `src/titan/api/middleware/rate_limit.py` with Redis-backed limiting. |

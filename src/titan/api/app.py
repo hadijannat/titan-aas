@@ -23,7 +23,12 @@ from fastapi.responses import ORJSONResponse
 from starlette.types import ExceptionHandler
 
 from titan.api.errors import AasApiError, aas_api_exception_handler, generic_exception_handler
-from titan.api.middleware import CachingMiddleware, CompressionMiddleware, RateLimitMiddleware
+from titan.api.middleware import (
+    CachingMiddleware,
+    CompressionMiddleware,
+    RateLimitMiddleware,
+    SecurityHeadersMiddleware,
+)
 from titan.api.middleware.rate_limit import RateLimitConfig
 from titan.api.routers import (
     aas_repository,
@@ -183,6 +188,18 @@ def create_app() -> FastAPI:
             CompressionMiddleware,
             minimum_size=settings.compression_min_size,
             compression_level=settings.compression_level,
+        )
+
+    # Security headers middleware (outermost for response headers)
+    if settings.enable_security_headers:
+        app.add_middleware(
+            SecurityHeadersMiddleware,
+            enable_hsts=settings.enable_hsts,
+            hsts_max_age=settings.hsts_max_age,
+            hsts_include_subdomains=settings.hsts_include_subdomains,
+            hsts_preload=settings.hsts_preload,
+            csp_policy=settings.csp_policy,
+            permissions_policy=settings.permissions_policy,
         )
 
     # Register exception handlers

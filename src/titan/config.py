@@ -103,5 +103,16 @@ class Settings(BaseSettings):
     rate_limit_requests: int = Field(default=100, validation_alias="RATE_LIMIT_REQUESTS")
     rate_limit_window: int = Field(default=60, validation_alias="RATE_LIMIT_WINDOW")
 
+    # Security Headers
+    enable_security_headers: bool = Field(default=True, validation_alias="ENABLE_SECURITY_HEADERS")
+    enable_hsts: bool = Field(default=False, validation_alias="ENABLE_HSTS")
+    hsts_max_age: int = Field(default=31536000, validation_alias="HSTS_MAX_AGE")  # 1 year
+    hsts_include_subdomains: bool = Field(
+        default=True, validation_alias="HSTS_INCLUDE_SUBDOMAINS"
+    )
+    hsts_preload: bool = Field(default=False, validation_alias="HSTS_PRELOAD")
+    csp_policy: str | None = Field(default=None, validation_alias="CSP_POLICY")
+    permissions_policy: str | None = Field(default=None, validation_alias="PERMISSIONS_POLICY")
+
 
 settings = Settings()

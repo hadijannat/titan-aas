@@ -49,6 +49,7 @@ class User:
     email: str | None = None
     name: str | None = None
     roles: list[str] = field(default_factory=list)
+    tenant_id: str | None = None
     claims: dict[str, Any] = field(default_factory=dict)
 
     @property
@@ -116,6 +117,7 @@ class TokenValidator:
             email=payload.get("email"),
             name=payload.get("name") or payload.get("preferred_username"),
             roles=self._extract_roles(payload),
+            tenant_id=payload.get("tenant_id") or payload.get("tenant"),
             claims=payload,
         )
 

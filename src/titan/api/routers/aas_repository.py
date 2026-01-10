@@ -13,7 +13,7 @@ All identifiers in path segments are Base64URL encoded per IDTA spec.
 from __future__ import annotations
 
 import orjson
-from fastapi import APIRouter, Depends, Header, Request, Response
+from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from titan.api.errors import (
@@ -61,11 +61,36 @@ async def get_cache() -> RedisCache:
     return RedisCache(redis)
 
 
+def _match_asset_ids(doc: dict, asset_ids: list[str]) -> bool:
+    """Check if AAS matches any of the given asset IDs.
+
+    Checks both globalAssetId and specificAssetIds.
+    """
+    asset_info = doc.get("assetInformation", {})
+
+    # Check globalAssetId
+    global_asset_id = asset_info.get("globalAssetId")
+    if global_asset_id and global_asset_id in asset_ids:
+        return True
+
+    # Check specificAssetIds
+    specific_ids = asset_info.get("specificAssetIds", [])
+    for specific_id in specific_ids:
+        if isinstance(specific_id, dict):
+            value = specific_id.get("value")
+            if value and value in asset_ids:
+                return True
+
+    return False
+
+
 @router.get("")
 async def get_all_shells(
     request: Request,
     limit: LimitParam = DEFAULT_LIMIT,
     cursor: CursorParam = None,
+    id_short: str | None = Query(None, alias="idShort"),
+    asset_ids: list[str] | None = Query(None, alias="assetIds"),
     level: LevelParam = None,
     extent: ExtentParam = None,
     content: ContentParam = None,
@@ -75,23 +100,39 @@ async def get_all_shells(
 
     Returns a paginated list of all AAS in the repository.
     Supports cursor-based pagination for consistent results across pages.
+    Optionally filter by idShort or assetIds (globalAssetId or specificAssetIds).
     """
-    if is_fast_path(request):
-        # Fast path: Use zero-copy SQL-level pagination
+    has_filters = id_short is not None or asset_ids is not None
+
+    if is_fast_path(request) and not has_filters:
+        # Fast path: Use zero-copy SQL-level pagination (no filters)
         paged_result = await repo.list_paged_zero_copy(limit=limit, cursor=cursor)
         return Response(
             content=paged_result.response_bytes,
             media_type="application/json",
         )
     else:
-        # Slow path: Need to apply projections, so fetch individual items
+        # Slow path: Need to apply projections or filters
         results = await repo.list_all(limit=limit, offset=0)
 
         items = []
         for doc_bytes, etag in results:
             doc = orjson.loads(doc_bytes)
-            modifiers = ProjectionModifiers(level=level, extent=extent, content=content)
-            items.append(apply_projection(doc, modifiers))
+
+            # Apply idShort filter
+            if id_short and doc.get("idShort") != id_short:
+                continue
+
+            # Apply assetIds filter
+            if asset_ids and not _match_asset_ids(doc, asset_ids):
+                continue
+
+            # Apply projections if needed
+            if not is_fast_path(request):
+                modifiers = ProjectionModifiers(level=level, extent=extent, content=content)
+                doc = apply_projection(doc, modifiers)
+
+            items.append(doc)
 
         # Build paginated response (no cursor for slow path with offset)
         response_data = {
