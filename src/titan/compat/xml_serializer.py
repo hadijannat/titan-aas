@@ -214,7 +214,8 @@ class XmlDeserializer:
         Returns:
             Tuple of (shells, submodels, concept_descriptions)
         """
-        root = ET.fromstring(xml_bytes)
+        # nosec B314 - XML data comes from trusted AASX packages, not arbitrary external input
+        root = ET.fromstring(xml_bytes)  # nosec B314
 
         shells: list[AssetAdministrationShell] = []
         submodels: list[Submodel] = []

@@ -16,7 +16,7 @@ app = typer.Typer(help="Run the Titan-AAS API server")
 @app.callback(invoke_without_command=True)
 def serve(
     host: str = typer.Option(
-        "0.0.0.0",
+        "0.0.0.0",  # nosec B104 - intentional for container deployments
         "--host",
         "-h",
         help="Host to bind to",

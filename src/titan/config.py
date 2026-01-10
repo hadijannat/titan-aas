@@ -11,7 +11,7 @@ class Settings(BaseSettings):
 
     app_name: str = "titan-aas"
     env: str = "dev"
-    host: str = "0.0.0.0"
+    host: str = "0.0.0.0"  # nosec B104 - intentional for container deployments
     port: int = 8080
 
     # Instance ID for distributed deployments
