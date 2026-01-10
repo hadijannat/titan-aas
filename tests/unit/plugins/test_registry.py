@@ -12,7 +12,7 @@ from titan.plugins.registry import (
 )
 
 
-class TestPlugin(TitanPlugin):
+class SamplePlugin(TitanPlugin):
     """Test plugin implementation."""
 
     name = "test-plugin"
@@ -74,7 +74,7 @@ class TestPluginRegistry:
     @pytest.mark.asyncio
     async def test_load_plugin(self, registry: PluginRegistry) -> None:
         """Loading a plugin registers it."""
-        plugin = TestPlugin()
+        plugin = SamplePlugin()
 
         await registry.load_plugin(plugin)
 
@@ -84,8 +84,8 @@ class TestPluginRegistry:
     @pytest.mark.asyncio
     async def test_load_duplicate_plugin(self, registry: PluginRegistry) -> None:
         """Loading duplicate plugin raises error."""
-        plugin1 = TestPlugin()
-        plugin2 = TestPlugin()
+        plugin1 = SamplePlugin()
+        plugin2 = SamplePlugin()
 
         await registry.load_plugin(plugin1)
 
@@ -95,7 +95,7 @@ class TestPluginRegistry:
     @pytest.mark.asyncio
     async def test_load_with_config(self, registry: PluginRegistry) -> None:
         """Loading with config passes config to plugin."""
-        plugin = TestPlugin()
+        plugin = SamplePlugin()
         config = {"key": "value"}
 
         await registry.load_plugin(plugin, config)
@@ -105,7 +105,7 @@ class TestPluginRegistry:
     @pytest.mark.asyncio
     async def test_unload_plugin(self, registry: PluginRegistry) -> None:
         """Unloading a plugin removes it."""
-        plugin = TestPlugin()
+        plugin = SamplePlugin()
         await registry.load_plugin(plugin)
 
         await registry.unload_plugin("test-plugin")
@@ -122,7 +122,7 @@ class TestPluginRegistry:
     @pytest.mark.asyncio
     async def test_get_plugin(self, registry: PluginRegistry) -> None:
         """Getting a loaded plugin returns it."""
-        plugin = TestPlugin()
+        plugin = SamplePlugin()
         await registry.load_plugin(plugin)
 
         result = registry.get_plugin("test-plugin")
@@ -139,7 +139,7 @@ class TestPluginRegistry:
     @pytest.mark.asyncio
     async def test_plugins_property(self, registry: PluginRegistry) -> None:
         """Plugins property returns all loaded plugins."""
-        plugin = TestPlugin()
+        plugin = SamplePlugin()
         await registry.load_plugin(plugin)
 
         plugins = registry.plugins
@@ -158,7 +158,7 @@ class TestPluginRegistry:
     @pytest.mark.asyncio
     async def test_load_with_satisfied_dependency(self, registry: PluginRegistry) -> None:
         """Loading plugin with satisfied dependency succeeds."""
-        base = TestPlugin()
+        base = SamplePlugin()
         dependent = DependentPlugin()
 
         await registry.load_plugin(base)
@@ -169,7 +169,7 @@ class TestPluginRegistry:
     @pytest.mark.asyncio
     async def test_unload_with_dependents(self, registry: PluginRegistry) -> None:
         """Cannot unload plugin that others depend on."""
-        base = TestPlugin()
+        base = SamplePlugin()
         dependent = DependentPlugin()
 
         await registry.load_plugin(base)
@@ -181,7 +181,7 @@ class TestPluginRegistry:
     @pytest.mark.asyncio
     async def test_unload_all(self, registry: PluginRegistry) -> None:
         """Unload all removes all plugins."""
-        plugin1 = TestPlugin()
+        plugin1 = SamplePlugin()
         plugin2 = HookedPlugin()
 
         await registry.load_plugin(plugin1)
