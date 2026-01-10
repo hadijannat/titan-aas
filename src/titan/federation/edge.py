@@ -276,9 +276,7 @@ class EdgeController:
                         result["errors"].append(str(e))
 
                 # Remove successfully pushed changes
-                self._pending_queue = [
-                    c for c in self._pending_queue if c.id not in pushed_ids
-                ]
+                self._pending_queue = [c for c in self._pending_queue if c.id not in pushed_ids]
 
                 # Pull updates from hub (delta sync)
                 pulled = await self._pull_from_hub(client)
