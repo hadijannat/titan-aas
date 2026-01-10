@@ -26,6 +26,8 @@ from titan.core.ids import encode_id_to_b64url
 from titan.persistence.db import get_session
 from titan.persistence.registry import AasDescriptorRepository
 from titan.persistence.tables import AasDescriptorTable
+from titan.security.deps import require_permission
+from titan.security.rbac import Permission
 
 router = APIRouter(prefix="/lookup", tags=["Discovery"])
 
@@ -37,7 +39,10 @@ async def get_aas_descriptor_repo(
     return AasDescriptorRepository(session)
 
 
-@router.get("/shells")
+@router.get(
+    "/shells",
+    dependencies=[Depends(require_permission(Permission.READ_DESCRIPTOR))],
+)
 async def lookup_shells(
     request: Request,
     limit: LimitParam = DEFAULT_LIMIT,

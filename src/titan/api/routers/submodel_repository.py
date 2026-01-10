@@ -18,7 +18,7 @@ from __future__ import annotations
 from typing import Any
 
 import orjson
-from fastapi import APIRouter, Depends, Header, Query, Request, Response
+from fastapi import APIRouter, Depends, Header, Request, Response
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 

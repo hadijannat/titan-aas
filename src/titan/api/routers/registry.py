@@ -40,6 +40,8 @@ from titan.persistence.registry import (
     AasDescriptorRepository,
     SubmodelDescriptorRepository,
 )
+from titan.security.deps import require_permission
+from titan.security.rbac import Permission
 
 router = APIRouter(tags=["Registry"])
 
@@ -64,7 +66,10 @@ async def get_submodel_descriptor_repo(
 # =============================================================================
 
 
-@router.get("/shell-descriptors")
+@router.get(
+    "/shell-descriptors",
+    dependencies=[Depends(require_permission(Permission.READ_DESCRIPTOR))],
+)
 async def get_all_shell_descriptors(
     request: Request,
     limit: LimitParam = DEFAULT_LIMIT,
@@ -105,7 +110,11 @@ async def get_all_shell_descriptors(
     return json_bytes_response(canonical_bytes(response_data))
 
 
-@router.post("/shell-descriptors", status_code=201)
+@router.post(
+    "/shell-descriptors",
+    status_code=201,
+    dependencies=[Depends(require_permission(Permission.CREATE_DESCRIPTOR))],
+)
 async def post_shell_descriptor(
     descriptor: AssetAdministrationShellDescriptor,
     repo: AasDescriptorRepository = Depends(get_aas_descriptor_repo),
@@ -129,7 +138,17 @@ async def post_shell_descriptor(
     )
 
 
-@router.get("/shell-descriptors/{aas_identifier}")
+@router.get(
+    "/shell-descriptors/{aas_identifier}",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_DESCRIPTOR,
+                resource_id_params=["aas_identifier"],
+            )
+        )
+    ],
+)
 async def get_shell_descriptor_by_id(
     aas_identifier: str,
     if_none_match: str | None = Header(None, alias="If-None-Match"),
@@ -160,7 +179,17 @@ async def get_shell_descriptor_by_id(
     )
 
 
-@router.put("/shell-descriptors/{aas_identifier}")
+@router.put(
+    "/shell-descriptors/{aas_identifier}",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.UPDATE_DESCRIPTOR,
+                resource_id_params=["aas_identifier"],
+            )
+        )
+    ],
+)
 async def put_shell_descriptor_by_id(
     aas_identifier: str,
     descriptor: AssetAdministrationShellDescriptor,
@@ -195,7 +224,18 @@ async def put_shell_descriptor_by_id(
     )
 
 
-@router.delete("/shell-descriptors/{aas_identifier}", status_code=204)
+@router.delete(
+    "/shell-descriptors/{aas_identifier}",
+    status_code=204,
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.DELETE_DESCRIPTOR,
+                resource_id_params=["aas_identifier"],
+            )
+        )
+    ],
+)
 async def delete_shell_descriptor_by_id(
     aas_identifier: str,
     repo: AasDescriptorRepository = Depends(get_aas_descriptor_repo),
@@ -296,7 +336,10 @@ async def bulk_delete_shell_descriptors(
 # =============================================================================
 
 
-@router.get("/submodel-descriptors")
+@router.get(
+    "/submodel-descriptors",
+    dependencies=[Depends(require_permission(Permission.READ_DESCRIPTOR))],
+)
 async def get_all_submodel_descriptors(
     request: Request,
     limit: LimitParam = DEFAULT_LIMIT,
@@ -332,7 +375,11 @@ async def get_all_submodel_descriptors(
     return json_bytes_response(canonical_bytes(response_data))
 
 
-@router.post("/submodel-descriptors", status_code=201)
+@router.post(
+    "/submodel-descriptors",
+    status_code=201,
+    dependencies=[Depends(require_permission(Permission.CREATE_DESCRIPTOR))],
+)
 async def post_submodel_descriptor(
     descriptor: SubmodelDescriptor,
     repo: SubmodelDescriptorRepository = Depends(get_submodel_descriptor_repo),
@@ -356,7 +403,17 @@ async def post_submodel_descriptor(
     )
 
 
-@router.get("/submodel-descriptors/{submodel_identifier}")
+@router.get(
+    "/submodel-descriptors/{submodel_identifier}",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_DESCRIPTOR,
+                resource_id_params=["submodel_identifier"],
+            )
+        )
+    ],
+)
 async def get_submodel_descriptor_by_id(
     submodel_identifier: str,
     if_none_match: str | None = Header(None, alias="If-None-Match"),
@@ -387,7 +444,17 @@ async def get_submodel_descriptor_by_id(
     )
 
 
-@router.put("/submodel-descriptors/{submodel_identifier}")
+@router.put(
+    "/submodel-descriptors/{submodel_identifier}",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.UPDATE_DESCRIPTOR,
+                resource_id_params=["submodel_identifier"],
+            )
+        )
+    ],
+)
 async def put_submodel_descriptor_by_id(
     submodel_identifier: str,
     descriptor: SubmodelDescriptor,
@@ -422,7 +489,18 @@ async def put_submodel_descriptor_by_id(
     )
 
 
-@router.delete("/submodel-descriptors/{submodel_identifier}", status_code=204)
+@router.delete(
+    "/submodel-descriptors/{submodel_identifier}",
+    status_code=204,
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.DELETE_DESCRIPTOR,
+                resource_id_params=["submodel_identifier"],
+            )
+        )
+    ],
+)
 async def delete_submodel_descriptor_by_id(
     submodel_identifier: str,
     repo: SubmodelDescriptorRepository = Depends(get_submodel_descriptor_repo),

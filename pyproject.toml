@@ -91,12 +91,18 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = [
+  "titan.api.middleware.security_headers",
+  "titan.api.routers.aasx",
+  "titan.api.routers.aas_repository",
+  "titan.api.routers.submodel_repository",
   "titan.cache.invalidation",
+  "titan.core.element_operations",
   "titan.distributed.leader",
   "titan.events.redis_bus",
   "titan.graphql.dataloaders",
   "titan.observability.profiling",
   "titan.security.audit",
+  "titan.security.deps",
   "titan.tenancy.middleware",
 ]
 ignore_errors = true  # New modules under active development

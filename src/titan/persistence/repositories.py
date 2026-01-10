@@ -393,11 +393,15 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
         if submodel.semantic_id and submodel.semantic_id.keys:
             semantic_id = submodel.semantic_id.keys[-1].value
 
+        # Extract kind for template filtering (SSP-003/004)
+        kind = submodel.kind.value if submodel.kind else None
+
         row = SubmodelTable(
             id=row_id,
             identifier=submodel.id,
             identifier_b64=encode_id_to_b64url(submodel.id),
             semantic_id=semantic_id,
+            kind=kind,
             doc=doc,
             doc_bytes=doc_bytes,
             etag=etag,
@@ -490,6 +494,7 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
         row.identifier = submodel.id
         row.identifier_b64 = encode_id_to_b64url(submodel.id)
         row.semantic_id = semantic_id
+        row.kind = submodel.kind.value if submodel.kind else None
         row.doc = doc
         row.doc_bytes = doc_bytes
         row.etag = etag
