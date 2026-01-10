@@ -98,6 +98,63 @@ flowchart LR
 3. **Read Path (Slow)**: When modifiers like `$value` or `$metadata` are requested, hydrate model and transform
 4. **Event Path**: Single writer pattern ensures consistent persistence and cache updates
 
+### 🌐 Enterprise Features
+
+#### Federation Architecture
+
+```mermaid
+flowchart TB
+    subgraph Hub["🏢 Hub Instance"]
+        H_API[API Server]
+        H_DB[(PostgreSQL)]
+        H_REDIS[(Redis)]
+    end
+    
+    subgraph Edge1["🏭 Factory Edge"]
+        E1_API[Edge API]
+        E1_QUEUE[Sync Queue]
+        E1_LOCAL[(Local SQLite)]
+    end
+    
+    subgraph Edge2["🚢 Field Edge"]
+        E2_API[Edge API]
+        E2_QUEUE[Sync Queue]
+        E2_LOCAL[(Local SQLite)]
+    end
+    
+    Edge1 <-.->|"Bi-directional Sync"| Hub
+    Edge2 <-.->|"Bi-directional Sync"| Hub
+    
+    style Hub fill:#0d9488,stroke:#0f766e,color:#fff
+    style Edge1 fill:#d97706,stroke:#b45309,color:#fff
+    style Edge2 fill:#d97706,stroke:#b45309,color:#fff
+```
+
+**Features:**
+- **Multi-Instance Sync**: Peer-to-peer or hub-spoke topology
+- **Offline-First Edge**: Queue changes locally, sync when connected  
+- **Delta Sync**: Only transfer changed data (bandwidth optimization)
+- **Conflict Resolution**: Configurable strategies (skip, overwrite, error, rename)
+
+#### AASX Package Management
+
+```mermaid
+flowchart LR
+    Upload[📤 Upload AASX] --> Validate[🔍 OPC Validation]
+    Validate --> Parse[📋 Parse Content]
+    Parse --> Preview[👁️ Preview Import]
+    Preview -->|Conflicts?| Resolve[⚡ Conflict Resolution]
+    Resolve --> Import[💾 Import to Repo]
+    Import --> Version[📊 Version Tracking]
+```
+
+**Capabilities:**
+- OPC-compliant package validation
+- Preview imports before committing
+- Selective import (specific shells/submodels)
+- Export with customizable options
+- Version history with rollback
+
 ---
 
 ## 📋 Specification Baseline
