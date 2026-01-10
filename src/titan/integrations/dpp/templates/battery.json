@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EU Battery Passport",
+  "description": "Template for EU Battery Regulation 2023/1542 compliant Battery Passport",
+  "version": "1.0.0",
+  "semanticId": "urn:samm:io.catenax.battery.battery_pass:3.0.1#BatteryPass",
+  "requiredFields": [
+    "batteryId",
+    "manufacturerId",
+    "manufacturingDate",
+    "batteryCategory",
+    "chemistry",
+    "nominalCapacity",
+    "carbonFootprint"
+  ],
+  "sections": {
+    "identification": {
+      "title": "Battery Identification",
+      "fields": {
+        "batteryId": {
+          "type": "string",
+          "description": "Unique battery identifier"
+        },
+        "manufacturerId": {
+          "type": "string",
+          "description": "Manufacturer's identification number"
+        },
+        "manufacturingDate": {
+          "type": "date",
+          "description": "Date of manufacture"
+        },
+        "manufacturingPlace": {
+          "type": "string",
+          "description": "Place of manufacture"
+        }
+      }
+    },
+    "technicalSpecifications": {
+      "title": "Technical Specifications",
+      "fields": {
+        "batteryCategory": {
+          "type": "enum",
+          "values": ["EV", "LMT", "industrial", "portable"],
+          "description": "Battery category per EU regulation"
+        },
+        "chemistry": {
+          "type": "string",
+          "description": "Battery chemistry type"
+        },
+        "nominalCapacity": {
+          "type": "number",
+          "unit": "kWh",
+          "description": "Nominal capacity in kilowatt-hours"
+        },
+        "nominalVoltage": {
+          "type": "number",
+          "unit": "V",
+          "description": "Nominal voltage"
+        },
+        "batteryWeight": {
+          "type": "number",
+          "unit": "kg",
+          "description": "Total battery weight"
+        }
+      }
+    },
+    "sustainability": {
+      "title": "Sustainability Information",
+      "fields": {
+        "carbonFootprint": {
+          "type": "number",
+          "unit": "kg CO2e/kWh",
+          "description": "Carbon footprint per kWh",
+          "mandatory": true
+        },
+        "recycledContent": {
+          "type": "number",
+          "unit": "%",
+          "description": "Percentage of recycled material"
+        },
+        "cobaltContent": {
+          "type": "number",
+          "unit": "%",
+          "description": "Cobalt content percentage"
+        },
+        "lithiumContent": {
+          "type": "number",
+          "unit": "%",
+          "description": "Lithium content percentage"
+        },
+        "nickelContent": {
+          "type": "number",
+          "unit": "%",
+          "description": "Nickel content percentage"
+        }
+      }
+    },
+    "performance": {
+      "title": "Performance & Durability",
+      "fields": {
+        "expectedLifetimeCycles": {
+          "type": "integer",
+          "description": "Expected number of full cycles"
+        },
+        "energyEfficiency": {
+          "type": "number",
+          "unit": "%",
+          "description": "Round-trip energy efficiency"
+        },
+        "stateOfHealth": {
+          "type": "number",
+          "unit": "%",
+          "description": "Current state of health",
+          "dynamic": true
+        }
+      }
+    },
+    "compliance": {
+      "title": "Compliance & Certification",
+      "fields": {
+        "ceMarking": {
+          "type": "boolean",
+          "description": "CE marking applied"
+        },
+        "dueDiligence": {
+          "type": "boolean",
+          "description": "Supply chain due diligence completed"
+        },
+        "conformityDeclaration": {
+          "type": "string",
+          "description": "URL to EU Declaration of Conformity"
+        }
+      }
+    }
+  },
+  "complianceRules": {
+    "minimumRecycledContent": {
+      "cobalt": 16,
+      "lithium": 6,
+      "nickel": 6,
+      "applicableFrom": "2031-01-01"
+    },
+    "carbonFootprintThreshold": {
+      "applicableFrom": "2028-02-18"
+    }
+  }
+}

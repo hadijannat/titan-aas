@@ -34,6 +34,15 @@ Legend:
 | ConceptDescriptionRepositoryServiceSpecification/SSP-002 | Implemented | Query endpoint with `idShort`, `isCaseOf`, and `dataSpecificationRef` filters. |
 | AasxFileServerServiceSpecification/SSP-001 | Planned | AASX file server not implemented. |
 
+## Data Specification Conformance (IDTA-01003-a)
+
+| Feature | Status | Evidence / Notes |
+| --- | --- | --- |
+| IEC 61360 content model | Implemented | `DataSpecificationIec61360` in `src/titan/core/model/administrative.py`. |
+| Embedded data specs | Implemented | `EmbeddedDataSpecification` + `HasDataSpecificationMixin` support embedded IEC 61360 specs. |
+| ConceptDescription filters | Implemented | `dataSpecificationRef` filter in `src/titan/api/routers/concept_description_repository.py`. |
+| External vocab / semantic validation | Planned | No external vocabulary validation or code list enforcement yet. |
+
 ## Security Conformance (IDTA-01004)
 
 | Feature | Status | Evidence / Notes |

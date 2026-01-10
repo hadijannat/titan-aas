@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Product Carbon Footprint",
+  "description": "Template for Product Carbon Footprint (PCF) data exchange",
+  "version": "1.0.0",
+  "semanticId": "urn:samm:io.catenax.pcf:6.0.0#Pcf",
+  "requiredFields": [
+    "productId",
+    "declaredUnit",
+    "pcfExcludingBiogenic"
+  ],
+  "sections": {
+    "productInfo": {
+      "title": "Product Information",
+      "fields": {
+        "productId": {
+          "type": "string",
+          "description": "Unique product identifier"
+        },
+        "pcfId": {
+          "type": "string",
+          "description": "PCF calculation identifier"
+        },
+        "productDescription": {
+          "type": "string",
+          "description": "Description of the product"
+        }
+      }
+    },
+    "functionalUnit": {
+      "title": "Functional Unit",
+      "fields": {
+        "declaredUnit": {
+          "type": "enum",
+          "values": ["kilogram", "piece", "liter", "squareMeter", "cubicMeter"],
+          "description": "Unit of measurement for the PCF"
+        },
+        "unitaryProductAmount": {
+          "type": "number",
+          "description": "Amount of product in declared unit"
+        }
+      }
+    },
+    "carbonData": {
+      "title": "Carbon Footprint Data",
+      "fields": {
+        "pcfExcludingBiogenic": {
+          "type": "number",
+          "unit": "kg CO2e",
+          "description": "PCF excluding biogenic carbon",
+          "mandatory": true
+        },
+        "pcfIncludingBiogenic": {
+          "type": "number",
+          "unit": "kg CO2e",
+          "description": "PCF including biogenic carbon"
+        },
+        "fossilGhgEmissions": {
+          "type": "number",
+          "unit": "kg CO2e",
+          "description": "Fossil GHG emissions"
+        },
+        "biogenicCarbonContent": {
+          "type": "number",
+          "unit": "kg CO2e",
+          "description": "Biogenic carbon content"
+        },
+        "dlucGhgEmissions": {
+          "type": "number",
+          "unit": "kg CO2e",
+          "description": "Direct land use change emissions"
+        },
+        "aircraftGhgEmissions": {
+          "type": "number",
+          "unit": "kg CO2e",
+          "description": "Aircraft emissions"
+        }
+      }
+    },
+    "lifecycle": {
+      "title": "Lifecycle Boundary",
+      "fields": {
+        "boundary": {
+          "type": "enum",
+          "values": ["Cradle-to-Gate", "Cradle-to-Grave", "Gate-to-Gate"],
+          "description": "System boundary for the PCF"
+        },
+        "referencePeriodStart": {
+          "type": "date",
+          "description": "Start of reference period"
+        },
+        "referencePeriodEnd": {
+          "type": "date",
+          "description": "End of reference period"
+        },
+        "geographicScope": {
+          "type": "string",
+          "description": "Geographic scope (ISO 3166)"
+        }
+      }
+    },
+    "dataQuality": {
+      "title": "Data Quality",
+      "fields": {
+        "primaryDataShare": {
+          "type": "number",
+          "unit": "%",
+          "description": "Share of primary data used"
+        },
+        "dataQualityRating": {
+          "type": "enum",
+          "values": ["excellent", "good", "fair", "poor"],
+          "description": "Overall data quality rating"
+        },
+        "coveragePercent": {
+          "type": "number",
+          "unit": "%",
+          "description": "Percentage of product lifecycle covered"
+        }
+      }
+    },
+    "verification": {
+      "title": "Verification",
+      "fields": {
+        "verified": {
+          "type": "boolean",
+          "description": "Whether PCF has been verified"
+        },
+        "verificationStandard": {
+          "type": "string",
+          "description": "Standard used for verification (e.g., ISO 14064-3)"
+        },
+        "verificationBody": {
+          "type": "string",
+          "description": "Name of verification body"
+        },
+        "verificationDate": {
+          "type": "date",
+          "description": "Date of verification"
+        }
+      }
+    }
+  },
+  "standards": [
+    "ISO 14067:2018",
+    "GHG Protocol Product Standard",
+    "Catena-X PCF Rulebook"
+  ]
+}

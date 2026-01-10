@@ -163,8 +163,8 @@ flowchart LR
 |--------------|---------|--------|
 | IDTA-01001 Part 1 Metamodel | v3.1.2 | ✅ Core models implemented |
 | IDTA-01002 Part 2 API | v3.1.1 | ⚠️ Partial (see conformance matrix) |
-| IDTA-01003-a Data Specification IEC 61360 | v3.1.1 | ⚠️ Partial |
-| IDTA-01004 Security | v3.0.1 | ⚠️ Partial |
+| IDTA-01003-a Data Specification IEC 61360 | v3.1.1 | ⚠️ Partial (see conformance matrix) |
+| IDTA-01004 Security | v3.0.1 | ⚠️ Partial (see security overview) |
 
 ---
 
