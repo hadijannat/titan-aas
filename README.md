@@ -407,6 +407,7 @@ Titan-AAS is configured via environment variables:
 
 ## 📖 Documentation
 
+- **[🚀 Try It Yourself](docs/try-it-yourself.md)** - Hands-on guide to verify each claimed functionality
 - [API Guide](docs/api-guide.md) - Complete API reference
 - [Deployment Runbook](docs/deployment-runbook.md) - Production deployment guide
 - [Conformance Matrix](docs/conformance-matrix.md) - IDTA service profile coverage
