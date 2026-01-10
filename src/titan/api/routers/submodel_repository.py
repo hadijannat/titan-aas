@@ -18,7 +18,7 @@ from __future__ import annotations
 from typing import Any
 
 import orjson
-from fastapi import APIRouter, Depends, Header, Query, Request, Response
+from fastapi import APIRouter, Body, Depends, Header, Query, Request, Response
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -1085,6 +1085,100 @@ async def put_submodel_element(
 
 
 @router.patch(
+    "/{submodel_identifier}/submodel-elements/{id_short_path:path}/$value",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.UPDATE_SUBMODEL,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier", "id_short_path"],
+            )
+        )
+    ],
+)
+async def patch_element_value(
+    submodel_identifier: str,
+    id_short_path: str,
+    payload: Any = Body(...),
+    if_match: str | None = Header(None, alias="If-Match"),
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+    cache: RedisCache = Depends(get_cache),
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """Update only the value of a SubmodelElement.
+
+    This is a convenience endpoint for updating just the value field.
+    """
+    try:
+        identifier = decode_id_from_b64url(submodel_identifier)
+    except InvalidBase64Url:
+        raise InvalidBase64UrlError(submodel_identifier)
+
+    # Get existing submodel
+    result = await repo.get_bytes_by_id(identifier)
+    if result is None:
+        raise NotFoundError("Submodel", identifier)
+
+    doc_bytes, current_etag = result
+
+    # Check If-Match precondition
+    if if_match and if_match.strip('"') != current_etag:
+        raise PreconditionFailedError()
+
+    doc = orjson.loads(doc_bytes)
+
+    # Accept either raw JSON value or {"value": ...}
+    value = payload
+    if isinstance(payload, dict) and "value" in payload:
+        value = payload["value"]
+
+    # Update value
+    try:
+        updated_doc = update_element_value(doc, id_short_path, value)
+    except ElementNotFoundError:
+        raise NotFoundError("SubmodelElement", id_short_path)
+    except InvalidPathError as e:
+        raise BadRequestError(str(e))
+
+    # Update submodel in database
+    try:
+        submodel = Submodel.model_validate(updated_doc)
+    except ValidationError as e:
+        raise BadRequestError(str(e)) from e
+    update_result = await repo.update(identifier, submodel)
+    if update_result is None:
+        raise NotFoundError("Submodel", identifier)
+
+    doc_bytes, etag = update_result
+    await session.commit()
+
+    # Update cache
+    await cache.set_submodel(submodel_identifier, doc_bytes, etag)
+    await cache.invalidate_submodel_elements(submodel_identifier)
+
+    # Publish event
+    semantic_id = None
+    if submodel.semantic_id and submodel.semantic_id.keys:
+        semantic_id = submodel.semantic_id.keys[0].value
+
+    await publish_submodel_event(
+        event_bus=get_event_bus(),
+        event_type=EventType.UPDATED,
+        identifier=identifier,
+        identifier_b64=submodel_identifier,
+        doc_bytes=doc_bytes,
+        etag=etag,
+        semantic_id=semantic_id,
+    )
+
+    return Response(
+        content=canonical_bytes(value),
+        media_type="application/json",
+        headers={"ETag": f'"{etag}"'},
+    )
+
+
+@router.patch(
     "/{submodel_identifier}/submodel-elements/{id_short_path:path}",
     dependencies=[
         Depends(
@@ -1171,95 +1265,6 @@ async def patch_submodel_element(
 
     return Response(
         content=canonical_bytes(updated_element),
-        media_type="application/json",
-        headers={"ETag": f'"{etag}"'},
-    )
-
-
-@router.patch(
-    "/{submodel_identifier}/submodel-elements/{id_short_path:path}/$value",
-    dependencies=[
-        Depends(
-            require_permission(
-                Permission.UPDATE_SUBMODEL,
-                resource_type=ResourceType.SUBMODEL_ELEMENT,
-                resource_id_params=["submodel_identifier", "id_short_path"],
-            )
-        )
-    ],
-)
-async def patch_element_value(
-    submodel_identifier: str,
-    id_short_path: str,
-    value: Any,
-    if_match: str | None = Header(None, alias="If-Match"),
-    repo: SubmodelRepository = Depends(get_submodel_repo),
-    cache: RedisCache = Depends(get_cache),
-    session: AsyncSession = Depends(get_session),
-) -> Response:
-    """Update only the value of a SubmodelElement.
-
-    This is a convenience endpoint for updating just the value field.
-    """
-    try:
-        identifier = decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
-
-    # Get existing submodel
-    result = await repo.get_bytes_by_id(identifier)
-    if result is None:
-        raise NotFoundError("Submodel", identifier)
-
-    doc_bytes, current_etag = result
-
-    # Check If-Match precondition
-    if if_match and if_match.strip('"') != current_etag:
-        raise PreconditionFailedError()
-
-    doc = orjson.loads(doc_bytes)
-
-    # Update value
-    try:
-        updated_doc = update_element_value(doc, id_short_path, value)
-    except ElementNotFoundError:
-        raise NotFoundError("SubmodelElement", id_short_path)
-    except InvalidPathError as e:
-        raise BadRequestError(str(e))
-
-    # Update submodel in database
-    try:
-        submodel = Submodel.model_validate(updated_doc)
-    except ValidationError as e:
-        raise BadRequestError(str(e)) from e
-    update_result = await repo.update(identifier, submodel)
-    if update_result is None:
-        raise NotFoundError("Submodel", identifier)
-
-    doc_bytes, etag = update_result
-    await session.commit()
-
-    # Update cache
-    await cache.set_submodel(submodel_identifier, doc_bytes, etag)
-    await cache.invalidate_submodel_elements(submodel_identifier)
-
-    # Publish event
-    semantic_id = None
-    if submodel.semantic_id and submodel.semantic_id.keys:
-        semantic_id = submodel.semantic_id.keys[0].value
-
-    await publish_submodel_event(
-        event_bus=get_event_bus(),
-        event_type=EventType.UPDATED,
-        identifier=identifier,
-        identifier_b64=submodel_identifier,
-        doc_bytes=doc_bytes,
-        etag=etag,
-        semantic_id=semantic_id,
-    )
-
-    return Response(
-        content=canonical_bytes(value),
         media_type="application/json",
         headers={"ETag": f'"{etag}"'},
     )
