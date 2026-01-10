@@ -25,6 +25,7 @@ from titan.api.middleware import CachingMiddleware, CompressionMiddleware, RateL
 from titan.api.middleware.rate_limit import RateLimitConfig
 from titan.api.routers import (
     aas_repository,
+    blobs,
     description,
     discovery,
     health,
@@ -159,6 +160,7 @@ def create_app() -> FastAPI:
     # IDTA-01002 Part 2 Repository API routers
     app.include_router(aas_repository.router)
     app.include_router(submodel_repository.router)
+    app.include_router(blobs.router)
 
     # IDTA-01002 Part 2 Registry and Discovery API routers
     app.include_router(registry.router)

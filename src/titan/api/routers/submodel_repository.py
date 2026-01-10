@@ -20,6 +20,7 @@ from fastapi import APIRouter, Depends, Header, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from titan.api.errors import (
+    BadRequestError,
     ConflictError,
     InvalidBase64UrlError,
     NotFoundError,
@@ -129,7 +130,10 @@ async def post_submodel(
     if await repo.exists(submodel.id):
         raise ConflictError("Submodel", submodel.id)
 
-    doc_bytes, etag = await repo.create(submodel)
+    try:
+        doc_bytes, etag = await repo.create(submodel)
+    except ValueError as e:
+        raise BadRequestError(str(e)) from e
     await session.commit()
 
     identifier_b64 = encode_id_to_b64url(submodel.id)
@@ -226,7 +230,10 @@ async def put_submodel_by_id(
             if if_match.strip('"') != current_etag:
                 raise PreconditionFailedError()
 
-    result = await repo.update(identifier, submodel)
+    try:
+        result = await repo.update(identifier, submodel)
+    except ValueError as e:
+        raise BadRequestError(str(e)) from e
     if result is None:
         raise NotFoundError("Submodel", identifier)
 

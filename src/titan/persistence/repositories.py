@@ -15,8 +15,8 @@ SQL-Level Pagination (The "Pagination Paradox" Fix):
 from __future__ import annotations
 
 from dataclasses import dataclass
-from uuid import uuid4
 from typing import Generic, TypeVar
+from uuid import uuid4
 
 import orjson
 from sqlalchemy import select, text
@@ -355,7 +355,14 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
     async def create(self, submodel: Submodel) -> tuple[bytes, str]:
         """Create a new Submodel."""
         doc = submodel.model_dump(by_alias=True, exclude_none=True)
-        doc_bytes = canonical_bytes_from_model(submodel)
+        row_id = str(uuid4())
+
+        storage = get_blob_storage()
+        externalized = await externalize_submodel_doc(doc, row_id, storage)
+        if externalized.referenced:
+            raise ValueError("Blob references are not allowed on create")
+
+        doc_bytes = canonical_bytes(doc)
         etag = generate_etag(doc_bytes)
 
         # Extract semantic ID if present
@@ -364,6 +371,7 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
             semantic_id = submodel.semantic_id.keys[-1].value
 
         row = SubmodelTable(
+            id=row_id,
             identifier=submodel.id,
             identifier_b64=encode_id_to_b64url(submodel.id),
             semantic_id=semantic_id,
@@ -372,6 +380,21 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
             etag=etag,
         )
         self.session.add(row)
+
+        for metadata in externalized.new_blobs:
+            self.session.add(
+                BlobAssetTable(
+                    id=metadata.id,
+                    submodel_id=row_id,
+                    id_short_path=metadata.id_short_path,
+                    storage_type=metadata.storage_type,
+                    storage_uri=metadata.storage_uri,
+                    content_type=metadata.content_type,
+                    filename=metadata.filename,
+                    size_bytes=metadata.size_bytes,
+                    content_hash=metadata.content_hash,
+                )
+            )
         await self.session.flush()
         return (doc_bytes, etag)
 
@@ -384,8 +407,57 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
             return None
 
         doc = submodel.model_dump(by_alias=True, exclude_none=True)
-        doc_bytes = canonical_bytes_from_model(submodel)
+
+        storage = get_blob_storage()
+        externalized = await externalize_submodel_doc(doc, row.id, storage)
+        doc_bytes = canonical_bytes(doc)
         etag = generate_etag(doc_bytes)
+
+        existing_assets = await self._load_blob_assets(row.id)
+        existing_by_id = {asset.id: asset for asset in existing_assets}
+
+        for blob_id, path in externalized.referenced.items():
+            asset = existing_by_id.get(blob_id)
+            if asset is None:
+                raise ValueError(f"Unknown blob reference: {blob_id}")
+            if asset.id_short_path != path:
+                asset.id_short_path = path
+
+        keep_ids = set(externalized.referenced.keys())
+        assets_to_delete = [asset for asset in existing_assets if asset.id not in keep_ids]
+
+        for asset in assets_to_delete:
+            metadata = BlobMetadata(
+                id=asset.id,
+                submodel_id=asset.submodel_id,
+                id_short_path=asset.id_short_path,
+                storage_type=asset.storage_type,
+                storage_uri=asset.storage_uri,
+                content_type=asset.content_type,
+                filename=asset.filename,
+                size_bytes=asset.size_bytes,
+                content_hash=asset.content_hash,
+            )
+            try:
+                await storage.delete(metadata)
+            except Exception:
+                pass
+            await self.session.delete(asset)
+
+        for metadata in externalized.new_blobs:
+            self.session.add(
+                BlobAssetTable(
+                    id=metadata.id,
+                    submodel_id=row.id,
+                    id_short_path=metadata.id_short_path,
+                    storage_type=metadata.storage_type,
+                    storage_uri=metadata.storage_uri,
+                    content_type=metadata.content_type,
+                    filename=metadata.filename,
+                    size_bytes=metadata.size_bytes,
+                    content_hash=metadata.content_hash,
+                )
+            )
 
         # Extract semantic ID if present
         semantic_id = None
