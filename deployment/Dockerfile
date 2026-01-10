@@ -23,7 +23,8 @@ COPY pyproject.toml uv.lock README.md LICENSE ./
 # Create virtual environment and install dependencies
 RUN uv venv /opt/venv && \
     . /opt/venv/bin/activate && \
-    uv sync --frozen --no-dev && \
+    uv export --frozen --no-dev --no-hashes --no-editable -o /tmp/requirements.txt && \
+    uv pip install --no-cache -r /tmp/requirements.txt && \
     python -c "import fastapi, uvicorn"
 
 # Copy source code
