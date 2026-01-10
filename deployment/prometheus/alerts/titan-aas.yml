@@ -159,3 +159,149 @@ groups:
         annotations:
           summary: "Critical event queue backlog"
           description: "Event queue has {{ $value }} pending events. System may be overwhelmed."
+
+  - name: titan-aas.security
+    rules:
+      - alert: TitanAASHighAuthFailureRate
+        expr: |
+          sum(rate(http_requests_total{job="titan-aas", status="401"}[5m]))
+          / sum(rate(http_requests_total{job="titan-aas"}[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High authentication failure rate"
+          description: "Authentication failure rate is {{ $value | humanizePercentage }}. Possible credential stuffing or misconfiguration."
+
+      - alert: TitanAASHighForbiddenRate
+        expr: |
+          sum(rate(http_requests_total{job="titan-aas", status="403"}[5m]))
+          / sum(rate(http_requests_total{job="titan-aas"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High authorization failure rate"
+          description: "Authorization failure rate is {{ $value | humanizePercentage }}. Check RBAC/ABAC configuration or potential unauthorized access attempts."
+
+      - alert: TitanAASHighRateLimitRate
+        expr: |
+          sum(rate(http_requests_total{job="titan-aas", status="429"}[5m]))
+          / sum(rate(http_requests_total{job="titan-aas"}[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate limiting"
+          description: "Rate limiting is affecting {{ $value | humanizePercentage }} of requests. Consider scaling or adjusting limits."
+
+      - alert: TitanAASSecurityHeadersMissing
+        expr: |
+          absent(http_response_headers_total{job="titan-aas", header="x-content-type-options"})
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Security headers not being set"
+          description: "Security headers middleware may not be enabled."
+
+  - name: titan-aas.slo
+    rules:
+      - alert: TitanAASSLOAvailabilityViolation
+        expr: |
+          (1 - sum(rate(http_requests_total{job="titan-aas", status!~"5.."}[1h]))
+          / sum(rate(http_requests_total{job="titan-aas"}[1h]))) > 0.001
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SLO availability violation"
+          description: "Error rate over 1 hour is {{ $value | humanizePercentage }}, exceeding 0.1% SLO target."
+
+      - alert: TitanAASSLOLatencyViolation
+        expr: |
+          histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job="titan-aas"}[1h])) by (le)) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "SLO latency violation"
+          description: "p99 latency over 1 hour is {{ $value | humanizeDuration }}, exceeding 100ms SLO target."
+
+      - alert: TitanAASErrorBudgetBurnRate
+        expr: |
+          sum(rate(http_requests_total{job="titan-aas", status=~"5.."}[1h]))
+          / sum(rate(http_requests_total{job="titan-aas"}[1h])) > 0.01
+        for: 1h
+        labels:
+          severity: critical
+        annotations:
+          summary: "Error budget burn rate high"
+          description: "Error rate is {{ $value | humanizePercentage }} over the last hour. Monthly error budget may be exhausted."
+
+  - name: titan-aas.leader
+    rules:
+      - alert: TitanAASNoLeader
+        expr: |
+          absent(titan_leader_status{job="titan-aas"} == 1)
+          or count(titan_leader_status{job="titan-aas"} == 1) == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No Titan-AAS leader elected"
+          description: "No instance has leader status. Singleton tasks may not be running."
+
+      - alert: TitanAASMultipleLeaders
+        expr: count(titan_leader_status{job="titan-aas"} == 1) > 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Multiple Titan-AAS leaders detected"
+          description: "{{ $value }} instances have leader status. Split-brain condition may exist."
+
+      - alert: TitanAASLeaderElectionStale
+        expr: |
+          time() - titan_leader_last_renewal_timestamp{job="titan-aas"} > 60
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Leader election renewal stale"
+          description: "Leader lock has not been renewed in {{ $value | humanizeDuration }}."
+
+  - name: titan-aas.capacity
+    rules:
+      - alert: TitanAASApproachingConnectionLimit
+        expr: |
+          pg_stat_activity_count{job="postgres"}
+          / pg_settings_max_connections{job="postgres"} > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Approaching PostgreSQL connection limit"
+          description: "Using {{ $value | humanizePercentage }} of max connections. Consider scaling."
+
+      - alert: TitanAASRedisMemoryHigh
+        expr: |
+          redis_memory_used_bytes{job="redis"}
+          / redis_memory_max_bytes{job="redis"} > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory usage high"
+          description: "Redis is using {{ $value | humanizePercentage }} of max memory."
+
+      - alert: TitanAASStorageSpaceLow
+        expr: |
+          (pg_database_size_bytes{job="postgres", datname="titan"}
+          / pg_tablespace_size_bytes{job="postgres"}) > 0.8
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database storage space low"
+          description: "Database is using {{ $value | humanizePercentage }} of available storage."

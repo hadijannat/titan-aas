@@ -54,8 +54,25 @@ jobs:
       - name: Install dependencies
         run: uv sync --group dev
 
-      - name: Run unit tests
-        run: uv run -- pytest tests/unit -v --tb=short --junitxml=test-results/unit.xml
+      - name: Install coverage tools
+        run: uv run -- pip install pytest-cov
+
+      - name: Run unit tests with coverage
+        run: |
+          uv run -- pytest tests/unit -v --tb=short \
+            --cov=src/titan \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=85 \
+            --junitxml=test-results/unit.xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: coverage.xml
+          flags: unittests
+          fail_ci_if_error: false
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -139,12 +156,27 @@ jobs:
       - name: Run contract tests
         run: uv run -- pytest tests/contract -v --tb=short --junitxml=test-results/contract.xml
 
+      - name: Generate conformance report
+        if: always()
+        run: |
+          python scripts/generate_conformance_report.py \
+            --input test-results/contract.xml \
+            --output conformance-report.json \
+            --version ${{ github.ref_name || 'dev' }}
+
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: contract-test-results
           path: test-results/contract.xml
+
+      - name: Upload conformance report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: conformance-report
+          path: conformance-report.json
 
   build:
     name: Build Docker Image
@@ -272,3 +304,169 @@ jobs:
             --ignore-vuln PYSEC-2024-230 \
             --ignore-vuln PYSEC-2024-225 \
             --ignore-vuln CVE-2024-23342
+
+  load-test:
+    name: Load Test (Performance Validation)
+    runs-on: ubuntu-latest
+    needs: [test-integration]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: titan
+          POSTGRES_PASSWORD: titan
+          POSTGRES_DB: titan
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Start Titan-AAS server
+        env:
+          DATABASE_URL: postgresql+asyncpg://titan:titan@localhost:5432/titan
+          REDIS_URL: redis://localhost:6379/0
+          TITAN_ENV: production
+          ENABLE_RATE_LIMITING: "false"
+        run: |
+          uv run -- titan serve --host 0.0.0.0 --port 8080 &
+          echo "Waiting for server to start..."
+          sleep 10
+          curl -f http://localhost:8080/health/live || exit 1
+          echo "Server is ready"
+
+      - name: Seed test data
+        env:
+          DATABASE_URL: postgresql+asyncpg://titan:titan@localhost:5432/titan
+        run: |
+          # Create some initial AAS and Submodel data for load testing
+          for i in {1..100}; do
+            curl -s -X POST http://localhost:8080/shells \
+              -H "Content-Type: application/json" \
+              -d "{\"modelType\":\"AssetAdministrationShell\",\"id\":\"urn:example:aas:seed-$i\",\"idShort\":\"SeedAAS$i\",\"assetInformation\":{\"assetKind\":\"Instance\",\"globalAssetId\":\"urn:example:asset:seed-$i\"}}" > /dev/null
+          done
+          for i in {1..100}; do
+            curl -s -X POST http://localhost:8080/submodels \
+              -H "Content-Type: application/json" \
+              -d "{\"modelType\":\"Submodel\",\"id\":\"urn:example:sm:seed-$i\",\"idShort\":\"SeedSM$i\",\"submodelElements\":[{\"modelType\":\"Property\",\"idShort\":\"Value\",\"valueType\":\"xs:string\",\"value\":\"test\"}]}" > /dev/null
+          done
+          echo "Seeded 100 AAS and 100 Submodels"
+
+      - name: Run load test
+        env:
+          LOAD_TEST_P99_MS: "200"
+          LOAD_TEST_MAX_ERROR_RATE: "0.01"
+        run: |
+          uv run -- locust -f tests/load/locustfile.py \
+            --host http://localhost:8080 \
+            --headless \
+            -u 100 \
+            -r 20 \
+            -t 60s \
+            --html load-test-report.html \
+            --csv load-test-results
+
+      - name: Generate benchmark artifact
+        if: always()
+        run: |
+          python -c "
+          import json
+          import csv
+          from datetime import datetime, timezone
+
+          # Read Locust stats
+          stats = {}
+          try:
+              with open('load-test-results_stats.csv', 'r') as f:
+                  reader = csv.DictReader(f)
+                  for row in reader:
+                      if row['Name'] == 'Aggregated':
+                          stats = {
+                              'requests_total': int(row.get('Request Count', 0)),
+                              'failures_total': int(row.get('Failure Count', 0)),
+                              'median_ms': float(row.get('Median Response Time', 0)),
+                              'p95_ms': float(row.get('95%', 0)),
+                              'p99_ms': float(row.get('99%', 0)),
+                              'avg_ms': float(row.get('Average Response Time', 0)),
+                              'min_ms': float(row.get('Min Response Time', 0)),
+                              'max_ms': float(row.get('Max Response Time', 0)),
+                              'rps': float(row.get('Requests/s', 0)),
+                          }
+          except FileNotFoundError:
+              stats = {'error': 'Stats file not found'}
+
+          benchmark = {
+              'version': '${{ github.ref_name }}' or 'dev',
+              'commit': '${{ github.sha }}',
+              'generated_at': datetime.now(timezone.utc).isoformat(),
+              'environment': {
+                  'runner': 'github-actions',
+                  'os': 'ubuntu-latest',
+                  'python': '${{ env.PYTHON_VERSION }}',
+              },
+              'configuration': {
+                  'users': 100,
+                  'spawn_rate': 20,
+                  'duration_seconds': 60,
+                  'rate_limiting': False,
+              },
+              'dataset': {
+                  'aas_count': 100,
+                  'submodel_count': 100,
+              },
+              'results': stats,
+              'thresholds': {
+                  'p99_ms': 200,
+                  'max_error_rate': 0.01,
+              },
+              'passed': stats.get('p99_ms', 999) <= 200 and
+                       (stats.get('failures_total', 1) / max(stats.get('requests_total', 1), 1)) <= 0.01,
+          }
+
+          with open('benchmark-results.json', 'w') as f:
+              json.dump(benchmark, f, indent=2)
+          print('Benchmark artifact generated')
+          print(json.dumps(benchmark, indent=2))
+          "
+
+      - name: Upload load test report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: load-test-report
+          path: |
+            load-test-report.html
+            load-test-results*.csv
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: benchmark-results
+          path: benchmark-results.json

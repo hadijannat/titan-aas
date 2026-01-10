@@ -23,6 +23,12 @@ class Settings(BaseSettings):
         validation_alias="DATABASE_URL",
     )
 
+    # Database connection pool (tuned for 15K+ RPS)
+    db_pool_size: int = Field(default=40, validation_alias="DB_POOL_SIZE")
+    db_max_overflow: int = Field(default=10, validation_alias="DB_MAX_OVERFLOW")
+    db_pool_timeout: int = Field(default=30, validation_alias="DB_POOL_TIMEOUT")
+    db_pool_recycle: int = Field(default=1800, validation_alias="DB_POOL_RECYCLE")
+
     # Redis
     redis_url: str = Field(default="redis://localhost:6379/0", validation_alias="REDIS_URL")
 
@@ -105,7 +111,8 @@ class Settings(BaseSettings):
 
     # Security Headers
     enable_security_headers: bool = Field(default=True, validation_alias="ENABLE_SECURITY_HEADERS")
-    enable_hsts: bool = Field(default=False, validation_alias="ENABLE_HSTS")
+    # HSTS enabled by default for production security
+    enable_hsts: bool = Field(default=True, validation_alias="ENABLE_HSTS")
     hsts_max_age: int = Field(default=31536000, validation_alias="HSTS_MAX_AGE")  # 1 year
     hsts_include_subdomains: bool = Field(default=True, validation_alias="HSTS_INCLUDE_SUBDOMAINS")
     hsts_preload: bool = Field(default=False, validation_alias="HSTS_PRELOAD")

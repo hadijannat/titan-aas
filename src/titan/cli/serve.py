@@ -10,6 +10,14 @@ from __future__ import annotations
 
 import typer
 
+# Install uvloop for 2-4x faster event loop performance
+try:
+    import uvloop
+
+    uvloop.install()
+except ImportError:
+    pass  # Fall back to standard asyncio
+
 app = typer.Typer(help="Run the Titan-AAS API server")
 
 

@@ -53,15 +53,139 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
 
+  generate-artifacts:
+    name: Generate Release Artifacts
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: titan
+          POSTGRES_PASSWORD: titan
+          POSTGRES_DB: titan
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.5"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Run contract tests and generate conformance report
+        run: |
+          uv run -- pytest tests/contract -v --tb=short --junitxml=test-results/contract.xml || true
+          python scripts/generate_conformance_report.py \
+            --input test-results/contract.xml \
+            --output conformance-report.json \
+            --version ${{ github.ref_name }}
+
+      - name: Start server and run load test
+        env:
+          DATABASE_URL: postgresql+asyncpg://titan:titan@localhost:5432/titan
+          REDIS_URL: redis://localhost:6379/0
+          TITAN_ENV: production
+          ENABLE_RATE_LIMITING: "false"
+        run: |
+          # Start server
+          uv run -- titan serve --host 0.0.0.0 --port 8080 &
+          sleep 10
+          curl -f http://localhost:8080/health/live
+
+          # Seed data
+          for i in {1..100}; do
+            curl -s -X POST http://localhost:8080/shells \
+              -H "Content-Type: application/json" \
+              -d "{\"modelType\":\"AssetAdministrationShell\",\"id\":\"urn:example:aas:seed-$i\",\"idShort\":\"SeedAAS$i\",\"assetInformation\":{\"assetKind\":\"Instance\",\"globalAssetId\":\"urn:example:asset:seed-$i\"}}" > /dev/null
+          done
+
+          # Run load test
+          uv run -- locust -f tests/load/locustfile.py \
+            --host http://localhost:8080 \
+            --headless \
+            -u 100 -r 20 -t 60s \
+            --csv load-test-results
+
+      - name: Generate benchmark artifact
+        run: |
+          python -c "
+          import json
+          import csv
+          from datetime import datetime, timezone
+
+          stats = {}
+          try:
+              with open('load-test-results_stats.csv', 'r') as f:
+                  reader = csv.DictReader(f)
+                  for row in reader:
+                      if row['Name'] == 'Aggregated':
+                          stats = {
+                              'requests_total': int(row.get('Request Count', 0)),
+                              'failures_total': int(row.get('Failure Count', 0)),
+                              'median_ms': float(row.get('Median Response Time', 0)),
+                              'p95_ms': float(row.get('95%', 0)),
+                              'p99_ms': float(row.get('99%', 0)),
+                              'rps': float(row.get('Requests/s', 0)),
+                          }
+          except FileNotFoundError:
+              stats = {'error': 'Stats file not found'}
+
+          benchmark = {
+              'version': '${{ github.ref_name }}',
+              'commit': '${{ github.sha }}',
+              'generated_at': datetime.now(timezone.utc).isoformat(),
+              'results': stats,
+              'thresholds': {'p99_ms': 200, 'max_error_rate': 0.01},
+          }
+
+          with open('benchmark-results.json', 'w') as f:
+              json.dump(benchmark, f, indent=2)
+          "
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: |
+            conformance-report.json
+            benchmark-results.json
+
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: build-and-push
+    needs: [build-and-push, generate-artifacts]
     permissions:
       contents: write
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+          path: artifacts/
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -69,3 +193,6 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+          files: |
+            artifacts/conformance-report.json
+            artifacts/benchmark-results.json

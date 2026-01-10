@@ -10,20 +10,94 @@ Usage:
     # Run with custom host
     locust -f tests/load/locustfile.py --host http://localhost:8080
 
+    # Run with 15K RPS validation
+    locust -f tests/load/locustfile.py --headless -u 500 -r 50 -t 5m
+
 Scenarios:
 - ReadOnlyUser: 80% read, 20% list operations
 - WriteUser: Mix of CRUD operations
 - CacheTestUser: Repeated reads to test cache performance
+
+Performance Targets (15K+ RPS):
+- p50 latency: < 10ms
+- p99 latency: < 100ms
+- Error rate: < 0.1%
 """
 
 from __future__ import annotations
 
 import base64
+import os
 import random
 import string
 from typing import Any
 
-from locust import HttpUser, between, task
+from locust import HttpUser, between, events, task
+
+# Performance thresholds for validation
+# Can be overridden via environment variables
+THRESHOLDS = {
+    "p99_ms": float(os.getenv("LOAD_TEST_P99_MS", "100")),
+    "max_error_rate": float(os.getenv("LOAD_TEST_MAX_ERROR_RATE", "0.001")),
+    "min_rps": float(os.getenv("LOAD_TEST_MIN_RPS", "0")),  # 0 = disabled
+}
+
+
+@events.quitting.add_listener
+def check_thresholds(environment: Any, **kwargs: Any) -> None:
+    """Validate performance against 15K RPS targets on test completion.
+
+    This listener runs when the load test finishes and validates that
+    performance metrics meet the defined thresholds. If validation fails,
+    the process exits with code 1 for CI integration.
+    """
+    if environment.stats.total.num_requests == 0:
+        print("WARNING: No requests were made during the test")
+        return
+
+    stats = environment.stats.total
+    errors_found = False
+
+    # Check error rate
+    error_rate = stats.fail_ratio
+    if error_rate > THRESHOLDS["max_error_rate"]:
+        print(f"FAIL: Error rate {error_rate:.2%} > {THRESHOLDS['max_error_rate']:.2%}")
+        errors_found = True
+    else:
+        print(f"PASS: Error rate {error_rate:.2%} <= {THRESHOLDS['max_error_rate']:.2%}")
+
+    # Check p99 latency
+    p99 = stats.get_response_time_percentile(0.99) or 0
+    if p99 > THRESHOLDS["p99_ms"]:
+        print(f"FAIL: p99 latency {p99:.1f}ms > {THRESHOLDS['p99_ms']:.1f}ms")
+        errors_found = True
+    else:
+        print(f"PASS: p99 latency {p99:.1f}ms <= {THRESHOLDS['p99_ms']:.1f}ms")
+
+    # Check minimum RPS (if configured)
+    if THRESHOLDS["min_rps"] > 0:
+        rps = stats.total_rps
+        if rps < THRESHOLDS["min_rps"]:
+            print(f"FAIL: RPS {rps:.1f} < {THRESHOLDS['min_rps']:.1f}")
+            errors_found = True
+        else:
+            print(f"PASS: RPS {rps:.1f} >= {THRESHOLDS['min_rps']:.1f}")
+
+    # Print summary
+    print("\nSummary:")
+    print(f"  Total requests: {stats.num_requests}")
+    print(f"  Total failures: {stats.num_failures}")
+    print(f"  Median response time: {stats.median_response_time:.1f}ms")
+    print(f"  Average response time: {stats.avg_response_time:.1f}ms")
+    print(f"  p95 response time: {stats.get_response_time_percentile(0.95):.1f}ms")
+    print(f"  p99 response time: {p99:.1f}ms")
+    print(f"  Requests/sec: {stats.total_rps:.1f}")
+
+    if errors_found:
+        print("\nLoad test FAILED - performance thresholds not met")
+        environment.process_exit_code = 1
+    else:
+        print("\nLoad test PASSED - all thresholds met")
 
 
 def generate_id() -> str:

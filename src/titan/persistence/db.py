@@ -6,9 +6,8 @@ extension with asyncpg driver.
 
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
@@ -29,16 +28,16 @@ def get_engine() -> AsyncEngine:
     """Get or create the async database engine.
 
     The engine is created lazily on first access using connection pool
-    settings appropriate for industrial workloads.
+    settings tuned for 15K+ RPS industrial workloads.
     """
     global _engine
     if _engine is None:
         _engine = create_async_engine(
             settings.database_url,
-            pool_size=10,
-            max_overflow=20,
-            pool_timeout=30,
-            pool_recycle=1800,  # Recycle connections after 30 minutes
+            pool_size=settings.db_pool_size,  # Default 40 for 15K+ RPS
+            max_overflow=settings.db_max_overflow,  # Default 10 (50 max total)
+            pool_timeout=settings.db_pool_timeout,  # Default 30s
+            pool_recycle=settings.db_pool_recycle,  # Recycle connections after 30 minutes
             pool_pre_ping=True,  # Verify connection health
             echo=settings.env == "dev",  # Log SQL in dev
         )

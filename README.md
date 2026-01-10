@@ -41,9 +41,10 @@
 | ⚡ **Blazing Fast Reads** | Stream raw bytes from Redis cache—sub-millisecond response times |
 | 🛡️ **IDTA Compliant** | Core repository, registry, discovery, serialization (see conformance matrix) |
 | 🔐 **Enterprise Security** | OIDC authentication, RBAC + ABAC authorization, rate limiting |
-| 📊 **Observable** | OpenTelemetry tracing + Prometheus metrics built-in |
+| 📊 **Observable** | OpenTelemetry tracing + Prometheus metrics + structured JSON logs with correlation IDs |
 | 🐳 **Cloud Native** | Helm charts, Terraform modules for AWS/Azure/GCP |
 | 🔌 **Real-time Events** | WebSocket + MQTT for live asset updates |
+| 🤝 **Ecosystem Integrations** | Catena-X EDC/DTR connector scaffolds + Digital Product Passport generator (battery/PCF) |
 | 🌐 **Federation** | Multi-instance synchronization with peer discovery |
 | 📦 **AASX Packages** | Import/export with validation, versioning, conflict resolution |
 | ☁️ **Multi-Cloud Storage** | S3, Azure Blob, GCS for binary attachments |
@@ -492,11 +493,17 @@ Titan-AAS is configured via environment variables:
 - **[🚀 Try It Yourself](docs/try-it-yourself.md)** - Hands-on guide to verify each claimed functionality
 - [API Guide](docs/api-guide.md) - Complete API reference
 - [Deployment Runbook](docs/deployment-runbook.md) - Production deployment guide
+- [High Availability Guide](docs/ha-guidance.md) - Active-active deployment patterns
 - [Conformance Matrix](docs/conformance-matrix.md) - IDTA service profile coverage
+- [Interop Matrix](docs/interop-matrix.md) - Endpoint-level interoperability details
 - [Benchmarks](docs/benchmarks.md) - Reproducible performance runs
+- [Production Readiness](docs/production-readiness.md) - Release gates and go-live checklist
+- [Release Process](docs/release-process.md) - Versioning and release workflow
 - [Architecture Decision Records](docs/adr/) - Design decisions
 - [Security Overview](docs/security.md) - Authentication and rate limiting
+- [Security Modes](docs/security-modes.md) - AuthN/AuthZ configuration matrix
 - [Security Policy](SECURITY.md) - Vulnerability reporting
+- [Security Advisories](docs/security-advisories.md) - Reviewed CVE exceptions
 - [Changelog](CHANGELOG.md) - Release history
 
 ---

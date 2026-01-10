@@ -2,6 +2,7 @@
 __pycache__/
 .CLAUDE.md
 CLAUDE.md
+load-test-report.html
 *.py[cod]
 *.pyd
 *.so
