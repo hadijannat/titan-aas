@@ -18,7 +18,7 @@ from __future__ import annotations
 from typing import Any
 
 import orjson
-from fastapi import APIRouter, Depends, Header, Request, Response
+from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -99,6 +99,7 @@ async def get_all_submodels(
     cursor: CursorParam = None,
     semantic_id: str | None = Query(None, alias="semanticId"),
     id_short: str | None = Query(None, alias="idShort"),
+    kind: str | None = Query(None, description="Filter by kind: Instance or Template"),
     level: LevelParam = None,
     extent: ExtentParam = None,
     content: ContentParam = None,
@@ -108,11 +109,12 @@ async def get_all_submodels(
 
     Returns a paginated list of all Submodels in the repository.
     Supports cursor-based pagination for consistent results across pages.
-    Optionally filter by semanticId or idShort.
+    Optionally filter by semanticId, idShort, or kind (Template/Instance).
     """
     has_id_short_filter = id_short is not None
+    has_kind_filter = kind is not None
 
-    if is_fast_path(request) and not has_id_short_filter:
+    if is_fast_path(request) and not has_id_short_filter and not has_kind_filter:
         # Fast path: Use zero-copy SQL-level pagination (semanticId supported at SQL level)
         paged_result = await repo.list_paged_zero_copy(
             limit=limit, cursor=cursor, semantic_id=semantic_id
@@ -134,6 +136,10 @@ async def get_all_submodels(
 
             # Apply idShort filter
             if id_short and doc.get("idShort") != id_short:
+                continue
+
+            # Apply kind filter (Template/Instance)
+            if kind and doc.get("kind") != kind:
                 continue
 
             # Apply semanticId filter (if not already filtered at SQL level)
