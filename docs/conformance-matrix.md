@@ -53,18 +53,18 @@ Legend:
 
 | Endpoint | Method | Status | Test Reference |
 |----------|--------|--------|----------------|
-| `/shell-descriptors` | GET | Implemented | `tests/unit/api/test_registry.py` |
-| `/shell-descriptors` | POST | Implemented | `tests/unit/api/test_registry.py` |
-| `/shell-descriptors/{aasIdentifier}` | GET | Implemented | `tests/unit/api/test_registry.py` |
-| `/shell-descriptors/{aasIdentifier}` | PUT | Implemented | `tests/unit/api/test_registry.py` |
-| `/shell-descriptors/{aasIdentifier}` | DELETE | Implemented | `tests/unit/api/test_registry.py` |
-| `/shell-descriptors/{aasIdentifier}/submodel-descriptors` | GET | Implemented | `tests/unit/api/test_registry.py` |
-| `/shell-descriptors/{aasIdentifier}/submodel-descriptors` | POST | Implemented | `tests/unit/api/test_registry.py` |
-| `/shell-descriptors/{aasIdentifier}/submodel-descriptors/{submodelIdentifier}` | GET | Implemented | `tests/unit/api/test_registry.py` |
-| `/shell-descriptors/{aasIdentifier}/submodel-descriptors/{submodelIdentifier}` | PUT | Planned | Bulk operations not yet implemented |
-| `/shell-descriptors/{aasIdentifier}/submodel-descriptors/{submodelIdentifier}` | DELETE | Implemented | `tests/unit/api/test_registry.py` |
+| `/shell-descriptors` | GET | Implemented | `tests/integration/test_registry.py::TestAasDescriptorEndpoints` |
+| `/shell-descriptors` | POST | Implemented | `tests/integration/test_registry.py::TestAasDescriptorEndpoints` |
+| `/shell-descriptors/{aasIdentifier}` | GET | Implemented | `tests/integration/test_registry.py::TestAasDescriptorEndpoints` |
+| `/shell-descriptors/{aasIdentifier}` | PUT | Implemented | `tests/integration/test_registry.py::TestAasDescriptorEndpoints` |
+| `/shell-descriptors/{aasIdentifier}` | DELETE | Implemented | `tests/integration/test_registry.py::TestAasDescriptorEndpoints` |
+| `/shell-descriptors/{aasIdentifier}/submodel-descriptors` | GET | Implemented | `tests/integration/test_registry.py::TestNestedSubmodelDescriptorEndpoints` |
+| `/shell-descriptors/{aasIdentifier}/submodel-descriptors` | POST | Implemented | `tests/integration/test_registry.py::TestNestedSubmodelDescriptorEndpoints` |
+| `/shell-descriptors/{aasIdentifier}/submodel-descriptors/{submodelIdentifier}` | GET | Implemented | `tests/integration/test_registry.py::TestNestedSubmodelDescriptorEndpoints` |
+| `/shell-descriptors/{aasIdentifier}/submodel-descriptors/{submodelIdentifier}` | PUT | Implemented | `tests/integration/test_registry.py::TestNestedSubmodelDescriptorEndpoints` |
+| `/shell-descriptors/{aasIdentifier}/submodel-descriptors/{submodelIdentifier}` | DELETE | Implemented | `tests/integration/test_registry.py::TestNestedSubmodelDescriptorEndpoints` |
 
-**Coverage: 9/10 endpoints (90%)**
+**Coverage: 10/10 endpoints (100%)**
 
 ### Submodel Registry Service (SSP-001)
 
@@ -140,11 +140,11 @@ Legend:
 |--------------|-------------|-------|----------|
 | AAS Repository | 10 | 10 | 100% |
 | Submodel Repository | 12 | 12 | 100% |
-| AAS Registry | 9 | 10 | 90% |
+| AAS Registry | 10 | 10 | 100% |
 | Submodel Registry | 5 | 5 | 100% |
 | Discovery | 6 | 6 | 100% |
 | ConceptDescription | 5 | 5 | 100% |
-| **Total** | **47** | **48** | **98%** |
+| **Total** | **48** | **48** | **100%** |
 
 ## Data Specification Conformance (IDTA-01003-a)
 

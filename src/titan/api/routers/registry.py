@@ -262,6 +262,310 @@ async def delete_shell_descriptor_by_id(
 
 
 # =============================================================================
+# Nested Submodel Descriptors (under Shell Descriptors) - SSP-001
+# =============================================================================
+
+
+@router.get(
+    "/shell-descriptors/{aas_identifier}/submodel-descriptors",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_DESCRIPTOR,
+                resource_id_params=["aas_identifier"],
+            )
+        )
+    ],
+)
+async def get_nested_submodel_descriptors(
+    aas_identifier: str,
+    limit: LimitParam = DEFAULT_LIMIT,
+    repo: AasDescriptorRepository = Depends(get_aas_descriptor_repo),
+) -> Response:
+    """Get all Submodel Descriptors within an AAS Descriptor.
+
+    Returns the submodelDescriptors array from the specified AAS descriptor.
+    """
+    try:
+        identifier = decode_id_from_b64url(aas_identifier)
+    except InvalidBase64Url:
+        raise InvalidBase64UrlError(aas_identifier)
+
+    result = await repo.get_bytes_by_id(identifier)
+    if result is None:
+        raise NotFoundError("AssetAdministrationShellDescriptor", identifier)
+
+    doc_bytes, _ = result
+    doc = orjson.loads(doc_bytes)
+    submodel_descriptors = doc.get("submodelDescriptors", []) or []
+
+    # Apply limit
+    if limit and len(submodel_descriptors) > limit:
+        submodel_descriptors = submodel_descriptors[:limit]
+
+    response_data = {
+        "result": submodel_descriptors,
+        "paging_metadata": {"cursor": None},
+    }
+
+    return json_bytes_response(canonical_bytes(response_data))
+
+
+@router.post(
+    "/shell-descriptors/{aas_identifier}/submodel-descriptors",
+    status_code=201,
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.UPDATE_DESCRIPTOR,
+                resource_id_params=["aas_identifier"],
+            )
+        )
+    ],
+)
+async def post_nested_submodel_descriptor(
+    aas_identifier: str,
+    descriptor: SubmodelDescriptor,
+    repo: AasDescriptorRepository = Depends(get_aas_descriptor_repo),
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """Add a Submodel Descriptor to an AAS Descriptor.
+
+    Creates a new submodel descriptor within the AAS's submodelDescriptors array.
+    """
+    try:
+        identifier = decode_id_from_b64url(aas_identifier)
+    except InvalidBase64Url:
+        raise InvalidBase64UrlError(aas_identifier)
+
+    result = await repo.get_bytes_by_id(identifier)
+    if result is None:
+        raise NotFoundError("AssetAdministrationShellDescriptor", identifier)
+
+    doc_bytes, _ = result
+    doc = orjson.loads(doc_bytes)
+    submodel_descriptors = doc.get("submodelDescriptors", []) or []
+
+    # Check for duplicate
+    for sm_desc in submodel_descriptors:
+        if sm_desc.get("id") == descriptor.id:
+            raise ConflictError("SubmodelDescriptor", descriptor.id)
+
+    # Add the new descriptor
+    submodel_descriptors.append(descriptor.model_dump(by_alias=True, exclude_none=True))
+    doc["submodelDescriptors"] = submodel_descriptors
+
+    # Parse and update the AAS descriptor
+    updated_descriptor = AssetAdministrationShellDescriptor.model_validate(doc)
+    updated_result = await repo.update(identifier, updated_descriptor)
+    if updated_result is None:
+        raise NotFoundError("AssetAdministrationShellDescriptor", identifier)
+
+    _, etag = updated_result
+    await session.commit()
+
+    return Response(
+        content=canonical_bytes(descriptor.model_dump(by_alias=True, exclude_none=True)),
+        status_code=201,
+        media_type="application/json",
+        headers={"ETag": f'"{etag}"'},
+    )
+
+
+@router.get(
+    "/shell-descriptors/{aas_identifier}/submodel-descriptors/{submodel_identifier}",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_DESCRIPTOR,
+                resource_id_params=["aas_identifier", "submodel_identifier"],
+            )
+        )
+    ],
+)
+async def get_nested_submodel_descriptor_by_id(
+    aas_identifier: str,
+    submodel_identifier: str,
+    if_none_match: str | None = Header(None, alias="If-None-Match"),
+    repo: AasDescriptorRepository = Depends(get_aas_descriptor_repo),
+) -> Response:
+    """Get a specific Submodel Descriptor from an AAS Descriptor.
+
+    Returns the submodel descriptor with the given identifier from the AAS's
+    submodelDescriptors array.
+    """
+    try:
+        aas_id = decode_id_from_b64url(aas_identifier)
+    except InvalidBase64Url:
+        raise InvalidBase64UrlError(aas_identifier)
+
+    try:
+        sm_id = decode_id_from_b64url(submodel_identifier)
+    except InvalidBase64Url:
+        raise InvalidBase64UrlError(submodel_identifier)
+
+    result = await repo.get_bytes_by_id(aas_id)
+    if result is None:
+        raise NotFoundError("AssetAdministrationShellDescriptor", aas_id)
+
+    doc_bytes, etag = result
+    doc = orjson.loads(doc_bytes)
+    submodel_descriptors = doc.get("submodelDescriptors", []) or []
+
+    # Find the submodel descriptor
+    for sm_desc in submodel_descriptors:
+        if sm_desc.get("id") == sm_id:
+            if if_none_match and if_none_match.strip('"') == etag:
+                return Response(status_code=304)
+
+            return Response(
+                content=canonical_bytes(sm_desc),
+                media_type="application/json",
+                headers={"ETag": f'"{etag}"'},
+            )
+
+    raise NotFoundError("SubmodelDescriptor", sm_id)
+
+
+@router.put(
+    "/shell-descriptors/{aas_identifier}/submodel-descriptors/{submodel_identifier}",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.UPDATE_DESCRIPTOR,
+                resource_id_params=["aas_identifier", "submodel_identifier"],
+            )
+        )
+    ],
+)
+async def put_nested_submodel_descriptor(
+    aas_identifier: str,
+    submodel_identifier: str,
+    descriptor: SubmodelDescriptor,
+    if_match: str | None = Header(None, alias="If-Match"),
+    repo: AasDescriptorRepository = Depends(get_aas_descriptor_repo),
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """Update a Submodel Descriptor within an AAS Descriptor.
+
+    Updates an existing submodel descriptor in the AAS's submodelDescriptors array.
+    If the submodel descriptor doesn't exist, returns 404.
+    """
+    try:
+        aas_id = decode_id_from_b64url(aas_identifier)
+    except InvalidBase64Url:
+        raise InvalidBase64UrlError(aas_identifier)
+
+    try:
+        sm_id = decode_id_from_b64url(submodel_identifier)
+    except InvalidBase64Url:
+        raise InvalidBase64UrlError(submodel_identifier)
+
+    result = await repo.get_bytes_by_id(aas_id)
+    if result is None:
+        raise NotFoundError("AssetAdministrationShellDescriptor", aas_id)
+
+    doc_bytes, current_etag = result
+
+    # Check If-Match precondition
+    if if_match and if_match.strip('"') != current_etag:
+        raise PreconditionFailedError()
+
+    doc = orjson.loads(doc_bytes)
+    submodel_descriptors = doc.get("submodelDescriptors", []) or []
+
+    # Find and update the submodel descriptor
+    found = False
+    for idx, sm_desc in enumerate(submodel_descriptors):
+        if sm_desc.get("id") == sm_id:
+            submodel_descriptors[idx] = descriptor.model_dump(
+                by_alias=True, exclude_none=True
+            )
+            found = True
+            break
+
+    if not found:
+        raise NotFoundError("SubmodelDescriptor", sm_id)
+
+    doc["submodelDescriptors"] = submodel_descriptors
+
+    # Parse and update the AAS descriptor
+    updated_descriptor = AssetAdministrationShellDescriptor.model_validate(doc)
+    updated_result = await repo.update(aas_id, updated_descriptor)
+    if updated_result is None:
+        raise NotFoundError("AssetAdministrationShellDescriptor", aas_id)
+
+    _, etag = updated_result
+    await session.commit()
+
+    return Response(
+        content=canonical_bytes(descriptor.model_dump(by_alias=True, exclude_none=True)),
+        media_type="application/json",
+        headers={"ETag": f'"{etag}"'},
+    )
+
+
+@router.delete(
+    "/shell-descriptors/{aas_identifier}/submodel-descriptors/{submodel_identifier}",
+    status_code=204,
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.UPDATE_DESCRIPTOR,
+                resource_id_params=["aas_identifier", "submodel_identifier"],
+            )
+        )
+    ],
+)
+async def delete_nested_submodel_descriptor(
+    aas_identifier: str,
+    submodel_identifier: str,
+    repo: AasDescriptorRepository = Depends(get_aas_descriptor_repo),
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """Remove a Submodel Descriptor from an AAS Descriptor.
+
+    Removes the submodel descriptor with the given identifier from the AAS's
+    submodelDescriptors array.
+    """
+    try:
+        aas_id = decode_id_from_b64url(aas_identifier)
+    except InvalidBase64Url:
+        raise InvalidBase64UrlError(aas_identifier)
+
+    try:
+        sm_id = decode_id_from_b64url(submodel_identifier)
+    except InvalidBase64Url:
+        raise InvalidBase64UrlError(submodel_identifier)
+
+    result = await repo.get_bytes_by_id(aas_id)
+    if result is None:
+        raise NotFoundError("AssetAdministrationShellDescriptor", aas_id)
+
+    doc_bytes, _ = result
+    doc = orjson.loads(doc_bytes)
+    submodel_descriptors = doc.get("submodelDescriptors", []) or []
+
+    # Find and remove the submodel descriptor
+    original_len = len(submodel_descriptors)
+    submodel_descriptors = [
+        sm_desc for sm_desc in submodel_descriptors if sm_desc.get("id") != sm_id
+    ]
+
+    if len(submodel_descriptors) == original_len:
+        raise NotFoundError("SubmodelDescriptor", sm_id)
+
+    doc["submodelDescriptors"] = submodel_descriptors
+
+    # Parse and update the AAS descriptor
+    updated_descriptor = AssetAdministrationShellDescriptor.model_validate(doc)
+    await repo.update(aas_id, updated_descriptor)
+    await session.commit()
+
+    return Response(status_code=204)
+
+
+# =============================================================================
 # Shell Descriptors Bulk Operations (SSP-003)
 # =============================================================================
 
