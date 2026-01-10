@@ -26,6 +26,7 @@ dependencies = [
   "opentelemetry-sdk>=1.25",
   "opentelemetry-exporter-otlp>=1.25",
   "opentelemetry-instrumentation-fastapi>=0.46b0",
+  "strawberry-graphql[fastapi]>=0.288.3",
 ]
 
 [project.optional-dependencies]
