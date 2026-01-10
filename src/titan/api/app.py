@@ -15,10 +15,11 @@ from __future__ import annotations
 
 import logging
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
+from typing import AsyncIterator, cast
 
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
+from starlette.types import ExceptionHandler
 
 from titan.api.errors import AasApiError, aas_api_exception_handler, generic_exception_handler
 from titan.api.middleware import CachingMiddleware, CompressionMiddleware, RateLimitMiddleware
@@ -146,8 +147,10 @@ def create_app() -> FastAPI:
         )
 
     # Register exception handlers
-    app.add_exception_handler(AasApiError, aas_api_exception_handler)
-    app.add_exception_handler(Exception, generic_exception_handler)
+    app.add_exception_handler(
+        AasApiError, cast(ExceptionHandler, aas_api_exception_handler)
+    )
+    app.add_exception_handler(Exception, cast(ExceptionHandler, generic_exception_handler))
 
     # Include routers
     app.include_router(health.router)

@@ -80,9 +80,7 @@ class CompressionMiddleware(BaseHTTPMiddleware):
             return response
 
         # Get response body
-        body = b""
-        async for chunk in response.body_iterator:
-            body += chunk
+        body = bytes(response.body)
 
         # Skip small responses
         if len(body) < self.minimum_size:

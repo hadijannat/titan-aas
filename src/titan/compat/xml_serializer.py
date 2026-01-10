@@ -319,6 +319,12 @@ class XmlDeserializer:
 
         return result
 
+    # Tags that are known to contain boolean values
+    BOOLEAN_TAGS = frozenset({
+        "min", "max", "nom", "typ",  # LevelTypeSpec
+        "allowDuplicates",
+    })
+
     def _parse_element_value(self, element: ET.Element) -> Any:
         """Parse an element's value (text content or nested structure).
 
@@ -326,8 +332,10 @@ class XmlDeserializer:
             element: XML element
 
         Returns:
-            Parsed value (dict, list, string, bool, or int)
+            Parsed value (dict, list, string, or bool)
         """
+        tag = self._strip_ns(element.tag)
+
         # Check for child elements
         if len(element) > 0:
             # Has children - recursively parse as dict
@@ -340,28 +348,16 @@ class XmlDeserializer:
 
             text = text.strip()
 
-            # Try to parse as boolean
-            if text.lower() == "true":
-                return True
-            elif text.lower() == "false":
-                return False
+            # Only parse as boolean for known boolean tags or explicit true/false
+            if tag in self.BOOLEAN_TAGS or text.lower() in ("true", "false"):
+                if text.lower() == "true":
+                    return True
+                elif text.lower() == "false":
+                    return False
 
-            # Try to parse as integer
-            try:
-                return int(text)
-            except ValueError:
-                pass
-
-            # Try to parse as float
-            try:
-                float_val = float(text)
-                # Only return as float if it has decimal places
-                if "." in text or "e" in text.lower():
-                    return float_val
-            except ValueError:
-                pass
-
-            # Return as string
+            # Keep all other values as strings - let Pydantic do the type coercion
+            # This prevents issues like "100" being converted to int when it should
+            # remain a string (e.g., Property.value)
             return text
 
     def _is_list_container(self, element: ET.Element, tag: str) -> bool:

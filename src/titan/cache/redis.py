@@ -6,7 +6,7 @@ Uses redis-py async client for connection pooling.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Awaitable, cast
 
 import redis.asyncio as redis
 
@@ -143,7 +143,7 @@ class RedisCache:
         This is for the hot path of $value reads.
         """
         key = CacheKeys.submodel_element_value(submodel_b64, id_short_path)
-        return await self.client.get(key)
+        return cast(bytes | None, await self.client.get(key))
 
     async def set_element_value(
         self,
@@ -187,7 +187,7 @@ class RedisCache:
     async def health_check(self) -> bool:
         """Check Redis connectivity."""
         try:
-            await self.client.ping()
+            await cast(Awaitable[bool], self.client.ping())
             return True
         except Exception:
             return False

@@ -201,9 +201,11 @@ def navigate_id_short_path(payload: dict[str, Any], id_short_path: str) -> dict[
         return payload
 
     parts = _parse_id_short_path(id_short_path)
-    current = payload
+    current: dict[str, Any] | None = payload
 
     for part in parts:
+        if current is None:
+            return None
         if isinstance(part, str):
             # Navigate by idShort
             current = _find_element_by_id_short(current, part)
@@ -281,7 +283,8 @@ def _get_element_at_index(container: dict[str, Any], index: int) -> dict[str, An
         elements = container.get("value", [])
 
     if isinstance(elements, list) and 0 <= index < len(elements):
-        return elements[index]
+        elem = elements[index]
+        return elem if isinstance(elem, dict) else None
 
     return None
 

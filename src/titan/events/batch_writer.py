@@ -115,7 +115,7 @@ class MicroBatchWriter:
 
         # State
         self._running = False
-        self._flush_task: asyncio.Task | None = None
+        self._flush_task: asyncio.Task[None] | None = None
 
         # Metrics
         self.metrics = BatchMetrics()
@@ -300,7 +300,7 @@ class MicroBatchWriter:
 
         pass  # Events already persisted by repository
 
-    def get_metrics(self) -> dict:
+    def get_metrics(self) -> dict[str, float | int]:
         """Get current metrics as a dictionary."""
         return {
             "events_received": self.metrics.events_received,

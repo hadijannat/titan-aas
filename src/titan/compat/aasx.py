@@ -36,17 +36,18 @@ from xml.etree import ElementTree as ET
 
 import orjson
 
-from titan.core.model import AssetAdministrationShell, Submodel
+from titan.core.model import AssetAdministrationShell, ConceptDescription, Submodel
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class AasxPackage:
-    """Represents an AASX package with AAS and submodels."""
+    """Represents an AASX package with AAS, submodels, and concept descriptions."""
 
     shells: list[AssetAdministrationShell] = field(default_factory=list)
     submodels: list[Submodel] = field(default_factory=list)
+    concept_descriptions: list[ConceptDescription] = field(default_factory=list)
     supplementary_files: dict[str, bytes] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
 
@@ -154,13 +155,25 @@ class AasxImporter:
                     await self._import_single_object(item, package)
 
     async def _import_xml(self, content: bytes, filename: str, package: AasxPackage) -> None:
-        """Parse XML content (limited support for IDTA XML)."""
-        # Note: Full XML support would require the basyx-python-sdk
-        # For now, we log a warning and skip XML files
-        logger.warning(f"XML import not fully supported: {filename}")
+        """Parse XML content following IDTA-01001 v3.1."""
+        from titan.compat.xml_serializer import XmlDeserializer
+
+        try:
+            deserializer = XmlDeserializer()
+            shells, submodels, concept_descs = deserializer.parse_environment(content)
+            package.shells.extend(shells)
+            package.submodels.extend(submodels)
+            package.concept_descriptions.extend(concept_descs)
+            logger.debug(
+                f"Imported from XML {filename}: "
+                f"{len(shells)} shells, {len(submodels)} submodels, "
+                f"{len(concept_descs)} concept descriptions"
+            )
+        except Exception as e:
+            logger.warning(f"Failed to parse XML {filename}: {e}")
 
     async def _import_environment(self, data: dict[str, Any], package: AasxPackage) -> None:
-        """Import AAS environment format with shells and submodels."""
+        """Import AAS environment format with shells, submodels, and concept descriptions."""
         # Import shells
         shells = data.get("assetAdministrationShells", [])
         for shell_data in shells:
@@ -171,10 +184,10 @@ class AasxImporter:
         for sm_data in submodels:
             await self._import_submodel(sm_data, package)
 
-        # Import concept descriptions (for metadata)
+        # Import concept descriptions
         concept_descs = data.get("conceptDescriptions", [])
-        if concept_descs:
-            package.metadata["conceptDescriptions"] = concept_descs
+        for cd_data in concept_descs:
+            await self._import_concept_description(cd_data, package)
 
     async def _import_single_object(self, data: dict[str, Any], package: AasxPackage) -> None:
         """Import a single object based on modelType."""
@@ -184,6 +197,8 @@ class AasxImporter:
             await self._import_shell(data, package)
         elif model_type == "Submodel":
             await self._import_submodel(data, package)
+        elif model_type == "ConceptDescription":
+            await self._import_concept_description(data, package)
         else:
             logger.debug(f"Skipping unknown modelType: {model_type}")
 
@@ -205,6 +220,18 @@ class AasxImporter:
         except Exception as e:
             logger.warning(f"Failed to parse submodel: {e}")
 
+    async def _import_concept_description(
+        self, data: dict[str, Any], package: AasxPackage
+    ) -> None:
+        """Parse and add a ConceptDescription."""
+        try:
+            concept = ConceptDescription.model_validate(data)
+            package.concept_descriptions.append(concept)
+            logger.debug(
+                f"Imported concept description: {concept.id_short or concept.id}"
+            )
+        except Exception as e:
+            logger.warning(f"Failed to parse concept description: {e}")
 
 class AasxExporter:
     """Exports Titan-AAS models to AASX packages."""
