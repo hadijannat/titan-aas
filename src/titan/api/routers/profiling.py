@@ -39,7 +39,7 @@ class ProfileStatsResponse(BaseModel):
         populate_by_name = True
 
     @classmethod
-    def from_stats(cls, stats: dict[str, Any]) -> "ProfileStatsResponse":
+    def from_stats(cls, stats: dict[str, Any]) -> ProfileStatsResponse:
         """Create from stats dict."""
         return cls(
             requests=stats.get("requests", {}),

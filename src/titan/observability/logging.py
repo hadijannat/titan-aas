@@ -23,7 +23,7 @@ import contextvars
 import json
 import logging
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 # Context variables for request correlation
@@ -57,7 +57,7 @@ class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         """Format log record as JSON."""
         log_data: dict[str, Any] = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
@@ -246,7 +246,7 @@ class LogContext:
         self.extra = kwargs
         self._tokens: dict[str, contextvars.Token[str]] = {}
 
-    def __enter__(self) -> "LogContext":
+    def __enter__(self) -> LogContext:
         if "request_id" in self.extra:
             self._tokens["request_id"] = request_id_var.set(self.extra["request_id"])
         if "correlation_id" in self.extra:

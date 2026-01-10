@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -153,7 +153,7 @@ class TokenValidator:
     async def _get_jwks(self) -> dict[str, Any]:
         """Get JWKS keys, with caching."""
         # Check if we need to refresh (cache with configurable TTL)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if self._jwks is not None and self._jwks_fetched_at is not None:
             age = (now - self._jwks_fetched_at).total_seconds()
             if age < self.config.jwks_cache_seconds:

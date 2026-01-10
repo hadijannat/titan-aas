@@ -25,11 +25,12 @@ Example:
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from functools import wraps
-from typing import Any, Awaitable, Callable, ParamSpec, TypeVar
+from typing import Any, ParamSpec, TypeVar
 
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import ORJSONResponse

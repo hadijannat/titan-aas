@@ -17,9 +17,10 @@ Example:
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Awaitable, Callable
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from titan.plugins.base import TitanPlugin
@@ -82,12 +83,12 @@ class HookResult:
     error_code: int | None = None
 
     @classmethod
-    def proceed(cls, data: dict[str, Any] | None = None) -> "HookResult":
+    def proceed(cls, data: dict[str, Any] | None = None) -> HookResult:
         """Continue with operation, optionally with modified data."""
         return cls(result_type=HookResultType.PROCEED, data=data)
 
     @classmethod
-    def abort(cls, message: str, code: int = 400) -> "HookResult":
+    def abort(cls, message: str, code: int = 400) -> HookResult:
         """Abort operation with error."""
         return cls(
             result_type=HookResultType.ABORT,
@@ -96,7 +97,7 @@ class HookResult:
         )
 
     @classmethod
-    def modify(cls, data: dict[str, Any]) -> "HookResult":
+    def modify(cls, data: dict[str, Any]) -> HookResult:
         """Continue with modified data."""
         return cls(result_type=HookResultType.MODIFY, data=data)
 
@@ -128,11 +129,11 @@ class HookRegistration:
     """Registration of a hook handler."""
 
     hook_type: HookType
-    plugin: "TitanPlugin"
+    plugin: TitanPlugin
     handler: Callable[[HookContext], Awaitable[HookResult]]
     priority: int = 0  # Higher priority runs first
 
-    def __lt__(self, other: "HookRegistration") -> bool:
+    def __lt__(self, other: HookRegistration) -> bool:
         """Compare by priority for sorting (higher first)."""
         return self.priority > other.priority
 

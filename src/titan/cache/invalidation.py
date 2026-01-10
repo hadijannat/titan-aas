@@ -21,9 +21,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Awaitable, Callable, cast
+from typing import TYPE_CHECKING, cast
 
 import orjson
 
@@ -70,7 +71,7 @@ class InvalidationMessage:
         )
 
     @classmethod
-    def from_bytes(cls, data: bytes) -> "InvalidationMessage":
+    def from_bytes(cls, data: bytes) -> InvalidationMessage:
         """Deserialize from JSON bytes."""
         parsed = orjson.loads(data)
         return cls(
@@ -247,7 +248,7 @@ class LocalCacheInvalidator:
     def __init__(self) -> None:
         self._cache: RedisCache | None = None
 
-    async def _get_cache(self) -> "RedisCache":
+    async def _get_cache(self) -> RedisCache:
         """Get or create the Redis cache instance."""
         if self._cache is None:
             from titan.cache.redis import RedisCache, get_redis

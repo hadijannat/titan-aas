@@ -1,6 +1,6 @@
 """Tests for job scheduler functionality."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock
 
 import pytest
@@ -62,21 +62,21 @@ class TestCronExpression:
     def test_matches_specific_time(self) -> None:
         """Matches specific datetime."""
         cron = CronExpression("30 14 * * *")
-        dt = datetime(2024, 1, 15, 14, 30, tzinfo=timezone.utc)
+        dt = datetime(2024, 1, 15, 14, 30, tzinfo=UTC)
 
         assert cron.matches(dt) is True
 
     def test_not_matches_wrong_time(self) -> None:
         """Does not match wrong datetime."""
         cron = CronExpression("30 14 * * *")
-        dt = datetime(2024, 1, 15, 14, 31, tzinfo=timezone.utc)  # Wrong minute
+        dt = datetime(2024, 1, 15, 14, 31, tzinfo=UTC)  # Wrong minute
 
         assert cron.matches(dt) is False
 
     def test_matches_daily_at_2am(self) -> None:
         """Matches daily at 2 AM pattern."""
         cron = CronExpression("0 2 * * *")
-        dt = datetime(2024, 1, 15, 2, 0, tzinfo=timezone.utc)
+        dt = datetime(2024, 1, 15, 2, 0, tzinfo=UTC)
 
         assert cron.matches(dt) is True
 
@@ -85,13 +85,13 @@ class TestCronExpression:
         cron = CronExpression("*/5 * * * *")
 
         # Should match 0, 5, 10, etc.
-        assert cron.matches(datetime(2024, 1, 1, 0, 0, tzinfo=timezone.utc))
-        assert cron.matches(datetime(2024, 1, 1, 0, 5, tzinfo=timezone.utc))
-        assert cron.matches(datetime(2024, 1, 1, 0, 10, tzinfo=timezone.utc))
+        assert cron.matches(datetime(2024, 1, 1, 0, 0, tzinfo=UTC))
+        assert cron.matches(datetime(2024, 1, 1, 0, 5, tzinfo=UTC))
+        assert cron.matches(datetime(2024, 1, 1, 0, 10, tzinfo=UTC))
 
         # Should not match 1, 2, 3, 4, 6, etc.
-        assert not cron.matches(datetime(2024, 1, 1, 0, 1, tzinfo=timezone.utc))
-        assert not cron.matches(datetime(2024, 1, 1, 0, 3, tzinfo=timezone.utc))
+        assert not cron.matches(datetime(2024, 1, 1, 0, 1, tzinfo=UTC))
+        assert not cron.matches(datetime(2024, 1, 1, 0, 3, tzinfo=UTC))
 
 
 class TestSchedulePresets:
@@ -99,7 +99,7 @@ class TestSchedulePresets:
 
     def test_presets_are_valid(self) -> None:
         """All presets are valid cron expressions."""
-        for name, expression in SCHEDULE_PRESETS.items():
+        for _name, expression in SCHEDULE_PRESETS.items():
             cron = CronExpression(expression)
             assert len(cron.minute) > 0
             assert len(cron.hour) > 0
@@ -109,16 +109,16 @@ class TestSchedulePresets:
         cron = CronExpression(SCHEDULE_PRESETS["every_minute"])
 
         # Should match any time
-        assert cron.matches(datetime(2024, 1, 1, 0, 0, tzinfo=timezone.utc))
-        assert cron.matches(datetime(2024, 1, 1, 12, 30, tzinfo=timezone.utc))
+        assert cron.matches(datetime(2024, 1, 1, 0, 0, tzinfo=UTC))
+        assert cron.matches(datetime(2024, 1, 1, 12, 30, tzinfo=UTC))
 
     def test_daily_midnight_preset(self) -> None:
         """Daily midnight preset matches midnight only."""
         cron = CronExpression(SCHEDULE_PRESETS["daily_midnight"])
 
-        assert cron.matches(datetime(2024, 1, 1, 0, 0, tzinfo=timezone.utc))
-        assert not cron.matches(datetime(2024, 1, 1, 0, 1, tzinfo=timezone.utc))
-        assert not cron.matches(datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc))
+        assert cron.matches(datetime(2024, 1, 1, 0, 0, tzinfo=UTC))
+        assert not cron.matches(datetime(2024, 1, 1, 0, 1, tzinfo=UTC))
+        assert not cron.matches(datetime(2024, 1, 1, 12, 0, tzinfo=UTC))
 
 
 class TestScheduledJob:

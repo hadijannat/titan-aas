@@ -188,7 +188,7 @@ class TestProfileCollector:
         """History is trimmed to max size."""
         collector = ProfileCollector(max_history=10)
 
-        for i in range(20):
+        for _i in range(20):
             collector.record_request("/test", "GET", 200, 1.0)
 
         assert len(collector._request_history) == 10

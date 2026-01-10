@@ -12,7 +12,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -47,7 +47,7 @@ class PendingChange:
     data: bytes | None = None
     etag: str | None = None
     priority: SyncPriority = SyncPriority.NORMAL
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     attempts: int = 0
     last_error: str | None = None
 
@@ -282,7 +282,7 @@ class EdgeController:
                 pulled = await self._pull_from_hub(client)
                 result["pulled"] = pulled
 
-                self._last_sync = datetime.now(timezone.utc)
+                self._last_sync = datetime.now(UTC)
 
         except Exception as e:
             result["errors"].append(str(e))

@@ -5,7 +5,7 @@ Tests ABAC policies, engine, and common policy types.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -192,7 +192,7 @@ class TestTimeBasedPolicy:
         """Access within allowed hours returns NOT_APPLICABLE."""
         policy = TimeBasedPolicy(allowed_hours=(9, 17))  # 9am-5pm
         # Create a time within allowed hours
-        request_time = datetime(2024, 1, 15, 12, 0, 0, tzinfo=timezone.utc)  # Noon
+        request_time = datetime(2024, 1, 15, 12, 0, 0, tzinfo=UTC)  # Noon
 
         ctx = PolicyContext(
             user=mock_user,
@@ -208,7 +208,7 @@ class TestTimeBasedPolicy:
         """Access outside allowed hours is denied."""
         policy = TimeBasedPolicy(allowed_hours=(9, 17))  # 9am-5pm
         # Create a time outside allowed hours
-        request_time = datetime(2024, 1, 15, 23, 0, 0, tzinfo=timezone.utc)  # 11pm
+        request_time = datetime(2024, 1, 15, 23, 0, 0, tzinfo=UTC)  # 11pm
 
         ctx = PolicyContext(
             user=mock_user,
@@ -225,7 +225,7 @@ class TestTimeBasedPolicy:
         # Only allow weekdays (Mon-Fri = 0-4)
         policy = TimeBasedPolicy(allowed_days=[0, 1, 2, 3, 4])
         # Saturday (weekday 5)
-        request_time = datetime(2024, 1, 13, 12, 0, 0, tzinfo=timezone.utc)
+        request_time = datetime(2024, 1, 13, 12, 0, 0, tzinfo=UTC)
 
         ctx = PolicyContext(
             user=mock_user,

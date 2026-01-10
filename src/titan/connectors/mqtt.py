@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 # Module-level MQTT client
-_mqtt_client: "Client | None" = None
+_mqtt_client: Client | None = None
 _mqtt_lock = asyncio.Lock()
 
 
@@ -39,7 +39,7 @@ class MqttPublisher:
 
     TOPIC_PREFIX = "titan"
 
-    def __init__(self, client: "Client"):
+    def __init__(self, client: Client):
         self.client = client
 
     async def publish_aas_event(self, event: AasEvent) -> None:
@@ -76,7 +76,7 @@ class MqttPublisher:
         return orjson.dumps(data)
 
 
-async def get_mqtt_client() -> "Client | None":
+async def get_mqtt_client() -> Client | None:
     """Get or create MQTT client.
 
     Returns None if MQTT is not configured.

@@ -12,11 +12,12 @@ This provides fine-grained access control beyond role-based permissions.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from ipaddress import ip_address, ip_network
-from typing import Any, Callable
+from typing import Any
 
 from titan.security.oidc import User
 
@@ -64,7 +65,7 @@ class PolicyContext:
 
     # Environment attributes
     client_ip: str | None = None
-    request_time: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    request_time: datetime = field(default_factory=lambda: datetime.now(UTC))
     environment: dict[str, Any] = field(default_factory=dict)
 
 

@@ -6,7 +6,8 @@ Uses redis-py async client for connection pooling.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Awaitable, cast
+from collections.abc import Awaitable
+from typing import TYPE_CHECKING, cast
 
 import redis.asyncio as redis
 

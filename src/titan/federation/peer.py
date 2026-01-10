@@ -11,7 +11,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -146,7 +146,7 @@ class PeerRegistry:
             response = await self._client.get(f"{peer.url}/health/ready")
             if response.status_code == 200:
                 peer.status = PeerStatus.ONLINE
-                peer.last_seen = datetime.now(timezone.utc)
+                peer.last_seen = datetime.now(UTC)
 
                 # Try to get version info
                 try:

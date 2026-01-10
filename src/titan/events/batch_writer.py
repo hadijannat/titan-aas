@@ -11,8 +11,9 @@ import asyncio
 import logging
 import time
 from collections import deque
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Awaitable, Callable
+from typing import TYPE_CHECKING
 
 from titan.events.schemas import (
     AasEvent,
@@ -97,9 +98,9 @@ class MicroBatchWriter:
 
     def __init__(
         self,
-        bus: "EventBus",
-        cache: "RedisCache",
-        session_factory: Callable[[], "AsyncSession"],
+        bus: EventBus,
+        cache: RedisCache,
+        session_factory: Callable[[], AsyncSession],
         broadcast_callback: BroadcastCallback | None = None,
         config: BatchWriterConfig | None = None,
     ):
@@ -282,7 +283,7 @@ class MicroBatchWriter:
 
             raise
 
-    async def _persist_event(self, session: "AsyncSession", event: AnyEvent) -> None:
+    async def _persist_event(self, session: AsyncSession, event: AnyEvent) -> None:
         """Persist a single event to the database.
 
         Note: The actual persistence is already done by the repository

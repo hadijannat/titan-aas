@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from jose import JWTError
@@ -83,7 +83,7 @@ async def test_get_jwks_cached(monkeypatch: pytest.MonkeyPatch) -> None:
         def __init__(self, payload: dict[str, object]) -> None:
             self._payload = payload
 
-        async def __aenter__(self) -> "FakeClient":
+        async def __aenter__(self) -> FakeClient:
             return self
 
         async def __aexit__(self, _exc_type: object, _exc: object, _tb: object) -> None:
@@ -111,10 +111,10 @@ async def test_get_jwks_fallback_to_cache(monkeypatch: pytest.MonkeyPatch) -> No
     config = OIDCConfig(issuer="https://issuer", audience="titan", jwks_cache_seconds=1)
     validator = TokenValidator(config)
     validator._jwks = {"keys": ["cached"]}
-    validator._jwks_fetched_at = datetime.now(timezone.utc) - timedelta(seconds=120)
+    validator._jwks_fetched_at = datetime.now(UTC) - timedelta(seconds=120)
 
     class FailingClient:
-        async def __aenter__(self) -> "FailingClient":
+        async def __aenter__(self) -> FailingClient:
             return self
 
         async def __aexit__(self, _exc_type: object, _exc: object, _tb: object) -> None:

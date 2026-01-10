@@ -12,9 +12,10 @@ This provides:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from collections.abc import AsyncIterator
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import AsyncIterator, BinaryIO, cast
+from typing import BinaryIO, cast
 from uuid import uuid4
 
 import aiofiles  # type: ignore[import-untyped]
@@ -81,7 +82,7 @@ class LocalBlobStorage(BlobStorage):
         async with aiofiles.open(blob_path, "wb") as f:
             await f.write(content_bytes)
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         logger.debug(
             f"Stored blob {blob_id} for submodel {submodel_id} at {blob_path} ({size_bytes} bytes)"

@@ -15,7 +15,7 @@ Example:
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Union
+from typing import Annotated
 
 import strawberry
 from strawberry.types import Info
@@ -168,7 +168,7 @@ class File:
 # Define SubmodelElement union using the new Annotated syntax
 # Note: Must be defined after all element types but before use
 SubmodelElement = Annotated[
-    Union[Property, MultiLanguageProperty, Range, Blob, File],
+    Property | MultiLanguageProperty | Range | Blob | File,
     strawberry.union("SubmodelElement"),
 ]
 

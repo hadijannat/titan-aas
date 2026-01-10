@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
-from typing import Optional
 
 import typer
 
@@ -29,13 +28,13 @@ def export_aasx(
         "-u",
         help="Titan-AAS API URL to export from",
     ),
-    shell_ids: Optional[list[str]] = typer.Option(
+    shell_ids: list[str] | None = typer.Option(
         None,
         "--shell-id",
         "-s",
         help="Shell IDs to export (can be specified multiple times)",
     ),
-    submodel_ids: Optional[list[str]] = typer.Option(
+    submodel_ids: list[str] | None = typer.Option(
         None,
         "--submodel-id",
         "-m",

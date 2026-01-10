@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
-from typing import Optional
 
 import typer
 
@@ -27,7 +26,7 @@ def import_aasx(
         dir_okay=False,
         readable=True,
     ),
-    api_url: Optional[str] = typer.Option(
+    api_url: str | None = typer.Option(
         None,
         "--api-url",
         "-u",

@@ -18,7 +18,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from titan.distributed.leader import LeaderElection
@@ -116,7 +116,7 @@ class CronExpression:
     def next_run(self, after: datetime | None = None) -> datetime:
         """Calculate next run time after given datetime."""
         if after is None:
-            after = datetime.now(timezone.utc)
+            after = datetime.now(UTC)
 
         # Start from next minute
         current = after.replace(second=0, microsecond=0)
@@ -272,7 +272,7 @@ class JobScheduler:
 
     async def _check_schedules(self) -> None:
         """Check all schedules and submit due jobs."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         for name, job in self._jobs.items():
             if not job.enabled:

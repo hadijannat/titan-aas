@@ -14,8 +14,8 @@ Security notes:
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Sequence
 
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
@@ -78,7 +78,7 @@ class CORSConfig:
     max_age: int = 600
 
     @classmethod
-    def development(cls) -> "CORSConfig":
+    def development(cls) -> CORSConfig:
         """Create a permissive config for development."""
         return cls(
             allow_origins=["*"],
@@ -91,7 +91,7 @@ class CORSConfig:
         cls,
         allowed_origins: Sequence[str],
         allow_credentials: bool = True,
-    ) -> "CORSConfig":
+    ) -> CORSConfig:
         """Create a restrictive config for production.
 
         Args:
@@ -117,7 +117,7 @@ class CORSConfig:
         )
 
     @classmethod
-    def from_env(cls) -> "CORSConfig":
+    def from_env(cls) -> CORSConfig:
         """Create config from environment variables.
 
         Environment variables:

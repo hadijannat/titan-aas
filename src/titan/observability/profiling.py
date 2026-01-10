@@ -25,9 +25,10 @@ import asyncio
 import logging
 import time
 import tracemalloc
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Callable, Generator
+from typing import Any
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request

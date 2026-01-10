@@ -10,7 +10,7 @@ Events carry all data needed for the single writer to:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Literal
 from uuid import uuid4
@@ -35,7 +35,7 @@ class AasEvent:
     etag: str | None = None
     entity: Literal["aas"] = "aas"
     event_id: str = field(default_factory=lambda: str(uuid4()))
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,7 +50,7 @@ class SubmodelEvent:
     semantic_id: str | None = None
     entity: Literal["submodel"] = "submodel"
     event_id: str = field(default_factory=lambda: str(uuid4()))
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,7 +67,7 @@ class SubmodelElementEvent:
     value_bytes: bytes | None = None  # None for delete
     entity: Literal["element"] = "element"
     event_id: str = field(default_factory=lambda: str(uuid4()))
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 @dataclass(frozen=True, slots=True)
@@ -81,7 +81,7 @@ class ConceptDescriptionEvent:
     etag: str | None = None
     entity: Literal["concept_description"] = "concept_description"
     event_id: str = field(default_factory=lambda: str(uuid4()))
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 class PackageEventType(str, Enum):
@@ -108,7 +108,7 @@ class PackageEvent:
     validation_result: dict | None = None  # For VALIDATED events
     entity: Literal["package"] = "package"
     event_id: str = field(default_factory=lambda: str(uuid4()))
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 # Base event protocol (for type hints)

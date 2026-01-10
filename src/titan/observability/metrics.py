@@ -187,7 +187,7 @@ def get_metrics() -> MetricsRegistry:
 class NoOpMetric:
     """No-op metric for when metrics are disabled."""
 
-    def labels(self, **kwargs: Any) -> "NoOpMetric":
+    def labels(self, **kwargs: Any) -> NoOpMetric:
         """Return self for chaining."""
         return self
 

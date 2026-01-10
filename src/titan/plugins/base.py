@@ -31,7 +31,8 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING, Any
 
 from titan.plugins.hooks import HookContext, HookResult, HookType
 
@@ -80,7 +81,7 @@ class TitanPlugin(ABC):
         """Full plugin name with version."""
         return f"{self.name}@{self.version}"
 
-    def set_registry(self, registry: "PluginRegistry") -> None:
+    def set_registry(self, registry: PluginRegistry) -> None:
         """Set the plugin registry (called by loader)."""
         self._registry = registry
 

@@ -1,6 +1,6 @@
 """Tests for cursor-based pagination."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from titan.api.pagination import (
     DEFAULT_LIMIT,
@@ -17,7 +17,7 @@ class TestCursorEncoding:
 
     def test_encode_decode_roundtrip(self) -> None:
         """Cursor encodes and decodes correctly."""
-        created_at = datetime(2024, 1, 15, 10, 30, 0, tzinfo=timezone.utc)
+        created_at = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
         item_id = "abc123"
 
         encoded = encode_cursor(created_at, item_id)
@@ -29,7 +29,7 @@ class TestCursorEncoding:
 
     def test_encoded_cursor_is_url_safe(self) -> None:
         """Encoded cursor is URL-safe base64."""
-        created_at = datetime.now(timezone.utc)
+        created_at = datetime.now(UTC)
         encoded = encode_cursor(created_at, "test-id")
 
         # URL-safe base64 should not contain + or /

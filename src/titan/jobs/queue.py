@@ -28,10 +28,11 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import AsyncIterator, Awaitable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, AsyncIterator, Awaitable, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 from uuid import uuid4
 
 if TYPE_CHECKING:
@@ -81,7 +82,7 @@ class Job:
     task: str
     payload: dict[str, Any]
     status: JobStatus = JobStatus.PENDING
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     started_at: datetime | None = None
     completed_at: datetime | None = None
     result: dict[str, Any] | None = None
@@ -277,7 +278,7 @@ class JobQueue:
 
             # Update job status
             job.status = JobStatus.RUNNING
-            job.started_at = datetime.now(timezone.utc)
+            job.started_at = datetime.now(UTC)
             job.attempts += 1
 
             await _await_redis(
@@ -310,7 +311,7 @@ class JobQueue:
             return
 
         job.status = JobStatus.COMPLETED
-        job.completed_at = datetime.now(timezone.utc)
+        job.completed_at = datetime.now(UTC)
         job.result = result
 
         # Update job with shorter TTL (result retention)
@@ -369,7 +370,7 @@ class JobQueue:
         else:
             # Move to dead letter queue
             job.status = JobStatus.DEAD
-            job.completed_at = datetime.now(timezone.utc)
+            job.completed_at = datetime.now(UTC)
             await _await_redis(
                 redis.set(
                     self._job_key(job.id),
@@ -404,7 +405,7 @@ class JobQueue:
 
         # Update status
         job.status = JobStatus.CANCELLED
-        job.completed_at = datetime.now(timezone.utc)
+        job.completed_at = datetime.now(UTC)
 
         await _await_redis(
             redis.set(

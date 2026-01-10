@@ -9,8 +9,9 @@ Supports:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import TYPE_CHECKING, AsyncIterator, BinaryIO, cast
+from collections.abc import AsyncIterator
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, BinaryIO, cast
 
 if TYPE_CHECKING:
     import aioboto3
@@ -59,9 +60,9 @@ class S3BlobStorage(BlobStorage):
         self.aws_access_key_id = aws_access_key_id
         self.aws_secret_access_key = aws_secret_access_key
         self.chunk_size = chunk_size
-        self._session: "aioboto3.Session | None" = None
+        self._session: aioboto3.Session | None = None
 
-    async def _get_session(self) -> "aioboto3.Session":
+    async def _get_session(self) -> aioboto3.Session:
         """Get or create aioboto3 session."""
         if self._session is None:
             import aioboto3
@@ -135,7 +136,7 @@ class S3BlobStorage(BlobStorage):
                 },
             )
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         return BlobMetadata(
             id=blob_id,
             submodel_id=submodel_id,

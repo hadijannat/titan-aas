@@ -36,8 +36,9 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+from collections.abc import Awaitable, Callable
 from types import TracebackType
-from typing import TYPE_CHECKING, Awaitable, Callable, ParamSpec, TypeVar, cast
+from typing import TYPE_CHECKING, ParamSpec, TypeVar, cast
 from uuid import uuid4
 
 from titan.cache.redis import get_redis
@@ -277,7 +278,7 @@ class LeaderElection:
         try:
             await asyncio.wait_for(future, timeout=timeout)
             return True
-        except asyncio.TimeoutError:
+        except TimeoutError:
             self._on_elected.remove(future)
             return False
 
@@ -289,7 +290,7 @@ class LeaderElection:
             return None
         return value.decode() if isinstance(value, bytes) else value
 
-    async def __aenter__(self) -> "LeaderElection":
+    async def __aenter__(self) -> LeaderElection:
         """Context manager entry - try to acquire leadership once."""
         redis = await self._get_redis()
         acquired = await redis.set(
@@ -337,7 +338,7 @@ class LeaderOnlyTask:
         """Check if the task should run (we are leader)."""
         return self._election is not None and self._election.is_leader
 
-    async def __aenter__(self) -> "LeaderOnlyTask":
+    async def __aenter__(self) -> LeaderOnlyTask:
         self._election = LeaderElection(self.name, lease_ttl=self.lease_ttl)
         await self._election.__aenter__()
         return self

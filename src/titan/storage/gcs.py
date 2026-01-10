@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
-from typing import Any, AsyncIterator, BinaryIO, cast
+from collections.abc import AsyncIterator
+from datetime import UTC, datetime
+from typing import Any, BinaryIO, cast
 from uuid import uuid4
 
 from titan.storage.base import BlobMetadata, BlobStorage
@@ -90,7 +91,7 @@ class GcsBlobStorage(BlobStorage):
         }
         await asyncio.to_thread(blob.upload_from_string, content_bytes, content_type=content_type)
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         return BlobMetadata(
             id=blob_id,
             submodel_id=submodel_id,

@@ -192,7 +192,7 @@ class RedisStreamEventBus(EventBus):
                     continue
 
                 # Process each message
-                for stream_name, stream_messages in messages:
+                for _stream_name, stream_messages in messages:
                     for message_id, message_data in stream_messages:
                         await self._process_message(redis, message_id, message_data)
 

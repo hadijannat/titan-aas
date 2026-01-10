@@ -123,7 +123,7 @@ def _validate_file(
     file_path: Path,
     strict: bool,
     verbose: bool,
-    console: "Console",
+    console: Console,
 ) -> ValidationResult:
     """Validate a single file and return result."""
     import orjson

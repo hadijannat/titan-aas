@@ -24,9 +24,10 @@ from __future__ import annotations
 import asyncio
 import logging
 import signal
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from types import TracebackType
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 from titan.distributed.leader import LeaderElection
 from titan.jobs.queue import Job, JobQueue
@@ -238,7 +239,7 @@ class JobWorker:
 
         return count
 
-    async def __aenter__(self) -> "JobWorker":
+    async def __aenter__(self) -> JobWorker:
         """Context manager entry."""
         await self.start()
         return self

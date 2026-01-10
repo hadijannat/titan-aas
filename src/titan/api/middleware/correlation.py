@@ -6,7 +6,7 @@ Propagates correlation IDs and request context to logging and tracing systems.
 from __future__ import annotations
 
 import uuid
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request

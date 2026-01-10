@@ -10,7 +10,7 @@ Provides administrative endpoints for dashboard and management:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends
@@ -65,7 +65,7 @@ async def get_dashboard_stats(
     blob_size = await session.scalar(select(func.sum(BlobAssetTable.size_bytes))) or 0
 
     # Recent activity (last 24h creates)
-    cutoff = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    cutoff = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
 
     recent_aas = await session.scalar(
         select(func.count()).select_from(AasTable).where(AasTable.created_at >= cutoff)
@@ -95,7 +95,7 @@ async def get_dashboard_stats(
             "shellsToday": recent_aas or 0,
             "submodelsToday": recent_submodels or 0,
         },
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
 
@@ -189,7 +189,7 @@ async def get_admin_health(
     health = {
         "status": "healthy",
         "components": {},
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
     # Database health

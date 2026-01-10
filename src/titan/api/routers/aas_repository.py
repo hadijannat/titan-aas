@@ -121,7 +121,7 @@ async def get_all_shells(
         results = await repo.list_all(limit=limit, offset=0)
 
         items = []
-        for doc_bytes, etag in results:
+        for doc_bytes, _etag in results:
             doc = orjson.loads(doc_bytes)
 
             # Apply idShort filter

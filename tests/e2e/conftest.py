@@ -4,8 +4,8 @@ import os
 import socket
 import subprocess
 import time
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator
 
 import httpx
 import pytest

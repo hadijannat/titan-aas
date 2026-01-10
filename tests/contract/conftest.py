@@ -5,7 +5,7 @@ Uses httpx for API testing against the OpenAPI specification.
 
 from __future__ import annotations
 
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient

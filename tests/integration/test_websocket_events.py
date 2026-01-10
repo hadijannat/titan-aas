@@ -5,7 +5,7 @@ Tests the full event flow: API CRUD -> Event Bus -> WebSocket broadcast.
 
 from __future__ import annotations
 
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 import pytest
 import pytest_asyncio

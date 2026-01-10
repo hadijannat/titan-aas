@@ -15,8 +15,9 @@ Creates the application with:
 from __future__ import annotations
 
 import logging
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator, cast
+from typing import cast
 
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse

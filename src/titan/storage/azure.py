@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any, AsyncIterator, BinaryIO, cast
+from collections.abc import AsyncIterator
+from datetime import UTC, datetime
+from typing import Any, BinaryIO, cast
 from uuid import uuid4
 
 from titan.storage.base import BlobMetadata, BlobStorage
@@ -100,7 +101,7 @@ class AzureBlobStorage(BlobStorage):
             },
         )
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         return BlobMetadata(
             id=blob_id,
             submodel_id=submodel_id,

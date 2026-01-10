@@ -12,7 +12,8 @@ from __future__ import annotations
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING
 
 from titan.events.schemas import AnyEvent
 
@@ -115,7 +116,7 @@ class InMemoryEventBus(EventBus):
 
                 self._queue.task_done()
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # No event, check if we should continue
                 continue
             except asyncio.CancelledError:

@@ -170,11 +170,11 @@ def get_tracer(name: str) -> Any:
 class NoOpTracer:
     """No-op tracer for when OpenTelemetry is not available."""
 
-    def start_as_current_span(self, name: str, **kwargs: Any) -> "NoOpSpanContextManager":
+    def start_as_current_span(self, name: str, **kwargs: Any) -> NoOpSpanContextManager:
         """Return a no-op span context manager."""
         return NoOpSpanContextManager()
 
-    def start_span(self, name: str, **kwargs: Any) -> "NoOpSpan":
+    def start_span(self, name: str, **kwargs: Any) -> NoOpSpan:
         """Return a no-op span."""
         return NoOpSpan()
 

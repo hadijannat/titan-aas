@@ -68,7 +68,7 @@ async def check_database() -> ComponentHealth:
             latency_ms=latency,
             message=None if healthy else "Database check failed",
         )
-    except asyncio.TimeoutError:
+    except TimeoutError:
         latency = (time.monotonic() - start) * 1000
         return ComponentHealth(
             name="database",
@@ -100,7 +100,7 @@ async def check_redis() -> ComponentHealth:
             latency_ms=latency,
             message=None if healthy else "Redis check failed",
         )
-    except asyncio.TimeoutError:
+    except TimeoutError:
         latency = (time.monotonic() - start) * 1000
         return ComponentHealth(
             name="redis",

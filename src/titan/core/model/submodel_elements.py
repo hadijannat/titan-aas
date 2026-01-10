@@ -11,7 +11,8 @@ The discriminated union pattern ensures that:
 
 from __future__ import annotations
 
-from typing import Annotated, Any, Literal, Mapping, Union
+from collections.abc import Mapping
+from typing import Annotated, Any, Literal
 
 from pydantic import Discriminator, Field, Tag
 
@@ -441,22 +442,20 @@ def _submodel_element_discriminator(value: Any) -> str | None:
 
 # Forward reference for recursive types
 SubmodelElementUnion = Annotated[
-    Union[
-        Annotated[Property, Tag("Property")],
-        Annotated[MultiLanguageProperty, Tag("MultiLanguageProperty")],
-        Annotated[Range, Tag("Range")],
-        Annotated[Blob, Tag("Blob")],
-        Annotated[File, Tag("File")],
-        Annotated[ReferenceElement, Tag("ReferenceElement")],
-        Annotated[RelationshipElement, Tag("RelationshipElement")],
-        Annotated[AnnotatedRelationshipElement, Tag("AnnotatedRelationshipElement")],
-        Annotated[SubmodelElementCollection, Tag("SubmodelElementCollection")],
-        Annotated[SubmodelElementList, Tag("SubmodelElementList")],
-        Annotated[Entity, Tag("Entity")],
-        Annotated[BasicEventElement, Tag("BasicEventElement")],
-        Annotated[Operation, Tag("Operation")],
-        Annotated[Capability, Tag("Capability")],
-    ],
+    Annotated[Property, Tag("Property")]
+    | Annotated[MultiLanguageProperty, Tag("MultiLanguageProperty")]
+    | Annotated[Range, Tag("Range")]
+    | Annotated[Blob, Tag("Blob")]
+    | Annotated[File, Tag("File")]
+    | Annotated[ReferenceElement, Tag("ReferenceElement")]
+    | Annotated[RelationshipElement, Tag("RelationshipElement")]
+    | Annotated[AnnotatedRelationshipElement, Tag("AnnotatedRelationshipElement")]
+    | Annotated[SubmodelElementCollection, Tag("SubmodelElementCollection")]
+    | Annotated[SubmodelElementList, Tag("SubmodelElementList")]
+    | Annotated[Entity, Tag("Entity")]
+    | Annotated[BasicEventElement, Tag("BasicEventElement")]
+    | Annotated[Operation, Tag("Operation")]
+    | Annotated[Capability, Tag("Capability")],
     Discriminator(_submodel_element_discriminator),
 ]
 

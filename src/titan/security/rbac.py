@@ -99,8 +99,8 @@ ROLE_PERMISSIONS: dict[str, set[Permission]] = {
         Permission.CREATE_CONCEPT_DESCRIPTION,
         Permission.UPDATE_CONCEPT_DESCRIPTION,
     },
-    Role.ADMIN.value: {perm for perm in Permission},
-    Role.TITAN_ADMIN.value: {perm for perm in Permission},
+    Role.ADMIN.value: set(Permission),
+    Role.TITAN_ADMIN.value: set(Permission),
 }
 
 
@@ -110,7 +110,7 @@ class RBACPolicy:
     def __init__(self, role_permissions: dict[str, set[Permission]] | None = None):
         self.role_permissions = role_permissions or ROLE_PERMISSIONS
 
-    def get_user_permissions(self, user: "User") -> set[Permission]:
+    def get_user_permissions(self, user: User) -> set[Permission]:
         """Get all permissions for a user based on their roles."""
         permissions: set[Permission] = set()
 
@@ -120,7 +120,7 @@ class RBACPolicy:
 
         return permissions
 
-    def has_permission(self, user: "User", permission: Permission) -> bool:
+    def has_permission(self, user: User, permission: Permission) -> bool:
         """Check if user has a specific permission."""
         # Admin has all permissions
         if user.is_admin:
@@ -129,7 +129,7 @@ class RBACPolicy:
         user_permissions = self.get_user_permissions(user)
         return permission in user_permissions
 
-    def has_any_permission(self, user: "User", permissions: list[Permission]) -> bool:
+    def has_any_permission(self, user: User, permissions: list[Permission]) -> bool:
         """Check if user has any of the specified permissions."""
         if user.is_admin:
             return True
@@ -137,7 +137,7 @@ class RBACPolicy:
         user_permissions = self.get_user_permissions(user)
         return bool(user_permissions.intersection(permissions))
 
-    def has_all_permissions(self, user: "User", permissions: list[Permission]) -> bool:
+    def has_all_permissions(self, user: User, permissions: list[Permission]) -> bool:
         """Check if user has all of the specified permissions."""
         if user.is_admin:
             return True
@@ -145,7 +145,7 @@ class RBACPolicy:
         user_permissions = self.get_user_permissions(user)
         return all(p in user_permissions for p in permissions)
 
-    def can_read(self, user: "User") -> bool:
+    def can_read(self, user: User) -> bool:
         """Check if user can read resources."""
         return user.can_read or self.has_any_permission(
             user,
@@ -156,7 +156,7 @@ class RBACPolicy:
             ],
         )
 
-    def can_write(self, user: "User") -> bool:
+    def can_write(self, user: User) -> bool:
         """Check if user can write resources."""
         return user.can_write or self.has_any_permission(
             user,

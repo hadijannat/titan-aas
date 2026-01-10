@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Iterator
 
 import pytest
 import pytest_asyncio

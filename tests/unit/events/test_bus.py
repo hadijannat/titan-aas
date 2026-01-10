@@ -101,7 +101,7 @@ class TestInMemoryEventBus:
         await bus.subscribe(handler)
 
         # Publish multiple events
-        for i in range(3):
+        for _i in range(3):
             await bus.publish(sample_event)
 
         await bus.start()

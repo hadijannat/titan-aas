@@ -7,9 +7,10 @@ from __future__ import annotations
 
 import hashlib
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import AsyncIterator, BinaryIO
+from typing import BinaryIO
 from uuid import uuid4
 
 

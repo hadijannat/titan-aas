@@ -1,6 +1,6 @@
 """Tests for API versioning and deprecation support."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from fastapi import FastAPI, Request
@@ -61,7 +61,7 @@ class TestVersionInfo:
 
     def test_deprecated_headers(self) -> None:
         """Deprecated version produces deprecation headers."""
-        sunset = datetime(2025, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+        sunset = datetime(2025, 12, 31, 23, 59, 59, tzinfo=UTC)
         info = VersionInfo(
             version=ApiVersion.V1,
             deprecated=True,
@@ -181,7 +181,7 @@ class TestDeprecatedDecorator:
 
     def test_decorator_stores_metadata(self) -> None:
         """Decorator stores deprecation metadata on function."""
-        sunset = datetime(2025, 12, 31, tzinfo=timezone.utc)
+        sunset = datetime(2025, 12, 31, tzinfo=UTC)
 
         @deprecated(sunset_date=sunset, successor_path="/new/path")
         async def old_endpoint() -> dict[str, str]:
@@ -201,7 +201,7 @@ class TestDeprecatedRoute:
         """DeprecatedRoute adds deprecation headers."""
         from fastapi import APIRouter
 
-        sunset = datetime(2025, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+        sunset = datetime(2025, 12, 31, 23, 59, 59, tzinfo=UTC)
 
         # Create router with deprecated route class
         router = APIRouter(route_class=DeprecatedRoute)

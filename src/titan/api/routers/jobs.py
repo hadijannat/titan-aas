@@ -65,7 +65,7 @@ class JobResponse(BaseModel):
     max_retries: int
 
     @classmethod
-    def from_job(cls, job: Job) -> "JobResponse":
+    def from_job(cls, job: Job) -> JobResponse:
         """Create response from Job instance."""
         return cls(
             id=job.id,
