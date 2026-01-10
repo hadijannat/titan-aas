@@ -1,6 +1,5 @@
 """Tests for WebSocket event broadcasting."""
 
-from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -178,9 +177,7 @@ class TestWebSocketManager:
         assert manager._matches_filter(sub, "aas", "abc123") is True
         assert manager._matches_filter(sub, "aas", "def456") is False
 
-    def test_serialize_aas_event(
-        self, manager: WebSocketManager, aas_event: AasEvent
-    ) -> None:
+    def test_serialize_aas_event(self, manager: WebSocketManager, aas_event: AasEvent) -> None:
         """Serialize AAS event to JSON."""
         data = manager._serialize_aas_event(aas_event)
         import orjson

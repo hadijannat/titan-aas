@@ -11,13 +11,14 @@ This provides:
 
 from __future__ import annotations
 
-import aiofiles
-import aiofiles.os
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import AsyncIterator, BinaryIO
 from uuid import uuid4
+
+import aiofiles
+import aiofiles.os
 
 from titan.storage.base import BlobMetadata, BlobStorage
 
@@ -83,8 +84,7 @@ class LocalBlobStorage(BlobStorage):
         now = datetime.now(timezone.utc)
 
         logger.debug(
-            f"Stored blob {blob_id} for submodel {submodel_id} "
-            f"at {blob_path} ({size_bytes} bytes)"
+            f"Stored blob {blob_id} for submodel {submodel_id} at {blob_path} ({size_bytes} bytes)"
         )
 
         return BlobMetadata(

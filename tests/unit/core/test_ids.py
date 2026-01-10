@@ -119,8 +119,8 @@ class TestIdtaCompliance:
         """IDTA requires no '=' padding in encoded identifiers."""
         # These test cases would produce padding in standard base64
         test_cases = [
-            "a",       # Would be "YQ=="
-            "ab",      # Would be "YWI="
+            "a",  # Would be "YQ=="
+            "ab",  # Would be "YWI="
             "https://example.com",  # Various padding scenarios
         ]
         for text in test_cases:

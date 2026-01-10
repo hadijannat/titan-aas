@@ -24,14 +24,15 @@ from titan.events.schemas import (
     AasEvent,
     AnyEvent,
     EventType,
-    SubmodelEvent,
     SubmodelElementEvent,
+    SubmodelEvent,
 )
 
 if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
+
     from titan.cache.redis import RedisCache
     from titan.events.bus import EventBus
-    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 

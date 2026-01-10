@@ -89,9 +89,7 @@ class TestAasRepository:
     """
 
     @pytest.mark.asyncio
-    async def test_shells_list_returns_paginated_response(
-        self, api_client: AsyncClient
-    ) -> None:
+    async def test_shells_list_returns_paginated_response(self, api_client: AsyncClient) -> None:
         """Test GET /shells returns paginated response."""
         response = await api_client.get("/shells")
 
@@ -129,9 +127,7 @@ class TestSubmodelRepository:
     """
 
     @pytest.mark.asyncio
-    async def test_submodels_list_returns_paginated_response(
-        self, api_client: AsyncClient
-    ) -> None:
+    async def test_submodels_list_returns_paginated_response(self, api_client: AsyncClient) -> None:
         """Test GET /submodels returns paginated response."""
         response = await api_client.get("/submodels")
 
@@ -143,9 +139,7 @@ class TestSubmodelRepository:
         assert "paging_metadata" in data
 
     @pytest.mark.asyncio
-    async def test_submodel_not_found_returns_404(
-        self, api_client: AsyncClient
-    ) -> None:
+    async def test_submodel_not_found_returns_404(self, api_client: AsyncClient) -> None:
         """Test GET /submodels/{id} returns 404 for non-existent Submodel."""
         encoded_id = "bm9uZXhpc3RlbnQ"
         response = await api_client.get(f"/submodels/{encoded_id}")

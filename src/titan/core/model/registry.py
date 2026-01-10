@@ -15,7 +15,7 @@ from pydantic import Field
 from titan.core.model import StrictModel
 from titan.core.model.administrative import AdministrativeInformation
 from titan.core.model.descriptions import LangStringTextType
-from titan.core.model.identifiers import Identifier, IdShort, Reference
+from titan.core.model.identifiers import Identifier, IdShort
 from titan.core.model.semantic import HasSemanticsMixin
 from titan.core.model.submodel_elements import SpecificAssetId
 

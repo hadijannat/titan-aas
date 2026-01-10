@@ -146,9 +146,11 @@ async def _import_aasx(
                 if response.status_code == 201:
                     console.print(f"  [green]✓[/green] Shell: {shell.id_short or shell.id}")
                 elif response.status_code == 409:
-                    console.print(f"  [yellow]⊘[/yellow] Shell exists: {shell.id_short or shell.id}")
+                    msg = f"  [yellow]⊘[/yellow] Shell exists: {shell.id_short or shell.id}"
+                    console.print(msg)
                 else:
-                    console.print(f"  [red]✗[/red] Shell failed: {shell.id_short or shell.id} - {response.text}")
+                    msg = f"  [red]✗[/red] Shell failed: {shell.id_short or shell.id}"
+                    console.print(f"{msg} - {response.text}")
 
             # Import submodels
             for sm in package.submodels:
@@ -158,9 +160,11 @@ async def _import_aasx(
                 if response.status_code == 201:
                     console.print(f"  [green]✓[/green] Submodel: {sm.id_short or sm.id}")
                 elif response.status_code == 409:
-                    console.print(f"  [yellow]⊘[/yellow] Submodel exists: {sm.id_short or sm.id}")
+                    msg = f"  [yellow]⊘[/yellow] Submodel exists: {sm.id_short or sm.id}"
+                    console.print(msg)
                 else:
-                    console.print(f"  [red]✗[/red] Submodel failed: {sm.id_short or sm.id} - {response.text}")
+                    msg = f"  [red]✗[/red] Submodel failed: {sm.id_short or sm.id}"
+                    console.print(f"{msg} - {response.text}")
 
         console.print()
         console.print("[green]Import complete![/green]")

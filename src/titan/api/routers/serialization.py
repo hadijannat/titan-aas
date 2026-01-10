@@ -11,9 +11,7 @@ from __future__ import annotations
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query, Response
-from fastapi.responses import StreamingResponse
 
-from titan.api.errors import BadRequestError
 from titan.persistence.db import get_session
 from titan.persistence.repositories import AasRepository, SubmodelRepository
 

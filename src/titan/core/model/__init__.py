@@ -25,28 +25,21 @@ class StrictModel(BaseModel):
     }
 
 
-# Import order matters due to forward references
-from titan.core.model.identifiers import (
-    AasSubmodelElements,
-    AssetKind,
-    ContentType,
-    DataTypeDefXsd,
-    DataTypeIec61360,
-    Direction,
-    EntityType,
-    IdShort,
-    Identifier,
-    Key,
-    KeyTypes,
-    LevelType,
-    ModellingKind,
-    PathType,
-    QualifierKind,
-    Reference,
-    ReferenceTypes,
-    StateOfEvent,
-    ValueDataType,
+# Import order matters due to forward references - StrictModel must be defined first
+# ruff: noqa: E402
+from titan.core.model.aas import (
+    AssetAdministrationShell,
+    AssetInformation,
+    Resource,
 )
+from titan.core.model.administrative import (
+    AdministrativeInformation,
+    DataSpecificationIec61360,
+    EmbeddedDataSpecification,
+    HasDataSpecificationMixin,
+    LevelTypeSpec,
+)
+from titan.core.model.concept_description import ConceptDescription
 from titan.core.model.descriptions import (
     LangStringDefinitionType,
     LangStringNameType,
@@ -59,7 +52,27 @@ from titan.core.model.descriptions import (
     MultiLanguageShortNameType,
     MultiLanguageTextType,
 )
-from titan.core.model.semantic import HasSemanticsMixin
+from titan.core.model.identifiers import (
+    AasSubmodelElements,
+    AssetKind,
+    ContentType,
+    DataTypeDefXsd,
+    DataTypeIec61360,
+    Direction,
+    EntityType,
+    Identifier,
+    IdShort,
+    Key,
+    KeyTypes,
+    LevelType,
+    ModellingKind,
+    PathType,
+    QualifierKind,
+    Reference,
+    ReferenceTypes,
+    StateOfEvent,
+    ValueDataType,
+)
 from titan.core.model.qualifiers import (
     Extension,
     HasExtensionsMixin,
@@ -67,13 +80,15 @@ from titan.core.model.qualifiers import (
     Qualifier,
     ValueReferencePair,
 )
-from titan.core.model.administrative import (
-    AdministrativeInformation,
-    DataSpecificationIec61360,
-    EmbeddedDataSpecification,
-    HasDataSpecificationMixin,
-    LevelTypeSpec,
+from titan.core.model.registry import (
+    AssetAdministrationShellDescriptor,
+    Endpoint,
+    ProtocolInformation,
+    ProtocolInformationSecurityType,
+    SubmodelDescriptor,
 )
+from titan.core.model.semantic import HasSemanticsMixin
+from titan.core.model.submodel import Submodel
 from titan.core.model.submodel_elements import (
     AnnotatedRelationshipElement,
     BasicEventElement,
@@ -95,21 +110,6 @@ from titan.core.model.submodel_elements import (
     SubmodelElementList,
     SubmodelElementUnion,
 )
-from titan.core.model.submodel import Submodel
-from titan.core.model.aas import (
-    AssetAdministrationShell,
-    AssetInformation,
-    Resource,
-)
-from titan.core.model.concept_description import ConceptDescription
-from titan.core.model.registry import (
-    AssetAdministrationShellDescriptor,
-    Endpoint,
-    ProtocolInformation,
-    ProtocolInformationSecurityType,
-    SubmodelDescriptor,
-)
-
 
 __all__ = [
     # Base

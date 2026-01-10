@@ -9,8 +9,6 @@ focus on format compatibility for data exchange.
 """
 
 import json
-from pathlib import Path
-from typing import Any
 
 import pytest
 
@@ -244,9 +242,7 @@ class TestBaSyxSubmodelCompatibility:
         submodel = Submodel.model_validate(BASYX_SAMPLE_SUBMODEL)
 
         # Find PhysicalAddress collection
-        collection = next(
-            e for e in submodel.submodel_elements if e.id_short == "PhysicalAddress"
-        )
+        collection = next(e for e in submodel.submodel_elements if e.id_short == "PhysicalAddress")
         assert collection.model_type == "SubmodelElementCollection"
         assert len(collection.value) == 3
 
@@ -278,9 +274,7 @@ class TestBaSyxSubmodelCompatibility:
 
         submodel = Submodel.model_validate(BASYX_SAMPLE_SUBMODEL)
 
-        mlp = next(
-            e for e in submodel.submodel_elements if e.id_short == "ProductDescription"
-        )
+        mlp = next(e for e in submodel.submodel_elements if e.id_short == "ProductDescription")
         assert mlp.model_type == "MultiLanguageProperty"
         assert len(mlp.value) == 2
 
@@ -308,9 +302,7 @@ class TestBaSyxSubmodelCompatibility:
 
         submodel = Submodel.model_validate(BASYX_SAMPLE_SUBMODEL)
 
-        ref_elem = next(
-            e for e in submodel.submodel_elements if e.id_short == "RelatedAAS"
-        )
+        ref_elem = next(e for e in submodel.submodel_elements if e.id_short == "RelatedAAS")
         assert ref_elem.model_type == "ReferenceElement"
         assert ref_elem.value.type == "ModelReference"
         assert len(ref_elem.value.keys) == 1

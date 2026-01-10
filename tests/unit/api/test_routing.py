@@ -2,8 +2,6 @@
 
 from unittest.mock import Mock
 
-import pytest
-
 from titan.api.routing import (
     PathType,
     detect_path_type,
@@ -54,18 +52,22 @@ class TestDetectPathType:
 
     def test_multiple_modifiers_is_slow(self) -> None:
         """Request with multiple modifiers is slow path."""
-        request = make_request({
-            "level": "core",
-            "content": "value",
-        })
+        request = make_request(
+            {
+                "level": "core",
+                "content": "value",
+            }
+        )
         assert detect_path_type(request) == PathType.SLOW
 
     def test_pagination_params_still_fast(self) -> None:
         """Pagination params don't make request slow."""
-        request = make_request({
-            "limit": "100",
-            "cursor": "abc123",
-        })
+        request = make_request(
+            {
+                "limit": "100",
+                "cursor": "abc123",
+            }
+        )
         assert detect_path_type(request) == PathType.FAST
 
 

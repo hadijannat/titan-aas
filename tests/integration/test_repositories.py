@@ -38,9 +38,7 @@ class TestAasRepository:
         }
 
     @pytest.mark.asyncio
-    async def test_create_aas(
-        self, db_session: AsyncSession, sample_aas_data: dict
-    ) -> None:
+    async def test_create_aas(self, db_session: AsyncSession, sample_aas_data: dict) -> None:
         """Test creating an AAS record."""
         import orjson
 
@@ -61,9 +59,7 @@ class TestAasRepository:
         await db_session.commit()
 
         # Verify it was saved
-        result = await db_session.execute(
-            select(AasTable).where(AasTable.identifier == identifier)
-        )
+        result = await db_session.execute(select(AasTable).where(AasTable.identifier == identifier))
         saved = result.scalar_one()
 
         assert saved.identifier == identifier
@@ -104,9 +100,7 @@ class TestAasRepository:
         assert found.identifier == identifier
 
     @pytest.mark.asyncio
-    async def test_update_aas(
-        self, db_session: AsyncSession, sample_aas_data: dict
-    ) -> None:
+    async def test_update_aas(self, db_session: AsyncSession, sample_aas_data: dict) -> None:
         """Test updating an AAS record."""
         import orjson
 
@@ -136,18 +130,14 @@ class TestAasRepository:
         await db_session.commit()
 
         # Verify update
-        result = await db_session.execute(
-            select(AasTable).where(AasTable.identifier == identifier)
-        )
+        result = await db_session.execute(select(AasTable).where(AasTable.identifier == identifier))
         saved = result.scalar_one()
 
         assert saved.doc["idShort"] == "UpdatedAAS"
         assert saved.etag == updated_etag
 
     @pytest.mark.asyncio
-    async def test_delete_aas(
-        self, db_session: AsyncSession, sample_aas_data: dict
-    ) -> None:
+    async def test_delete_aas(self, db_session: AsyncSession, sample_aas_data: dict) -> None:
         """Test deleting an AAS record."""
         import orjson
 
@@ -171,9 +161,7 @@ class TestAasRepository:
         await db_session.commit()
 
         # Verify deletion
-        result = await db_session.execute(
-            select(AasTable).where(AasTable.identifier == identifier)
-        )
+        result = await db_session.execute(select(AasTable).where(AasTable.identifier == identifier))
         found = result.scalar_one_or_none()
 
         assert found is None
@@ -191,9 +179,7 @@ class TestSubmodelRepository:
             "idShort": "TestSubmodel",
             "semanticId": {
                 "type": "ExternalReference",
-                "keys": [
-                    {"type": "GlobalReference", "value": "urn:example:semantic:1"}
-                ],
+                "keys": [{"type": "GlobalReference", "value": "urn:example:semantic:1"}],
             },
             "submodelElements": [
                 {
@@ -304,9 +290,7 @@ class TestSubmodelRepository:
 
         # Query using JSONB containment
         result = await db_session.execute(
-            select(SubmodelTable).where(
-                SubmodelTable.doc.contains({"idShort": "TestSubmodel"})
-            )
+            select(SubmodelTable).where(SubmodelTable.doc.contains({"idShort": "TestSubmodel"}))
         )
         found = result.scalars().all()
 
@@ -318,9 +302,7 @@ class TestDatabaseIntegrity:
     """Tests for database constraints and integrity."""
 
     @pytest.mark.asyncio
-    async def test_unique_identifier_constraint(
-        self, db_session: AsyncSession
-    ) -> None:
+    async def test_unique_identifier_constraint(self, db_session: AsyncSession) -> None:
         """Test that duplicate identifiers are rejected."""
         import orjson
         from sqlalchemy.exc import IntegrityError

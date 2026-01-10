@@ -107,9 +107,7 @@ async def lookup_shells(
                     name = specific_id.get("name")
                     value = specific_id.get("value")
                     if name and value:
-                        results = await repo.find_by_specific_asset_id(
-                            name, value, limit=limit
-                        )
+                        results = await repo.find_by_specific_asset_id(name, value, limit=limit)
                         for doc_bytes, _ in results:
                             doc = orjson.loads(doc_bytes)
                             aas_id = doc.get("id")
@@ -155,9 +153,7 @@ async def lookup_submodels(
             import base64
 
             padded = semantic_id + "=" * ((4 - len(semantic_id) % 4) % 4)
-            decoded_semantic_id = base64.urlsafe_b64decode(
-                padded.encode("ascii")
-            ).decode("utf-8")
+            decoded_semantic_id = base64.urlsafe_b64decode(padded.encode("ascii")).decode("utf-8")
         except Exception:
             decoded_semantic_id = semantic_id  # Use as-is if not encoded
 

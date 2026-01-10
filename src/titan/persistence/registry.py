@@ -9,7 +9,6 @@ Supports discovery queries by globalAssetId, specificAssetIds, and semanticId.
 
 from __future__ import annotations
 
-import orjson
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -62,9 +61,7 @@ class AasDescriptorRepository:
     # Slow path: model operations
     # -------------------------------------------------------------------------
 
-    async def get_model(
-        self, identifier_b64: str
-    ) -> AssetAdministrationShellDescriptor | None:
+    async def get_model(self, identifier_b64: str) -> AssetAdministrationShellDescriptor | None:
         """Slow path: get as Pydantic model."""
         stmt = select(AasDescriptorTable.doc).where(
             AasDescriptorTable.identifier_b64 == identifier_b64
@@ -79,9 +76,7 @@ class AasDescriptorRepository:
     # Write operations
     # -------------------------------------------------------------------------
 
-    async def create(
-        self, descriptor: AssetAdministrationShellDescriptor
-    ) -> tuple[bytes, str]:
+    async def create(self, descriptor: AssetAdministrationShellDescriptor) -> tuple[bytes, str]:
         """Create a new AAS descriptor."""
         doc = descriptor.model_dump(by_alias=True, exclude_none=True)
         doc_bytes = canonical_bytes(doc)
@@ -103,9 +98,7 @@ class AasDescriptorRepository:
         self, identifier: str, descriptor: AssetAdministrationShellDescriptor
     ) -> tuple[bytes, str] | None:
         """Update an existing AAS descriptor."""
-        stmt = select(AasDescriptorTable).where(
-            AasDescriptorTable.identifier == identifier
-        )
+        stmt = select(AasDescriptorTable).where(AasDescriptorTable.identifier == identifier)
         result = await self.session.execute(stmt)
         row = result.scalar_one_or_none()
         if row is None:
@@ -127,9 +120,7 @@ class AasDescriptorRepository:
 
     async def delete(self, identifier: str) -> bool:
         """Delete an AAS descriptor."""
-        stmt = select(AasDescriptorTable).where(
-            AasDescriptorTable.identifier == identifier
-        )
+        stmt = select(AasDescriptorTable).where(AasDescriptorTable.identifier == identifier)
         result = await self.session.execute(stmt)
         row = result.scalar_one_or_none()
         if row is None:
@@ -141,15 +132,11 @@ class AasDescriptorRepository:
 
     async def exists(self, identifier: str) -> bool:
         """Check if an AAS descriptor exists."""
-        stmt = select(AasDescriptorTable.id).where(
-            AasDescriptorTable.identifier == identifier
-        )
+        stmt = select(AasDescriptorTable.id).where(AasDescriptorTable.identifier == identifier)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none() is not None
 
-    async def list_all(
-        self, limit: int = 100, offset: int = 0
-    ) -> list[tuple[bytes, str]]:
+    async def list_all(self, limit: int = 100, offset: int = 0) -> list[tuple[bytes, str]]:
         """List all AAS descriptors (fast path)."""
         stmt = (
             select(AasDescriptorTable.doc_bytes, AasDescriptorTable.etag)
@@ -206,9 +193,9 @@ class SubmodelDescriptorRepository:
 
     async def get_bytes(self, identifier_b64: str) -> tuple[bytes, str] | None:
         """Fast path: get raw canonical bytes and etag."""
-        stmt = select(
-            SubmodelDescriptorTable.doc_bytes, SubmodelDescriptorTable.etag
-        ).where(SubmodelDescriptorTable.identifier_b64 == identifier_b64)
+        stmt = select(SubmodelDescriptorTable.doc_bytes, SubmodelDescriptorTable.etag).where(
+            SubmodelDescriptorTable.identifier_b64 == identifier_b64
+        )
         result = await self.session.execute(stmt)
         row = result.first()
         if row is None:
@@ -217,9 +204,9 @@ class SubmodelDescriptorRepository:
 
     async def get_bytes_by_id(self, identifier: str) -> tuple[bytes, str] | None:
         """Fast path: get by original identifier."""
-        stmt = select(
-            SubmodelDescriptorTable.doc_bytes, SubmodelDescriptorTable.etag
-        ).where(SubmodelDescriptorTable.identifier == identifier)
+        stmt = select(SubmodelDescriptorTable.doc_bytes, SubmodelDescriptorTable.etag).where(
+            SubmodelDescriptorTable.identifier == identifier
+        )
         result = await self.session.execute(stmt)
         row = result.first()
         if row is None:
@@ -321,9 +308,7 @@ class SubmodelDescriptorRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none() is not None
 
-    async def list_all(
-        self, limit: int = 100, offset: int = 0
-    ) -> list[tuple[bytes, str]]:
+    async def list_all(self, limit: int = 100, offset: int = 0) -> list[tuple[bytes, str]]:
         """List all Submodel descriptors (fast path)."""
         stmt = (
             select(SubmodelDescriptorTable.doc_bytes, SubmodelDescriptorTable.etag)

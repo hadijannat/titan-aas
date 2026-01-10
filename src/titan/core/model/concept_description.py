@@ -11,7 +11,6 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from titan.core.model import StrictModel
 from titan.core.model.administrative import (
     AdministrativeInformation,
     HasDataSpecificationMixin,
@@ -35,9 +34,7 @@ class ConceptDescription(HasExtensionsMixin, HasDataSpecificationMixin):
     - Multi-language descriptions and display names
     """
 
-    id: Identifier = Field(
-        ..., description="Globally unique identifier of the ConceptDescription"
-    )
+    id: Identifier = Field(..., description="Globally unique identifier of the ConceptDescription")
     id_short: IdShort | None = Field(
         default=None,
         alias="idShort",
@@ -51,9 +48,7 @@ class ConceptDescription(HasExtensionsMixin, HasDataSpecificationMixin):
         alias="displayName",
         description="Display name in multiple languages",
     )
-    category: str | None = Field(
-        default=None, description="Category of the ConceptDescription"
-    )
+    category: str | None = Field(default=None, description="Category of the ConceptDescription")
     administration: AdministrativeInformation | None = Field(
         default=None, description="Administrative information (version, revision)"
     )

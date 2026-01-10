@@ -9,9 +9,12 @@ Usage:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING
 
 import typer
+
+if TYPE_CHECKING:
+    from rich.console import Console
 
 app = typer.Typer(help="Validate AAS/Submodel JSON files")
 
@@ -53,7 +56,6 @@ def validate(
     Supports single files, multiple files, or directories.
     """
     import json
-    import sys
 
     from rich.console import Console
 
@@ -162,7 +164,8 @@ def _validate_file(
                     result["errors"].append(msg)
                     if verbose:
                         console.print(f"    [red]└[/red] {msg}")
-                console.print(f"[red]✗[/red] {file_path}: {len(result['errors'])} validation error(s)")
+                err_count = len(result["errors"])
+                console.print(f"[red]✗[/red] {file_path}: {err_count} validation error(s)")
 
         elif model_type == "Submodel" or "submodelElements" in data:
             result["type"] = "Submodel"
@@ -181,7 +184,8 @@ def _validate_file(
                     result["errors"].append(msg)
                     if verbose:
                         console.print(f"    [red]└[/red] {msg}")
-                console.print(f"[red]✗[/red] {file_path}: {len(result['errors'])} validation error(s)")
+                err_count = len(result["errors"])
+                console.print(f"[red]✗[/red] {file_path}: {err_count} validation error(s)")
 
         elif "assetAdministrationShells" in data:
             # Environment format

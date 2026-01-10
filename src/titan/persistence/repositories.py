@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from typing import Generic, TypeVar
 
 import orjson
-from sqlalchemy import func, literal_column, select, text
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from titan.core.canonicalize import canonical_bytes_from_model
@@ -81,9 +81,7 @@ class AasRepository(BaseRepository[AssetAdministrationShell, AasTable]):
 
     async def get_bytes_by_id(self, identifier: str) -> tuple[bytes, str] | None:
         """Fast path: get by original identifier."""
-        stmt = select(AasTable.doc_bytes, AasTable.etag).where(
-            AasTable.identifier == identifier
-        )
+        stmt = select(AasTable.doc_bytes, AasTable.etag).where(AasTable.identifier == identifier)
         result = await self.session.execute(stmt)
         row = result.first()
         if row is None:
@@ -192,9 +190,7 @@ class AasRepository(BaseRepository[AssetAdministrationShell, AasTable]):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none() is not None
 
-    async def list_all(
-        self, limit: int = 100, offset: int = 0
-    ) -> list[tuple[bytes, str]]:
+    async def list_all(self, limit: int = 100, offset: int = 0) -> list[tuple[bytes, str]]:
         """List all AAS (fast path).
 
         Returns:
@@ -328,9 +324,7 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
 
     async def get_model(self, identifier_b64: str) -> Submodel | None:
         """Slow path: get as Pydantic model."""
-        stmt = select(SubmodelTable.doc).where(
-            SubmodelTable.identifier_b64 == identifier_b64
-        )
+        stmt = select(SubmodelTable.doc).where(SubmodelTable.identifier_b64 == identifier_b64)
         result = await self.session.execute(stmt)
         row = result.first()
         if row is None:
@@ -373,9 +367,7 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
         await self.session.flush()
         return (doc_bytes, etag)
 
-    async def update(
-        self, identifier: str, submodel: Submodel
-    ) -> tuple[bytes, str] | None:
+    async def update(self, identifier: str, submodel: Submodel) -> tuple[bytes, str] | None:
         """Update an existing Submodel."""
         stmt = select(SubmodelTable).where(SubmodelTable.identifier == identifier)
         result = await self.session.execute(stmt)
@@ -420,9 +412,7 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none() is not None
 
-    async def list_all(
-        self, limit: int = 100, offset: int = 0
-    ) -> list[tuple[bytes, str]]:
+    async def list_all(self, limit: int = 100, offset: int = 0) -> list[tuple[bytes, str]]:
         """List all Submodels (fast path)."""
         stmt = (
             select(SubmodelTable.doc_bytes, SubmodelTable.etag)
@@ -539,18 +529,16 @@ class ConceptDescriptionRepository:
 
     async def get_bytes(self, identifier_b64: str) -> tuple[bytes, str] | None:
         """Fast path: get raw canonical bytes and etag."""
-        stmt = select(
-            ConceptDescriptionTable.doc_bytes, ConceptDescriptionTable.etag
-        ).where(ConceptDescriptionTable.identifier_b64 == identifier_b64)
+        stmt = select(ConceptDescriptionTable.doc_bytes, ConceptDescriptionTable.etag).where(
+            ConceptDescriptionTable.identifier_b64 == identifier_b64
+        )
         result = await self.session.execute(stmt)
         row = result.first()
         if row is None:
             return None
         return (row.doc_bytes, row.etag)
 
-    async def list_all(
-        self, limit: int = 100, offset: int = 0
-    ) -> list[tuple[bytes, str]]:
+    async def list_all(self, limit: int = 100, offset: int = 0) -> list[tuple[bytes, str]]:
         """List all ConceptDescriptions (fast path)."""
         stmt = (
             select(ConceptDescriptionTable.doc_bytes, ConceptDescriptionTable.etag)

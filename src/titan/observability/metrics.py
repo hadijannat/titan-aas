@@ -220,9 +220,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.metrics = get_metrics()
 
-    async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Any]
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable[[Request], Any]) -> Response:
         """Record metrics for HTTP requests."""
         # Skip metrics for health and metrics endpoints
         if request.url.path in ("/health", "/ready", "/metrics"):
@@ -346,9 +344,7 @@ def record_cache_miss(cache_type: str = "redis") -> None:
         metrics.cache_misses_total.labels(cache_type=cache_type).inc()
 
 
-def record_cache_operation(
-    operation: str, duration: float, cache_type: str = "redis"
-) -> None:
+def record_cache_operation(operation: str, duration: float, cache_type: str = "redis") -> None:
     """Record cache operation duration.
 
     Args:

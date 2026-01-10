@@ -6,7 +6,6 @@ Supports conditional requests with If-Modified-Since.
 
 from __future__ import annotations
 
-from email.utils import formatdate, parsedate_to_datetime
 from typing import Callable
 
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -86,7 +85,7 @@ class CachingMiddleware(BaseHTTPMiddleware):
 
         # Registry/Discovery - short cache
         if "/shell-descriptors" in path or "/submodel-descriptors" in path:
-            return f"private, max-age=30, stale-while-revalidate=10"
+            return "private, max-age=30, stale-while-revalidate=10"
 
         # Default - no specific cache policy
         return None

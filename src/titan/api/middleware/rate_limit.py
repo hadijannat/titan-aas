@@ -28,9 +28,7 @@ class RateLimitConfig:
     # Window duration in seconds
     window_seconds: int = 60
     # Path prefixes to bypass (health checks, metrics)
-    bypass_prefixes: list[str] = field(
-        default_factory=lambda: ["/health", "/metrics"]
-    )
+    bypass_prefixes: list[str] = field(default_factory=lambda: ["/health", "/metrics"])
     # IPs to bypass (internal services)
     bypass_ips: list[str] = field(default_factory=list)
 
@@ -131,6 +129,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         try:
             # Get Redis lazily at request time
             from titan.cache import get_redis
+
             redis = await get_redis()
             limiter = self._get_limiter(redis)
             allowed, headers = await limiter.is_allowed(key)

@@ -104,9 +104,7 @@ class WebSocketManager:
             payload=self._serialize_submodel_event(event),
         )
 
-    async def _broadcast_event(
-        self, entity: str, identifier_b64: str, payload: bytes
-    ) -> None:
+    async def _broadcast_event(self, entity: str, identifier_b64: str, payload: bytes) -> None:
         """Broadcast event to matching subscribers."""
         async with self._lock:
             subscriptions = list(self._subscriptions)
@@ -118,16 +116,11 @@ class WebSocketManager:
                 except Exception as e:
                     logger.debug(f"Failed to send to WebSocket: {e}")
 
-    def _matches_filter(
-        self, subscription: Subscription, entity: str, identifier_b64: str
-    ) -> bool:
+    def _matches_filter(self, subscription: Subscription, entity: str, identifier_b64: str) -> bool:
         """Check if event matches subscription filters."""
         if subscription.entity_filter and subscription.entity_filter != entity:
             return False
-        if (
-            subscription.identifier_filter
-            and subscription.identifier_filter != identifier_b64
-        ):
+        if subscription.identifier_filter and subscription.identifier_filter != identifier_b64:
             return False
         return True
 
@@ -177,9 +170,7 @@ def get_ws_manager() -> WebSocketManager:
 @router.websocket("/events")
 async def websocket_events(
     websocket: WebSocket,
-    entity: str | None = Query(
-        default=None, description="Filter by entity type (aas or submodel)"
-    ),
+    entity: str | None = Query(default=None, description="Filter by entity type (aas or submodel)"),
     identifier: str | None = Query(
         default=None, description="Filter by Base64URL encoded identifier"
     ),

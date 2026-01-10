@@ -3,12 +3,12 @@
 import hashlib
 
 from titan.persistence.tables import (
-    AasTable,
-    SubmodelTable,
-    ConceptDescriptionTable,
     AasDescriptorTable,
-    SubmodelDescriptorTable,
+    AasTable,
     Base,
+    ConceptDescriptionTable,
+    SubmodelDescriptorTable,
+    SubmodelTable,
     generate_etag,
 )
 

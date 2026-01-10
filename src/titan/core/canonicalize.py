@@ -5,7 +5,6 @@ from typing import Any
 import orjson
 from pydantic import BaseModel
 
-
 ORJSON_OPTIONS = orjson.OPT_NON_STR_KEYS | orjson.OPT_UTC_Z
 
 

@@ -61,7 +61,9 @@ def docker_compose_up() -> Generator[None, None, None]:
             capture_output=True,
             text=True,
         )
-        pytest.fail(f"Stack failed to start in {STARTUP_TIMEOUT}s.\nLogs:\n{logs.stdout}\n{logs.stderr}")
+        pytest.fail(
+            f"Stack failed to start in {STARTUP_TIMEOUT}s.\nLogs:\n{logs.stdout}\n{logs.stderr}"
+        )
 
     yield
 

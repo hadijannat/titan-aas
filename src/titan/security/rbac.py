@@ -10,7 +10,7 @@ Permissions are enforced per endpoint via FastAPI dependencies.
 
 from __future__ import annotations
 
-from enum import Enum, auto
+from enum import Enum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -122,9 +122,7 @@ class RBACPolicy:
         user_permissions = self.get_user_permissions(user)
         return permission in user_permissions
 
-    def has_any_permission(
-        self, user: "User", permissions: list[Permission]
-    ) -> bool:
+    def has_any_permission(self, user: "User", permissions: list[Permission]) -> bool:
         """Check if user has any of the specified permissions."""
         if user.is_admin:
             return True
@@ -132,9 +130,7 @@ class RBACPolicy:
         user_permissions = self.get_user_permissions(user)
         return bool(user_permissions.intersection(permissions))
 
-    def has_all_permissions(
-        self, user: "User", permissions: list[Permission]
-    ) -> bool:
+    def has_all_permissions(self, user: "User", permissions: list[Permission]) -> bool:
         """Check if user has all of the specified permissions."""
         if user.is_admin:
             return True

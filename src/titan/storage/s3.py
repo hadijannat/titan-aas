@@ -9,8 +9,6 @@ Supports:
 
 from __future__ import annotations
 
-import hashlib
-import io
 from datetime import datetime
 from typing import AsyncIterator, BinaryIO
 

@@ -66,9 +66,7 @@ class TestInMemoryEventBus:
         assert len(received) == 1
         assert received[0].identifier == sample_event.identifier
 
-    async def test_multiple_handlers(
-        self, bus: InMemoryEventBus, sample_event: AasEvent
-    ) -> None:
+    async def test_multiple_handlers(self, bus: InMemoryEventBus, sample_event: AasEvent) -> None:
         """Multiple handlers all receive the event."""
         received1: list[AasEvent] = []
         received2: list[AasEvent] = []

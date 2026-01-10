@@ -13,7 +13,6 @@ from pydantic import Field
 from titan.core.model import StrictModel
 from titan.core.model.identifiers import (
     DataTypeDefXsd,
-    IdShort,
     QualifierKind,
     Reference,
     ValueDataType,
@@ -50,9 +49,7 @@ class Qualifier(HasSemanticsMixin):
     value_type: DataTypeDefXsd = Field(
         ..., alias="valueType", description="Data type of the qualifier value"
     )
-    value: ValueDataType | None = Field(
-        default=None, description="The qualifier value"
-    )
+    value: ValueDataType | None = Field(default=None, description="The qualifier value")
     value_id: Reference | None = Field(
         default=None,
         alias="valueId",
@@ -73,9 +70,7 @@ class Extension(HasSemanticsMixin):
     value_type: DataTypeDefXsd | None = Field(
         default=None, alias="valueType", description="Data type of the extension value"
     )
-    value: ValueDataType | None = Field(
-        default=None, description="The extension value"
-    )
+    value: ValueDataType | None = Field(default=None, description="The extension value")
     refers_to: list[Reference] | None = Field(
         default=None,
         alias="refersTo",
@@ -86,14 +81,10 @@ class Extension(HasSemanticsMixin):
 class HasExtensionsMixin(StrictModel):
     """Mixin for elements that can have extensions."""
 
-    extensions: list[Extension] | None = Field(
-        default=None, description="List of extensions"
-    )
+    extensions: list[Extension] | None = Field(default=None, description="List of extensions")
 
 
 class HasQualifiersMixin(StrictModel):
     """Mixin for elements that can have qualifiers."""
 
-    qualifiers: list[Qualifier] | None = Field(
-        default=None, description="List of qualifiers"
-    )
+    qualifiers: list[Qualifier] | None = Field(default=None, description="List of qualifiers")

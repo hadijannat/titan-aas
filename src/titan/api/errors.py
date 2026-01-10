@@ -7,7 +7,6 @@ for consistent error handling across all API endpoints.
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any
 
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -137,9 +136,7 @@ class InternalServerError(AasApiError):
         )
 
 
-async def aas_api_exception_handler(
-    request: Request, exc: AasApiError
-) -> JSONResponse:
+async def aas_api_exception_handler(request: Request, exc: AasApiError) -> JSONResponse:
     """Exception handler for AAS API errors."""
     return JSONResponse(
         status_code=exc.status_code,
@@ -147,9 +144,7 @@ async def aas_api_exception_handler(
     )
 
 
-async def generic_exception_handler(
-    request: Request, exc: Exception
-) -> JSONResponse:
+async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Exception handler for unexpected errors."""
     return JSONResponse(
         status_code=500,

@@ -56,9 +56,7 @@ class MqttPublisher:
         await self.client.publish(topic, payload, qos=1)
         logger.debug(f"Published Submodel event to {topic}")
 
-    def _build_topic(
-        self, entity: str, identifier_b64: str, event_type: EventType
-    ) -> str:
+    def _build_topic(self, entity: str, identifier_b64: str, event_type: EventType) -> str:
         """Build MQTT topic for event."""
         action = event_type.value.lower()
         return f"{self.TOPIC_PREFIX}/{entity}/{identifier_b64}/{action}"

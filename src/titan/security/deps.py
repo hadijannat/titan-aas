@@ -18,7 +18,6 @@ from typing import Annotated
 
 from fastapi import Depends, Header, HTTPException, Request, status
 
-from titan.config import settings
 from titan.security.oidc import InvalidTokenError, User, get_token_validator
 from titan.security.rbac import Permission, rbac_policy
 

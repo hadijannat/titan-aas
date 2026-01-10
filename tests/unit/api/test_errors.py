@@ -1,9 +1,6 @@
 """Tests for IDTA-compliant error responses."""
 
-import pytest
-
 from titan.api.errors import (
-    AasApiError,
     BadRequestError,
     ConflictError,
     InternalServerError,
@@ -32,11 +29,7 @@ class TestMessage:
 
     def test_basic_message(self) -> None:
         """Message with required fields."""
-        msg = Message(
-            code="NotFound",
-            message_type=MessageType.ERROR,
-            text="Resource not found"
-        )
+        msg = Message(code="NotFound", message_type=MessageType.ERROR, text="Resource not found")
         assert msg.code == "NotFound"
         assert msg.message_type == MessageType.ERROR
         assert msg.text == "Resource not found"
@@ -47,7 +40,7 @@ class TestMessage:
             code="Error",
             message_type=MessageType.ERROR,
             text="Test",
-            timestamp="2024-01-01T00:00:00Z"
+            timestamp="2024-01-01T00:00:00Z",
         )
         assert msg.timestamp == "2024-01-01T00:00:00Z"
 

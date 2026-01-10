@@ -36,7 +36,6 @@ from titan.core.model.identifiers import (
 from titan.core.model.qualifiers import HasExtensionsMixin, HasQualifiersMixin
 from titan.core.model.semantic import HasSemanticsMixin
 
-
 # -----------------------------------------------------------------------------
 # Base classes for SubmodelElement hierarchy
 # -----------------------------------------------------------------------------
@@ -91,9 +90,7 @@ class Property(SubmodelElementBase):
     value_type: DataTypeDefXsd = Field(
         ..., alias="valueType", description="XSD data type of the value"
     )
-    value: ValueDataType | None = Field(
-        default=None, description="The actual value"
-    )
+    value: ValueDataType | None = Field(default=None, description="The actual value")
     value_id: Reference | None = Field(
         default=None,
         alias="valueId",
@@ -153,9 +150,7 @@ class Blob(SubmodelElementBase):
     content_type: ContentType = Field(
         ..., alias="contentType", description="MIME type of the content"
     )
-    value: str | None = Field(
-        default=None, description="Base64-encoded binary content"
-    )
+    value: str | None = Field(default=None, description="Base64-encoded binary content")
 
 
 class File(SubmodelElementBase):
@@ -168,12 +163,8 @@ class File(SubmodelElementBase):
     model_type: Literal["File"] = Field(
         default="File", alias="modelType", description="Model type discriminator"
     )
-    content_type: ContentType = Field(
-        ..., alias="contentType", description="MIME type of the file"
-    )
-    value: PathType | None = Field(
-        default=None, description="Path or URL to the file"
-    )
+    content_type: ContentType = Field(..., alias="contentType", description="MIME type of the file")
+    value: PathType | None = Field(default=None, description="Path or URL to the file")
 
 
 class ReferenceElement(SubmodelElementBase):
@@ -188,9 +179,7 @@ class ReferenceElement(SubmodelElementBase):
         alias="modelType",
         description="Model type discriminator",
     )
-    value: Reference | None = Field(
-        default=None, description="The reference value"
-    )
+    value: Reference | None = Field(default=None, description="The reference value")
 
 
 # -----------------------------------------------------------------------------
@@ -307,9 +296,7 @@ class Entity(SubmodelElementBase):
     model_type: Literal["Entity"] = Field(
         default="Entity", alias="modelType", description="Model type discriminator"
     )
-    entity_type: EntityType = Field(
-        ..., alias="entityType", description="Type of entity"
-    )
+    entity_type: EntityType = Field(..., alias="entityType", description="Type of entity")
     global_asset_id: Annotated[str, Field(min_length=1, max_length=2000)] | None = Field(
         default=None,
         alias="globalAssetId",
@@ -367,12 +354,8 @@ class BasicEventElement(SubmodelElementBase):
         alias="modelType",
         description="Model type discriminator",
     )
-    observed: Reference = Field(
-        ..., description="Reference to the observed element"
-    )
-    direction: Direction = Field(
-        ..., description="Direction of the event (input/output)"
-    )
+    observed: Reference = Field(..., description="Reference to the observed element")
+    direction: Direction = Field(..., description="Direction of the event (input/output)")
     state: StateOfEvent = Field(..., description="State of the event (on/off)")
     message_topic: Annotated[str, Field(max_length=255)] | None = Field(
         default=None, alias="messageTopic", description="Topic for the event messages"

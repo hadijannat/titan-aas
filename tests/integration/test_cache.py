@@ -6,7 +6,6 @@ Tests cache operations with real Redis.
 from __future__ import annotations
 
 import pytest
-import pytest_asyncio
 from redis.asyncio import Redis
 
 from titan.cache.keys import CacheKeys
@@ -72,9 +71,7 @@ class TestCacheOperations:
         pattern = CacheKeys.invalidation_pattern("sm", submodel_id)
         cursor = 0
         while True:
-            cursor, found_keys = await redis_client.scan(
-                cursor=cursor, match=pattern, count=100
-            )
+            cursor, found_keys = await redis_client.scan(cursor=cursor, match=pattern, count=100)
             if found_keys:
                 await redis_client.delete(*found_keys)
             if cursor == 0:

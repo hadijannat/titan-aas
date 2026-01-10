@@ -9,22 +9,18 @@ This is a Titan-only feature that provides full IDTA spec compliance.
 
 from __future__ import annotations
 
-from typing import Annotated, Literal
+from typing import Annotated
 
 from pydantic import Field
 
 from titan.core.model import StrictModel
 from titan.core.model.descriptions import (
-    LangStringDefinitionType,
-    LangStringPreferredNameType,
-    LangStringShortNameType,
     MultiLanguageDefinitionType,
     MultiLanguagePreferredNameType,
     MultiLanguageShortNameType,
 )
 from titan.core.model.identifiers import (
     DataTypeIec61360,
-    LevelType,
     Reference,
 )
 from titan.core.model.qualifiers import ValueReferencePair

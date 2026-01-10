@@ -12,12 +12,12 @@ The dual storage pattern (JSONB + doc_bytes) enables:
 """
 
 from titan.persistence.db import get_engine, get_session, init_db
-from titan.persistence.tables import AasTable, SubmodelTable, ConceptDescriptionTable
 from titan.persistence.repositories import (
     AasRepository,
-    SubmodelRepository,
     ConceptDescriptionRepository,
+    SubmodelRepository,
 )
+from titan.persistence.tables import AasTable, ConceptDescriptionTable, SubmodelTable
 
 __all__ = [
     # DB

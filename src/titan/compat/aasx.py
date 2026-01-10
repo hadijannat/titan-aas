@@ -26,7 +26,6 @@ Example:
 
 from __future__ import annotations
 
-import json
 import logging
 import zipfile
 from dataclasses import dataclass, field
@@ -121,14 +120,10 @@ class AasxImporter:
         except zipfile.BadZipFile as e:
             raise ValueError(f"Invalid AASX package: {e}") from e
 
-        logger.info(
-            f"Imported {len(package.shells)} shells, {len(package.submodels)} submodels"
-        )
+        logger.info(f"Imported {len(package.shells)} shells, {len(package.submodels)} submodels")
         return package
 
-    async def _import_json(
-        self, content: bytes, filename: str, package: AasxPackage
-    ) -> None:
+    async def _import_json(self, content: bytes, filename: str, package: AasxPackage) -> None:
         """Parse JSON content and add to package."""
         try:
             data = orjson.loads(content)
@@ -158,17 +153,13 @@ class AasxImporter:
                 if isinstance(item, dict):
                     await self._import_single_object(item, package)
 
-    async def _import_xml(
-        self, content: bytes, filename: str, package: AasxPackage
-    ) -> None:
+    async def _import_xml(self, content: bytes, filename: str, package: AasxPackage) -> None:
         """Parse XML content (limited support for IDTA XML)."""
         # Note: Full XML support would require the basyx-python-sdk
         # For now, we log a warning and skip XML files
         logger.warning(f"XML import not fully supported: {filename}")
 
-    async def _import_environment(
-        self, data: dict[str, Any], package: AasxPackage
-    ) -> None:
+    async def _import_environment(self, data: dict[str, Any], package: AasxPackage) -> None:
         """Import AAS environment format with shells and submodels."""
         # Import shells
         shells = data.get("assetAdministrationShells", [])
@@ -185,9 +176,7 @@ class AasxImporter:
         if concept_descs:
             package.metadata["conceptDescriptions"] = concept_descs
 
-    async def _import_single_object(
-        self, data: dict[str, Any], package: AasxPackage
-    ) -> None:
+    async def _import_single_object(self, data: dict[str, Any], package: AasxPackage) -> None:
         """Import a single object based on modelType."""
         model_type = data.get("modelType", "")
 
@@ -198,9 +187,7 @@ class AasxImporter:
         else:
             logger.debug(f"Skipping unknown modelType: {model_type}")
 
-    async def _import_shell(
-        self, data: dict[str, Any], package: AasxPackage
-    ) -> None:
+    async def _import_shell(self, data: dict[str, Any], package: AasxPackage) -> None:
         """Parse and add an AssetAdministrationShell."""
         try:
             shell = AssetAdministrationShell.model_validate(data)
@@ -209,9 +196,7 @@ class AasxImporter:
         except Exception as e:
             logger.warning(f"Failed to parse shell: {e}")
 
-    async def _import_submodel(
-        self, data: dict[str, Any], package: AasxPackage
-    ) -> None:
+    async def _import_submodel(self, data: dict[str, Any], package: AasxPackage) -> None:
         """Parse and add a Submodel."""
         try:
             submodel = Submodel.model_validate(data)
@@ -225,12 +210,8 @@ class AasxExporter:
     """Exports Titan-AAS models to AASX packages."""
 
     # OPC relationship types
-    AAS_SPEC_REL_TYPE = (
-        "http://admin-shell.io/aasx/relationships/aas-spec"
-    )
-    AASX_ORIGIN_REL_TYPE = (
-        "http://admin-shell.io/aasx/relationships/aasx-origin"
-    )
+    AAS_SPEC_REL_TYPE = "http://admin-shell.io/aasx/relationships/aas-spec"
+    AASX_ORIGIN_REL_TYPE = "http://admin-shell.io/aasx/relationships/aasx-origin"
 
     async def export_package(
         self,
@@ -319,12 +300,10 @@ class AasxExporter:
         """Create AAS environment JSON."""
         environment = {
             "assetAdministrationShells": [
-                shell.model_dump(mode="json", by_alias=True, exclude_none=True)
-                for shell in shells
+                shell.model_dump(mode="json", by_alias=True, exclude_none=True) for shell in shells
             ],
             "submodels": [
-                sm.model_dump(mode="json", by_alias=True, exclude_none=True)
-                for sm in submodels
+                sm.model_dump(mode="json", by_alias=True, exclude_none=True) for sm in submodels
             ],
             "conceptDescriptions": [],
         }
@@ -338,15 +317,12 @@ class AasxExporter:
         # Default extensions
         ET.SubElement(root, "Default", Extension="json", ContentType="application/json")
         ET.SubElement(root, "Default", Extension="xml", ContentType="application/xml")
-        ET.SubElement(root, "Default", Extension="rels", ContentType="application/vnd.openxmlformats-package.relationships+xml")
+        rels_content_type = "application/vnd.openxmlformats-package.relationships+xml"
+        ET.SubElement(root, "Default", Extension="rels", ContentType=rels_content_type)
 
         # Override for specific parts
         for part_path, content_type in parts:
-            ET.SubElement(
-                root, "Override",
-                PartName=f"/{part_path}",
-                ContentType=content_type
-            )
+            ET.SubElement(root, "Override", PartName=f"/{part_path}", ContentType=content_type)
 
         return ET.tostring(root, encoding="unicode", xml_declaration=True)
 
@@ -357,19 +333,21 @@ class AasxExporter:
 
         # Add relationship to aasx-origin
         ET.SubElement(
-            root, "Relationship",
+            root,
+            "Relationship",
             Type=self.AASX_ORIGIN_REL_TYPE,
             Target="/aasx/aasx-origin",
-            Id="rId1"
+            Id="rId1",
         )
 
         # Add relationship to AAS spec file
         for i, (part_path, _) in enumerate(parts, start=2):
             ET.SubElement(
-                root, "Relationship",
+                root,
+                "Relationship",
                 Type=self.AAS_SPEC_REL_TYPE,
                 Target=f"/{part_path}",
-                Id=f"rId{i}"
+                Id=f"rId{i}",
             )
 
         return ET.tostring(root, encoding="unicode", xml_declaration=True)

@@ -7,7 +7,7 @@ Provides Redis caching with the cache-aside pattern:
 """
 
 from titan.cache.keys import CacheKeys
-from titan.cache.redis import RedisCache, get_redis, close_redis
+from titan.cache.redis import RedisCache, close_redis, get_redis
 
 __all__ = [
     "CacheKeys",

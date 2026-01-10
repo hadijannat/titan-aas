@@ -45,36 +45,40 @@ class ProjectionModifiers:
 
 
 # Metadata fields that should be included in $metadata projection
-METADATA_FIELDS = frozenset({
-    "modelType",
-    "idShort",
-    "semanticId",
-    "supplementalSemanticIds",
-    "qualifiers",
-    "category",
-    "description",
-    "displayName",
-    "extensions",
-    "embeddedDataSpecifications",
-})
+METADATA_FIELDS = frozenset(
+    {
+        "modelType",
+        "idShort",
+        "semanticId",
+        "supplementalSemanticIds",
+        "qualifiers",
+        "category",
+        "description",
+        "displayName",
+        "extensions",
+        "embeddedDataSpecifications",
+    }
+)
 
 # Value fields that should be included in $value projection
-VALUE_FIELDS = frozenset({
-    "modelType",
-    "value",
-    "valueType",
-    "min",
-    "max",
-    "contentType",
-    "first",
-    "second",
-    "entityType",
-    "globalAssetId",
-    "specificAssetIds",
-    "observed",
-    "direction",
-    "state",
-})
+VALUE_FIELDS = frozenset(
+    {
+        "modelType",
+        "value",
+        "valueType",
+        "min",
+        "max",
+        "contentType",
+        "first",
+        "second",
+        "entityType",
+        "globalAssetId",
+        "specificAssetIds",
+        "observed",
+        "direction",
+        "state",
+    }
+)
 
 
 def apply_projection(
@@ -185,9 +189,7 @@ def _strip_blob_values(payload: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
-def navigate_id_short_path(
-    payload: dict[str, Any], id_short_path: str
-) -> dict[str, Any] | None:
+def navigate_id_short_path(payload: dict[str, Any], id_short_path: str) -> dict[str, Any] | None:
     """Navigate to nested element by idShortPath.
 
     The idShortPath uses dots as separators: "Collection.Property"
@@ -256,9 +258,7 @@ def _parse_id_short_path(path: str) -> list[str | int]:
     return parts
 
 
-def _find_element_by_id_short(
-    container: dict[str, Any], id_short: str
-) -> dict[str, Any] | None:
+def _find_element_by_id_short(container: dict[str, Any], id_short: str) -> dict[str, Any] | None:
     """Find element by idShort in container."""
     # Check submodelElements
     elements = container.get("submodelElements", [])
@@ -274,9 +274,7 @@ def _find_element_by_id_short(
     return None
 
 
-def _get_element_at_index(
-    container: dict[str, Any], index: int
-) -> dict[str, Any] | None:
+def _get_element_at_index(container: dict[str, Any], index: int) -> dict[str, Any] | None:
     """Get element at index in container."""
     elements = container.get("submodelElements", [])
     if not elements:

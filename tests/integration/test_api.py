@@ -49,9 +49,7 @@ class TestAasEndpoints:
         }
 
     @pytest.mark.asyncio
-    async def test_create_aas(
-        self, test_client: AsyncClient, sample_aas: dict
-    ) -> None:
+    async def test_create_aas(self, test_client: AsyncClient, sample_aas: dict) -> None:
         """Test POST /shells creates an AAS."""
         response = await test_client.post("/shells", json=sample_aas)
 
@@ -104,9 +102,7 @@ class TestAasEndpoints:
         assert isinstance(data["result"], list)
 
     @pytest.mark.asyncio
-    async def test_update_aas(
-        self, test_client: AsyncClient, sample_aas: dict
-    ) -> None:
+    async def test_update_aas(self, test_client: AsyncClient, sample_aas: dict) -> None:
         """Test PUT /shells/{id} updates an AAS."""
         # Create first
         await test_client.post("/shells", json=sample_aas)
@@ -124,9 +120,7 @@ class TestAasEndpoints:
         assert data["idShort"] == "UpdatedAAS"
 
     @pytest.mark.asyncio
-    async def test_delete_aas(
-        self, test_client: AsyncClient, sample_aas: dict
-    ) -> None:
+    async def test_delete_aas(self, test_client: AsyncClient, sample_aas: dict) -> None:
         """Test DELETE /shells/{id} removes an AAS."""
         # Create first
         await test_client.post("/shells", json=sample_aas)
@@ -175,9 +169,7 @@ class TestSubmodelEndpoints:
         }
 
     @pytest.mark.asyncio
-    async def test_create_submodel(
-        self, test_client: AsyncClient, sample_submodel: dict
-    ) -> None:
+    async def test_create_submodel(self, test_client: AsyncClient, sample_submodel: dict) -> None:
         """Test POST /submodels creates a Submodel."""
         response = await test_client.post("/submodels", json=sample_submodel)
 
@@ -186,9 +178,7 @@ class TestSubmodelEndpoints:
         assert data["id"] == sample_submodel["id"]
 
     @pytest.mark.asyncio
-    async def test_get_submodel(
-        self, test_client: AsyncClient, sample_submodel: dict
-    ) -> None:
+    async def test_get_submodel(self, test_client: AsyncClient, sample_submodel: dict) -> None:
         """Test GET /submodels/{id} retrieves a Submodel."""
         await test_client.post("/submodels", json=sample_submodel)
 
@@ -208,9 +198,7 @@ class TestSubmodelEndpoints:
         await test_client.post("/submodels", json=sample_submodel)
 
         encoded_id = encode_id(sample_submodel["id"])
-        response = await test_client.get(
-            f"/submodels/{encoded_id}/submodel-elements/TestProperty"
-        )
+        response = await test_client.get(f"/submodels/{encoded_id}/submodel-elements/TestProperty")
 
         assert response.status_code == 200
         data = response.json()
@@ -230,9 +218,7 @@ class TestConditionalRequests:
         }
 
     @pytest.mark.asyncio
-    async def test_if_match_success(
-        self, test_client: AsyncClient, sample_aas: dict
-    ) -> None:
+    async def test_if_match_success(self, test_client: AsyncClient, sample_aas: dict) -> None:
         """Test If-Match header with correct ETag succeeds."""
         # Create and get ETag
         await test_client.post("/shells", json=sample_aas)
@@ -252,9 +238,7 @@ class TestConditionalRequests:
         assert response.status_code in (200, 204)
 
     @pytest.mark.asyncio
-    async def test_if_match_failure(
-        self, test_client: AsyncClient, sample_aas: dict
-    ) -> None:
+    async def test_if_match_failure(self, test_client: AsyncClient, sample_aas: dict) -> None:
         """Test If-Match header with incorrect ETag returns 412."""
         await test_client.post("/shells", json=sample_aas)
         encoded_id = encode_id(sample_aas["id"])

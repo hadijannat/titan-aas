@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import logging
 from enum import Enum
-from typing import Any, get_args, get_origin
+from typing import Any
 from xml.etree import ElementTree as ET
 
 from pydantic import BaseModel
@@ -68,9 +68,7 @@ class XmlSerializer:
         if shells:
             shells_elem = ET.SubElement(root, f"{self.ns_prefix}assetAdministrationShells")
             for shell in shells:
-                shell_elem = self._model_to_element(
-                    shell, "assetAdministrationShell"
-                )
+                shell_elem = self._model_to_element(shell, "assetAdministrationShell")
                 shells_elem.append(shell_elem)
 
         # Add submodels
@@ -113,9 +111,7 @@ class XmlSerializer:
 
         return element
 
-    def _value_to_element(
-        self, value: Any, tag: str, parent: ET.Element
-    ) -> None:
+    def _value_to_element(self, value: Any, tag: str, parent: ET.Element) -> None:
         """Convert a value to XML subelement(s).
 
         Args:
@@ -227,9 +223,7 @@ class XmlDeserializer:
         # Parse shells
         shells_elem = root.find(f"{self.ns_prefix}assetAdministrationShells")
         if shells_elem is not None:
-            for shell_elem in shells_elem.findall(
-                f"{self.ns_prefix}assetAdministrationShell"
-            ):
+            for shell_elem in shells_elem.findall(f"{self.ns_prefix}assetAdministrationShell"):
                 data = self._element_to_dict(shell_elem)
                 try:
                     shell = AssetAdministrationShell.model_validate(data)

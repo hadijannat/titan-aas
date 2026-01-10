@@ -11,7 +11,7 @@ The "Binary Blob Trap" fix:
 - Only metadata is stored in PostgreSQL
 """
 
-from titan.storage.base import BlobStorage, BlobMetadata
+from titan.storage.base import BlobMetadata, BlobStorage
 from titan.storage.local import LocalBlobStorage
 from titan.storage.s3 import S3BlobStorage
 

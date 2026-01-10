@@ -25,19 +25,23 @@ class PathType(str, Enum):
 
 
 # IDTA modifiers that trigger slow path
-SLOW_PATH_MODIFIERS = frozenset({
-    "level",
-    "extent",
-    "content",
-})
+SLOW_PATH_MODIFIERS = frozenset(
+    {
+        "level",
+        "extent",
+        "content",
+    }
+)
 
 # Special path suffixes that trigger slow path
-SLOW_PATH_SUFFIXES = frozenset({
-    "/$value",
-    "/$metadata",
-    "/$reference",
-    "/$path",
-})
+SLOW_PATH_SUFFIXES = frozenset(
+    {
+        "/$value",
+        "/$metadata",
+        "/$reference",
+        "/$path",
+    }
+)
 
 
 def detect_path_type(request: Request) -> PathType:

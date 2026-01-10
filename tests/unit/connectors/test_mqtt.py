@@ -123,9 +123,7 @@ class TestMqttPublisher:
         parsed = orjson.loads(data)
         assert parsed["etag"] == "abc123"
 
-    def test_serialize_event_excludes_etag_when_none(
-        self, publisher: MqttPublisher
-    ) -> None:
+    def test_serialize_event_excludes_etag_when_none(self, publisher: MqttPublisher) -> None:
         """Serialized event excludes etag when None."""
         event = AasEvent(
             event_type=EventType.DELETED,

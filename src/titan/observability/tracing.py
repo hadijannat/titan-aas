@@ -85,8 +85,7 @@ def setup_tracing() -> None:
                 logger.info(f"OTLP tracing enabled: {settings.otlp_endpoint}")
             except ImportError:
                 logger.warning(
-                    "opentelemetry-exporter-otlp-proto-grpc not installed, "
-                    "OTLP export disabled"
+                    "opentelemetry-exporter-otlp-proto-grpc not installed, OTLP export disabled"
                 )
         else:
             # Development: use console exporter
@@ -98,9 +97,7 @@ def setup_tracing() -> None:
                     )
 
                     console_exporter = ConsoleSpanExporter()
-                    _tracer_provider.add_span_processor(
-                        SimpleSpanProcessor(console_exporter)
-                    )
+                    _tracer_provider.add_span_processor(SimpleSpanProcessor(console_exporter))
                     logger.info("Console tracing enabled (dev mode)")
                 except ImportError:
                     pass
@@ -172,9 +169,7 @@ def get_tracer(name: str) -> Any:
 class NoOpTracer:
     """No-op tracer for when OpenTelemetry is not available."""
 
-    def start_as_current_span(
-        self, name: str, **kwargs: Any
-    ) -> "NoOpSpanContextManager":
+    def start_as_current_span(self, name: str, **kwargs: Any) -> "NoOpSpanContextManager":
         """Return a no-op span context manager."""
         return NoOpSpanContextManager()
 
@@ -227,9 +222,7 @@ class TracingMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.tracer = get_tracer("titan.api")
 
-    async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Any]
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable[[Request], Any]) -> Response:
         """Trace HTTP requests."""
         # Skip tracing for health and metrics endpoints
         if request.url.path in ("/health", "/ready", "/metrics"):

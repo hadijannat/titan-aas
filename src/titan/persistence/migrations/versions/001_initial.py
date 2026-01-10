@@ -18,8 +18,8 @@ Each table uses the dual storage pattern:
 
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers
@@ -85,9 +85,7 @@ def upgrade() -> None:
         ),
     )
     op.create_index("idx_submodels_identifier", "submodels", ["identifier"], unique=True)
-    op.create_index(
-        "idx_submodels_identifier_b64", "submodels", ["identifier_b64"], unique=True
-    )
+    op.create_index("idx_submodels_identifier_b64", "submodels", ["identifier_b64"], unique=True)
     op.create_index("idx_submodels_semantic_id", "submodels", ["semantic_id"])
     op.create_index(
         "idx_submodels_doc_gin",

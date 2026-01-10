@@ -13,7 +13,7 @@ from titan.security.deps import (
     require_write,
 )
 from titan.security.oidc import OIDCConfig, TokenValidator, User
-from titan.security.rbac import Permission, Role, RBACPolicy
+from titan.security.rbac import Permission, RBACPolicy, Role
 
 __all__ = [
     # OIDC

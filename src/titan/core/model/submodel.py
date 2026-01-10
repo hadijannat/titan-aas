@@ -6,11 +6,8 @@ SubmodelElements representing a specific aspect of an asset.
 
 from __future__ import annotations
 
-from typing import Annotated
-
 from pydantic import Field
 
-from titan.core.model import StrictModel
 from titan.core.model.administrative import (
     AdministrativeInformation,
     HasDataSpecificationMixin,

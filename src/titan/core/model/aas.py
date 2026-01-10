@@ -85,9 +85,7 @@ class AssetAdministrationShell(HasExtensionsMixin, HasDataSpecificationMixin):
     - Administrative information
     """
 
-    id: Identifier = Field(
-        ..., description="Globally unique identifier of the AAS"
-    )
+    id: Identifier = Field(..., description="Globally unique identifier of the AAS")
     id_short: IdShort | None = Field(
         default=None,
         alias="idShort",

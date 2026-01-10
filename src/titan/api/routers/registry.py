@@ -30,7 +30,7 @@ from titan.api.errors import (
 from titan.api.pagination import DEFAULT_LIMIT, LimitParam
 from titan.api.responses import json_bytes_response
 from titan.core.canonicalize import canonical_bytes
-from titan.core.ids import InvalidBase64Url, decode_id_from_b64url, encode_id_to_b64url
+from titan.core.ids import InvalidBase64Url, decode_id_from_b64url
 from titan.core.model.registry import (
     AssetAdministrationShellDescriptor,
     SubmodelDescriptor,

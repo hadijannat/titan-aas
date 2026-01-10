@@ -81,9 +81,7 @@ class RedisCache:
 
         return (doc_bytes, etag.decode() if isinstance(etag, bytes) else etag)
 
-    async def set_aas(
-        self, identifier_b64: str, doc_bytes: bytes, etag: str
-    ) -> None:
+    async def set_aas(self, identifier_b64: str, doc_bytes: bytes, etag: str) -> None:
         """Cache AAS bytes and ETag."""
         key_bytes = CacheKeys.aas_bytes(identifier_b64)
         key_etag = CacheKeys.aas_etag(identifier_b64)
@@ -119,9 +117,7 @@ class RedisCache:
 
         return (doc_bytes, etag.decode() if isinstance(etag, bytes) else etag)
 
-    async def set_submodel(
-        self, identifier_b64: str, doc_bytes: bytes, etag: str
-    ) -> None:
+    async def set_submodel(self, identifier_b64: str, doc_bytes: bytes, etag: str) -> None:
         """Cache Submodel bytes and ETag."""
         key_bytes = CacheKeys.submodel_bytes(identifier_b64)
         key_etag = CacheKeys.submodel_etag(identifier_b64)
@@ -141,9 +137,7 @@ class RedisCache:
     # SubmodelElement $value caching
     # -------------------------------------------------------------------------
 
-    async def get_element_value(
-        self, submodel_b64: str, id_short_path: str
-    ) -> bytes | None:
+    async def get_element_value(self, submodel_b64: str, id_short_path: str) -> bytes | None:
         """Get cached SubmodelElement $value.
 
         This is for the hot path of $value reads.
@@ -165,9 +159,7 @@ class RedisCache:
         key = CacheKeys.submodel_element_value(submodel_b64, id_short_path)
         await self.client.setex(key, ttl or 300, value_bytes)  # 5 min default
 
-    async def delete_element_value(
-        self, submodel_b64: str, id_short_path: str
-    ) -> None:
+    async def delete_element_value(self, submodel_b64: str, id_short_path: str) -> None:
         """Delete cached SubmodelElement $value."""
         key = CacheKeys.submodel_element_value(submodel_b64, id_short_path)
         await self.client.delete(key)

@@ -3,7 +3,6 @@ from __future__ import annotations
 import base64
 from typing import Final
 
-
 _B64URL_ALPHABET: Final[str] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 
 

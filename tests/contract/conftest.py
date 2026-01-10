@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from typing import AsyncIterator
 
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 

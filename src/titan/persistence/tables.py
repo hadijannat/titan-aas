@@ -10,11 +10,10 @@ The etag is SHA256 of doc_bytes for conditional requests.
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
 from uuid import uuid4
 
-import sqlalchemy as sa
 from sqlalchemy import (
     BigInteger,
     DateTime,
@@ -309,17 +308,13 @@ class BlobAssetTable(Base):
     )
 
     # Reference to the parent submodel
-    submodel_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), nullable=False, index=True
-    )
+    submodel_id: Mapped[str] = mapped_column(UUID(as_uuid=False), nullable=False, index=True)
 
     # The idShortPath to the element containing this blob
     id_short_path: Mapped[str] = mapped_column(Text, nullable=False)
 
     # Storage backend: "local", "s3", "minio", "azure"
-    storage_type: Mapped[str] = mapped_column(
-        String(50), nullable=False, default="local"
-    )
+    storage_type: Mapped[str] = mapped_column(String(50), nullable=False, default="local")
 
     # Storage location (path, S3 URI, etc.)
     storage_uri: Mapped[str] = mapped_column(Text, nullable=False)

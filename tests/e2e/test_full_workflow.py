@@ -79,9 +79,7 @@ class TestAASCrudWorkflow:
         response = client.get(f"/shells/{encoded_id}")
         assert response.status_code == 404
 
-    def test_list_shells_pagination(
-        self, client: httpx.Client, sample_aas: dict, base64url_encode
-    ):
+    def test_list_shells_pagination(self, client: httpx.Client, sample_aas: dict, base64url_encode):
         """Test listing shells with pagination."""
         # Create multiple shells
         created_ids = []
@@ -180,7 +178,12 @@ class TestSubmodelCrudWorkflow:
             assert nested["value"] == "1.0.0"
 
             # Update element
-            updated_elem = {"modelType": "Property", "idShort": "Temperature", "valueType": "xs:double", "value": "99.9"}
+            updated_elem = {
+                "modelType": "Property",
+                "idShort": "Temperature",
+                "valueType": "xs:double",
+                "value": "99.9",
+            }
             response = client.put(
                 f"/submodels/{encoded_id}/submodel-elements/Temperature",
                 json=updated_elem,
@@ -212,9 +215,7 @@ class TestCacheConsistency:
 
         try:
             # First read (cache miss)
-            start = time.time()
             response = client.get(f"/submodels/{encoded_id}")
-            first_read_time = time.time() - start
             assert response.status_code == 200
 
             # Subsequent reads (cache hits) should be faster
@@ -225,7 +226,6 @@ class TestCacheConsistency:
                 read_times.append(time.time() - start)
                 assert response.status_code == 200
 
-            avg_cached_time = sum(read_times) / len(read_times)
             # Cached reads should generally be faster, but we give some tolerance
             # In E2E tests, network latency dominates, so we just verify they work
             assert all(t < 1.0 for t in read_times), "Cached reads took too long"
@@ -303,9 +303,7 @@ class TestErrorHandling:
         response = client.post("/shells", json=invalid_aas)
         assert response.status_code in [400, 422]
 
-    def test_duplicate_id_error(
-        self, client: httpx.Client, sample_aas: dict, base64url_encode
-    ):
+    def test_duplicate_id_error(self, client: httpx.Client, sample_aas: dict, base64url_encode):
         """Test 409 conflict for duplicate ID."""
         unique_id = f"urn:example:aas:e2e-dup-{uuid.uuid4()}"
         sample_aas["id"] = unique_id

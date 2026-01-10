@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import asyncio
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Callable, Awaitable
+from typing import TYPE_CHECKING, Awaitable, Callable
 
 from titan.events.schemas import AnyEvent
 

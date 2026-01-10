@@ -5,13 +5,12 @@ Provides containerized PostgreSQL and Redis for realistic testing.
 
 from __future__ import annotations
 
-import asyncio
 from typing import AsyncIterator, Iterator
 
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 # Import conditionally to allow unit tests to run without testcontainers
 try:
@@ -51,9 +50,7 @@ def database_url(postgres_container: PostgresContainer) -> str:
     """Get the database URL for the test container."""
     # testcontainers provides psycopg2 URL, convert to asyncpg
     url = postgres_container.get_connection_url()
-    return url.replace("postgresql://", "postgresql+asyncpg://").replace(
-        "psycopg2", "asyncpg"
-    )
+    return url.replace("postgresql://", "postgresql+asyncpg://").replace("psycopg2", "asyncpg")
 
 
 @pytest.fixture(scope="session")
@@ -87,9 +84,7 @@ async def db_engine(database_url: str):
 @pytest_asyncio.fixture
 async def db_session(db_engine) -> AsyncIterator[AsyncSession]:
     """Create a database session for each test."""
-    session_factory = async_sessionmaker(
-        db_engine, class_=AsyncSession, expire_on_commit=False
-    )
+    session_factory = async_sessionmaker(db_engine, class_=AsyncSession, expire_on_commit=False)
 
     async with session_factory() as session:
         yield session
@@ -116,17 +111,24 @@ async def test_client(
     """Create a test client with real database and Redis."""
     from contextlib import asynccontextmanager
 
+    import redis.asyncio as aioredis
     from fastapi import FastAPI
     from fastapi.responses import ORJSONResponse
 
     from titan.api.errors import AasApiError, aas_api_exception_handler, generic_exception_handler
-    from titan.api.routers import aas_repository, health, submodel_repository, system
-    from titan.api.routers import description, discovery, registry, serialization
-    from titan.persistence import db as db_module
+    from titan.api.routers import (
+        aas_repository,
+        description,
+        discovery,
+        health,
+        registry,
+        serialization,
+        submodel_repository,
+        system,
+    )
     from titan.cache import redis as redis_module
     from titan.cache.redis import RedisCache
-
-    import redis.asyncio as aioredis
+    from titan.persistence import db as db_module
 
     # Create a test-specific lifespan that does nothing
     @asynccontextmanager

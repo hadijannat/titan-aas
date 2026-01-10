@@ -2,12 +2,10 @@
 
 from datetime import datetime, timezone
 
-import pytest
-
 from titan.api.pagination import (
-    CursorData,
     DEFAULT_LIMIT,
     MAX_LIMIT,
+    CursorData,
     PagingMetadata,
     decode_cursor,
     encode_cursor,
@@ -59,10 +57,7 @@ class TestCursorData:
 
     def test_cursor_data(self) -> None:
         """CursorData stores expected fields."""
-        data = CursorData(
-            created_at="2024-01-15T10:30:00+00:00",
-            id="test-uuid"
-        )
+        data = CursorData(created_at="2024-01-15T10:30:00+00:00", id="test-uuid")
         assert data.created_at == "2024-01-15T10:30:00+00:00"
         assert data.id == "test-uuid"
 

@@ -8,8 +8,6 @@ Usage:
 
 from __future__ import annotations
 
-from typing import Optional
-
 import typer
 
 app = typer.Typer(help="Run the Titan-AAS API server")
@@ -72,7 +70,7 @@ def serve(
     }
 
     # Print startup info
-    typer.echo(f"Starting Titan-AAS server...")
+    typer.echo("Starting Titan-AAS server...")
     typer.echo(f"  Host: {host}")
     typer.echo(f"  Port: {port}")
     typer.echo(f"  Workers: {config['workers']}")

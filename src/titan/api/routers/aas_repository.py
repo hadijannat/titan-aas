@@ -23,8 +23,8 @@ from titan.api.errors import (
     PreconditionFailedError,
 )
 from titan.api.pagination import (
-    CursorParam,
     DEFAULT_LIMIT,
+    CursorParam,
     LimitParam,
 )
 from titan.api.responses import json_bytes_response
@@ -39,7 +39,6 @@ from titan.core.canonicalize import canonical_bytes
 from titan.core.ids import InvalidBase64Url, decode_id_from_b64url, encode_id_to_b64url
 from titan.core.model import AssetAdministrationShell
 from titan.core.projection import ProjectionModifiers, apply_projection
-from titan.events import AasEvent, EventType, InMemoryEventBus
 from titan.persistence.db import get_session
 from titan.persistence.repositories import AasRepository
 

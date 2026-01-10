@@ -23,8 +23,16 @@ from fastapi.responses import ORJSONResponse
 from titan.api.errors import AasApiError, aas_api_exception_handler, generic_exception_handler
 from titan.api.middleware import CachingMiddleware, CompressionMiddleware, RateLimitMiddleware
 from titan.api.middleware.rate_limit import RateLimitConfig
-from titan.api.routers import aas_repository, health, submodel_repository, system
-from titan.api.routers import description, discovery, registry, serialization
+from titan.api.routers import (
+    aas_repository,
+    description,
+    discovery,
+    health,
+    registry,
+    serialization,
+    submodel_repository,
+    system,
+)
 from titan.api.routers import metrics as metrics_router
 from titan.api.routers import websocket as ws_router
 from titan.cache import close_redis, get_redis

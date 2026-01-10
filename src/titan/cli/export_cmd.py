@@ -131,7 +131,9 @@ async def _export_aasx(
                     console.print("  Fetching shells...")
                     for shell_id in shell_ids:
                         # Encode ID for URL
-                        encoded_id = base64.urlsafe_b64encode(shell_id.encode()).decode().rstrip("=")
+                        encoded_id = (
+                            base64.urlsafe_b64encode(shell_id.encode()).decode().rstrip("=")
+                        )
                         response = await client.get(f"/shells/{encoded_id}")
 
                         if response.status_code == 200:
@@ -179,8 +181,7 @@ async def _export_aasx(
 
         console.print()
         console.print(
-            f"[green]Export complete![/green] "
-            f"{len(shells)} shells, {len(submodels)} submodels"
+            f"[green]Export complete![/green] {len(shells)} shells, {len(submodels)} submodels"
         )
 
     except Exception as e:

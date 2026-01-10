@@ -10,38 +10,37 @@ from pydantic import ValidationError
 from titan.core.model import (
     # Enums
     AasSubmodelElements,
-    AssetKind,
-    DataTypeDefXsd,
-    EntityType,
-    KeyTypes,
-    ModellingKind,
-    ReferenceTypes,
-    # Core types
-    Key,
-    Reference,
-    # SubmodelElements
-    Property,
-    MultiLanguageProperty,
-    Range,
-    Blob,
-    File,
-    ReferenceElement,
-    RelationshipElement,
-    SubmodelElementCollection,
-    SubmodelElementList,
-    Entity,
-    Capability,
-    # Containers
-    Submodel,
+    # Administrative
     AssetAdministrationShell,
     AssetInformation,
-    # Administrative
-    AdministrativeInformation,
-    EmbeddedDataSpecification,
+    AssetKind,
+    Blob,
+    Capability,
     DataSpecificationIec61360,
+    DataTypeDefXsd,
+    EmbeddedDataSpecification,
+    Entity,
+    EntityType,
+    File,
+    # Core types
+    Key,
+    KeyTypes,
+    LangStringPreferredNameType,
     # Lang strings
     LangStringTextType,
-    LangStringPreferredNameType,
+    ModellingKind,
+    MultiLanguageProperty,
+    # SubmodelElements
+    Property,
+    Range,
+    Reference,
+    ReferenceElement,
+    ReferenceTypes,
+    RelationshipElement,
+    # Containers
+    Submodel,
+    SubmodelElementCollection,
+    SubmodelElementList,
 )
 from titan.core.model.submodel_elements import SubmodelElementUnion
 
@@ -53,7 +52,7 @@ class TestReference:
         """External reference with single key."""
         ref = Reference(
             type=ReferenceTypes.EXTERNAL_REFERENCE,
-            keys=[Key(type=KeyTypes.GLOBAL_REFERENCE, value="https://example.com")]
+            keys=[Key(type=KeyTypes.GLOBAL_REFERENCE, value="https://example.com")],
         )
         assert ref.is_external
         assert not ref.is_model_reference
@@ -65,7 +64,7 @@ class TestReference:
             keys=[
                 Key(type=KeyTypes.SUBMODEL, value="urn:example:submodel:1"),
                 Key(type=KeyTypes.PROPERTY, value="temperature"),
-            ]
+            ],
         )
         assert ref.is_model_reference
         assert not ref.is_external
@@ -81,11 +80,7 @@ class TestProperty:
 
     def test_basic_property(self) -> None:
         """Basic property with string value."""
-        prop = Property(
-            idShort="temperature",
-            valueType=DataTypeDefXsd.XS_DOUBLE,
-            value="25.5"
-        )
+        prop = Property(idShort="temperature", valueType=DataTypeDefXsd.XS_DOUBLE, value="25.5")
         assert prop.id_short == "temperature"
         assert prop.value_type == DataTypeDefXsd.XS_DOUBLE
         assert prop.value == "25.5"
@@ -99,8 +94,8 @@ class TestProperty:
             value="ABC-12345",
             semanticId=Reference(
                 type=ReferenceTypes.EXTERNAL_REFERENCE,
-                keys=[Key(type=KeyTypes.GLOBAL_REFERENCE, value="0173-1#02-AAM556#002")]
-            )
+                keys=[Key(type=KeyTypes.GLOBAL_REFERENCE, value="0173-1#02-AAM556#002")],
+            ),
         )
         assert prop.semantic_id is not None
         assert prop.semantic_id.keys[0].value == "0173-1#02-AAM556#002"
@@ -128,7 +123,7 @@ class TestMultiLanguageProperty:
             value=[
                 LangStringTextType(language="en", text="Description"),
                 LangStringTextType(language="de", text="Beschreibung"),
-            ]
+            ],
         )
         assert prop.model_type == "MultiLanguageProperty"
         assert len(prop.value) == 2
@@ -140,10 +135,7 @@ class TestRange:
     def test_range_with_min_max(self) -> None:
         """Range with min and max values."""
         rng = Range(
-            idShort="operatingTemp",
-            valueType=DataTypeDefXsd.XS_DOUBLE,
-            min="-40",
-            max="85"
+            idShort="operatingTemp", valueType=DataTypeDefXsd.XS_DOUBLE, min="-40", max="85"
         )
         assert rng.min == "-40"
         assert rng.max == "85"
@@ -158,7 +150,7 @@ class TestBlob:
         blob = Blob(
             idShort="thumbnail",
             contentType="image/png",
-            value="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+            value="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
         )
         assert blob.content_type == "image/png"
         assert blob.model_type == "Blob"
@@ -170,9 +162,7 @@ class TestFile:
     def test_file_with_path(self) -> None:
         """File with path reference."""
         file = File(
-            idShort="manual",
-            contentType="application/pdf",
-            value="/aasx/documentation/manual.pdf"
+            idShort="manual", contentType="application/pdf", value="/aasx/documentation/manual.pdf"
         )
         assert file.content_type == "application/pdf"
         assert file.model_type == "File"
@@ -189,7 +179,7 @@ class TestSubmodelElementCollection:
                 Property(idShort="street", valueType=DataTypeDefXsd.XS_STRING, value="Main St"),
                 Property(idShort="city", valueType=DataTypeDefXsd.XS_STRING, value="Boston"),
                 Property(idShort="zip", valueType=DataTypeDefXsd.XS_STRING, value="02101"),
-            ]
+            ],
         )
         assert collection.model_type == "SubmodelElementCollection"
         assert len(collection.value) == 3
@@ -197,13 +187,9 @@ class TestSubmodelElementCollection:
     def test_nested_collections(self) -> None:
         """Collections can be nested."""
         inner = SubmodelElementCollection(
-            idShort="inner",
-            value=[Property(idShort="prop", valueType=DataTypeDefXsd.XS_STRING)]
+            idShort="inner", value=[Property(idShort="prop", valueType=DataTypeDefXsd.XS_STRING)]
         )
-        outer = SubmodelElementCollection(
-            idShort="outer",
-            value=[inner]
-        )
+        outer = SubmodelElementCollection(idShort="outer", value=[inner])
         assert outer.value[0].model_type == "SubmodelElementCollection"
 
 
@@ -220,7 +206,7 @@ class TestSubmodelElementList:
             value=[
                 Property(idShort="m1", valueType=DataTypeDefXsd.XS_DOUBLE, value="1.0"),
                 Property(idShort="m2", valueType=DataTypeDefXsd.XS_DOUBLE, value="2.0"),
-            ]
+            ],
         )
         assert lst.model_type == "SubmodelElementList"
         assert lst.order_relevant is True
@@ -234,7 +220,7 @@ class TestEntity:
         entity = Entity(
             idShort="motor",
             entityType=EntityType.SELF_MANAGED_ENTITY,
-            globalAssetId="https://example.com/assets/motor-001"
+            globalAssetId="https://example.com/assets/motor-001",
         )
         assert entity.entity_type == EntityType.SELF_MANAGED_ENTITY
         assert entity.model_type == "Entity"
@@ -249,10 +235,11 @@ class TestDiscriminatedUnion:
             "modelType": "Property",
             "idShort": "test",
             "valueType": "xs:string",
-            "value": "hello"
+            "value": "hello",
         }
         # Parse through a container that uses the union
         from pydantic import TypeAdapter
+
         adapter = TypeAdapter(SubmodelElementUnion)
         element = adapter.validate_python(data)
         assert isinstance(element, Property)
@@ -263,11 +250,10 @@ class TestDiscriminatedUnion:
         data = {
             "modelType": "SubmodelElementCollection",
             "idShort": "test",
-            "value": [
-                {"modelType": "Property", "idShort": "p1", "valueType": "xs:string"}
-            ]
+            "value": [{"modelType": "Property", "idShort": "p1", "valueType": "xs:string"}],
         }
         from pydantic import TypeAdapter
+
         adapter = TypeAdapter(SubmodelElementUnion)
         element = adapter.validate_python(data)
         assert isinstance(element, SubmodelElementCollection)
@@ -283,8 +269,14 @@ class TestDiscriminatedUnion:
             ReferenceElement(idShort="re"),
             RelationshipElement(
                 idShort="rel",
-                first=Reference(type=ReferenceTypes.MODEL_REFERENCE, keys=[Key(type=KeyTypes.SUBMODEL, value="x")]),
-                second=Reference(type=ReferenceTypes.MODEL_REFERENCE, keys=[Key(type=KeyTypes.SUBMODEL, value="y")])
+                first=Reference(
+                    type=ReferenceTypes.MODEL_REFERENCE,
+                    keys=[Key(type=KeyTypes.SUBMODEL, value="x")],
+                ),
+                second=Reference(
+                    type=ReferenceTypes.MODEL_REFERENCE,
+                    keys=[Key(type=KeyTypes.SUBMODEL, value="y")],
+                ),
             ),
             SubmodelElementCollection(idShort="sec"),
             SubmodelElementList(idShort="sel", typeValueListElement=AasSubmodelElements.PROPERTY),
@@ -309,7 +301,7 @@ class TestSubmodel:
             submodelElements=[
                 Property(idShort="weight", valueType=DataTypeDefXsd.XS_DOUBLE, value="2.5"),
                 Property(idShort="height", valueType=DataTypeDefXsd.XS_DOUBLE, value="10.0"),
-            ]
+            ],
         )
         assert sm.id == "https://example.com/submodels/technical-data"
         assert len(sm.submodel_elements) == 2
@@ -320,7 +312,7 @@ class TestSubmodel:
             id="urn:example:submodel:1",
             submodelElements=[
                 Property(idShort="p1", valueType=DataTypeDefXsd.XS_STRING, value="test")
-            ]
+            ],
         )
         data = sm.model_dump(by_alias=True, exclude_none=True)
         assert "submodelElements" in data
@@ -336,9 +328,8 @@ class TestAssetAdministrationShell:
             id="https://example.com/aas/1",
             idShort="ExampleAAS",
             assetInformation=AssetInformation(
-                assetKind=AssetKind.INSTANCE,
-                globalAssetId="https://example.com/assets/product-001"
-            )
+                assetKind=AssetKind.INSTANCE, globalAssetId="https://example.com/assets/product-001"
+            ),
         )
         assert aas.id == "https://example.com/aas/1"
         assert aas.asset_information.asset_kind == AssetKind.INSTANCE
@@ -348,15 +339,14 @@ class TestAssetAdministrationShell:
         aas = AssetAdministrationShell(
             id="https://example.com/aas/1",
             assetInformation=AssetInformation(
-                assetKind=AssetKind.INSTANCE,
-                globalAssetId="https://example.com/assets/1"
+                assetKind=AssetKind.INSTANCE, globalAssetId="https://example.com/assets/1"
             ),
             submodels=[
                 Reference(
                     type=ReferenceTypes.MODEL_REFERENCE,
-                    keys=[Key(type=KeyTypes.SUBMODEL, value="https://example.com/submodels/1")]
+                    keys=[Key(type=KeyTypes.SUBMODEL, value="https://example.com/submodels/1")],
                 )
-            ]
+            ],
         )
         assert len(aas.submodels) == 1
 
@@ -374,16 +364,21 @@ class TestHasDataSpecification:
                 EmbeddedDataSpecification(
                     dataSpecification=Reference(
                         type=ReferenceTypes.EXTERNAL_REFERENCE,
-                        keys=[Key(type=KeyTypes.GLOBAL_REFERENCE, value="https://admin-shell.io/aas/3/0/RC02/DataSpecificationIec61360")]
+                        keys=[
+                            Key(
+                                type=KeyTypes.GLOBAL_REFERENCE,
+                                value="https://admin-shell.io/aas/3/0/RC02/DataSpecificationIec61360",
+                            )
+                        ],
                     ),
                     dataSpecificationContent=DataSpecificationIec61360(
                         preferredName=[
                             LangStringPreferredNameType(language="en", text="Voltage"),
                             LangStringPreferredNameType(language="de", text="Spannung"),
                         ]
-                    )
+                    ),
                 )
-            ]
+            ],
         )
         assert len(prop.embedded_data_specifications) == 1
         spec = prop.embedded_data_specifications[0]
@@ -399,7 +394,7 @@ class TestStrictMode:
             Property(
                 idShort="test",
                 valueType=DataTypeDefXsd.XS_STRING,
-                unknownField="should fail"  # type: ignore
+                unknownField="should fail",  # type: ignore
             )
 
     def test_invalid_id_short_pattern(self) -> None:

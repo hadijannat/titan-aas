@@ -1,7 +1,5 @@
 """Tests for IDTA projection modifiers."""
 
-import pytest
-
 from titan.core.projection import (
     ProjectionModifiers,
     apply_projection,
@@ -207,11 +205,7 @@ class TestNavigateIdShortPath:
 
     def test_index_out_of_bounds(self) -> None:
         """Out of bounds index returns None."""
-        payload = {
-            "submodelElements": [
-                {"idShort": "list", "value": [{"idShort": "a"}]}
-            ]
-        }
+        payload = {"submodelElements": [{"idShort": "list", "value": [{"idShort": "a"}]}]}
         result = navigate_id_short_path(payload, "list[99]")
         assert result is None
 
