@@ -220,18 +220,15 @@ class AasxImporter:
         except Exception as e:
             logger.warning(f"Failed to parse submodel: {e}")
 
-    async def _import_concept_description(
-        self, data: dict[str, Any], package: AasxPackage
-    ) -> None:
+    async def _import_concept_description(self, data: dict[str, Any], package: AasxPackage) -> None:
         """Parse and add a ConceptDescription."""
         try:
             concept = ConceptDescription.model_validate(data)
             package.concept_descriptions.append(concept)
-            logger.debug(
-                f"Imported concept description: {concept.id_short or concept.id}"
-            )
+            logger.debug(f"Imported concept description: {concept.id_short or concept.id}")
         except Exception as e:
             logger.warning(f"Failed to parse concept description: {e}")
+
 
 class AasxExporter:
     """Exports Titan-AAS models to AASX packages."""
@@ -245,6 +242,7 @@ class AasxExporter:
         shells: list[AssetAdministrationShell],
         submodels: list[Submodel],
         output_path: str | Path,
+        concept_descriptions: list[ConceptDescription] | None = None,
         supplementary_files: dict[str, bytes] | None = None,
         use_json: bool = True,
     ) -> None:
@@ -254,6 +252,7 @@ class AasxExporter:
             shells: List of shells to export
             submodels: List of submodels to export
             output_path: Path for the output AASX file
+            concept_descriptions: Optional list of concept descriptions to export
             supplementary_files: Optional dict of path -> bytes for attachments
             use_json: If True, use JSON format; if False, use XML
         """
@@ -263,6 +262,7 @@ class AasxExporter:
         buffer = await self.export_to_stream(
             shells=shells,
             submodels=submodels,
+            concept_descriptions=concept_descriptions,
             supplementary_files=supplementary_files,
             use_json=use_json,
         )
@@ -276,16 +276,25 @@ class AasxExporter:
         self,
         shells: list[AssetAdministrationShell],
         submodels: list[Submodel],
+        concept_descriptions: list[ConceptDescription] | None = None,
         supplementary_files: dict[str, bytes] | None = None,
         use_json: bool = True,
     ) -> BytesIO:
         """Export shells and submodels to a binary stream.
+
+        Args:
+            shells: List of shells to export
+            submodels: List of submodels to export
+            concept_descriptions: Optional list of concept descriptions to export
+            supplementary_files: Optional dict of path -> bytes for attachments
+            use_json: If True, use JSON format; if False, use XML
 
         Returns:
             BytesIO containing the AASX package
         """
         buffer = BytesIO()
         supplementary_files = supplementary_files or {}
+        concept_descriptions = concept_descriptions or []
 
         with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
             # Track parts for relationships
@@ -294,12 +303,20 @@ class AasxExporter:
             # Write environment JSON/XML
             if use_json:
                 env_path = "aasx/aas-environment.json"
-                env_content = await self._create_environment_json(shells, submodels)
+                env_content = self._create_environment_json(shells, submodels, concept_descriptions)
                 zf.writestr(env_path, env_content)
                 parts.append((env_path, "application/json"))
             else:
-                # XML export would go here
-                raise NotImplementedError("XML export not yet implemented")
+                # XML export using XmlSerializer
+                from titan.compat.xml_serializer import XmlSerializer
+
+                env_path = "aasx/aas-environment.xml"
+                serializer = XmlSerializer()
+                env_content = serializer.serialize_environment(
+                    shells, submodels, concept_descriptions
+                )
+                zf.writestr(env_path, env_content)
+                parts.append((env_path, "application/xml"))
 
             # Write supplementary files
             for file_path, content in supplementary_files.items():
@@ -319,12 +336,23 @@ class AasxExporter:
         buffer.seek(0)
         return buffer
 
-    async def _create_environment_json(
+    def _create_environment_json(
         self,
         shells: list[AssetAdministrationShell],
         submodels: list[Submodel],
+        concept_descriptions: list[ConceptDescription] | None = None,
     ) -> bytes:
-        """Create AAS environment JSON."""
+        """Create AAS environment JSON.
+
+        Args:
+            shells: List of shells to serialize
+            submodels: List of submodels to serialize
+            concept_descriptions: Optional list of concept descriptions
+
+        Returns:
+            UTF-8 encoded JSON bytes
+        """
+        concept_descriptions = concept_descriptions or []
         environment = {
             "assetAdministrationShells": [
                 shell.model_dump(mode="json", by_alias=True, exclude_none=True) for shell in shells
@@ -332,7 +360,10 @@ class AasxExporter:
             "submodels": [
                 sm.model_dump(mode="json", by_alias=True, exclude_none=True) for sm in submodels
             ],
-            "conceptDescriptions": [],
+            "conceptDescriptions": [
+                cd.model_dump(mode="json", by_alias=True, exclude_none=True)
+                for cd in concept_descriptions
+            ],
         }
         return orjson.dumps(environment, option=orjson.OPT_INDENT_2)
 
@@ -397,6 +428,8 @@ async def export_aasx(
     shells: list[AssetAdministrationShell],
     submodels: list[Submodel],
     output_path: str | Path,
+    concept_descriptions: list[ConceptDescription] | None = None,
+    use_json: bool = True,
 ) -> None:
     """Convenience function to export to AASX.
 
@@ -404,6 +437,10 @@ async def export_aasx(
         shells: List of shells to export
         submodels: List of submodels to export
         output_path: Path for the output file
+        concept_descriptions: Optional list of concept descriptions to export
+        use_json: If True, use JSON format; if False, use XML
     """
     exporter = AasxExporter()
-    await exporter.export_package(shells, submodels, output_path)
+    await exporter.export_package(
+        shells, submodels, output_path, concept_descriptions, use_json=use_json
+    )

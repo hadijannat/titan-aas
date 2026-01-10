@@ -147,9 +147,7 @@ def create_app() -> FastAPI:
         )
 
     # Register exception handlers
-    app.add_exception_handler(
-        AasApiError, cast(ExceptionHandler, aas_api_exception_handler)
-    )
+    app.add_exception_handler(AasApiError, cast(ExceptionHandler, aas_api_exception_handler))
     app.add_exception_handler(Exception, cast(ExceptionHandler, generic_exception_handler))
 
     # Include routers

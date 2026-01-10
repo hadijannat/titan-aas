@@ -320,10 +320,15 @@ class XmlDeserializer:
         return result
 
     # Tags that are known to contain boolean values
-    BOOLEAN_TAGS = frozenset({
-        "min", "max", "nom", "typ",  # LevelTypeSpec
-        "allowDuplicates",
-    })
+    BOOLEAN_TAGS = frozenset(
+        {
+            "min",
+            "max",
+            "nom",
+            "typ",  # LevelTypeSpec
+            "allowDuplicates",
+        }
+    )
 
     def _parse_element_value(self, element: ET.Element) -> Any:
         """Parse an element's value (text content or nested structure).
