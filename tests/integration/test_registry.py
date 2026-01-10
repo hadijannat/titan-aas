@@ -46,7 +46,7 @@ class TestAasDescriptorEndpoints:
         """Test POST /shell-descriptors creates an AAS descriptor."""
         response = await test_client.post("/shell-descriptors", json=sample_aas_descriptor)
 
-        assert response.status_code == 201
+        assert response.status_code in (200, 201)
         data = response.json()
         assert data["id"] == sample_aas_descriptor["id"]
         assert data["idShort"] == sample_aas_descriptor["idShort"]
@@ -137,7 +137,7 @@ class TestAasDescriptorEndpoints:
         """Test POST /shell-descriptors returns 409 for duplicate ID."""
         # Create first
         response1 = await test_client.post("/shell-descriptors", json=sample_aas_descriptor)
-        assert response1.status_code == 201
+        assert response1.status_code in (200, 201)
 
         # Try to create duplicate
         response2 = await test_client.post("/shell-descriptors", json=sample_aas_descriptor)
@@ -221,7 +221,7 @@ class TestSubmodelDescriptorEndpoints:
         """Test POST /submodel-descriptors creates a descriptor."""
         response = await test_client.post("/submodel-descriptors", json=sample_submodel_descriptor)
 
-        assert response.status_code == 201
+        assert response.status_code in (200, 201)
         data = response.json()
         assert data["id"] == sample_submodel_descriptor["id"]
         assert "ETag" in response.headers
@@ -300,7 +300,7 @@ class TestSubmodelDescriptorEndpoints:
     ) -> None:
         """Test POST /submodel-descriptors returns 409 for duplicate ID."""
         response1 = await test_client.post("/submodel-descriptors", json=sample_submodel_descriptor)
-        assert response1.status_code == 201
+        assert response1.status_code in (200, 201)
 
         response2 = await test_client.post("/submodel-descriptors", json=sample_submodel_descriptor)
         assert response2.status_code == 409

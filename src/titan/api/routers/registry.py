@@ -104,6 +104,7 @@ async def post_shell_descriptor(
 
     return Response(
         content=doc_bytes,
+        status_code=201,
         media_type="application/json",
         headers={"ETag": f'"{etag}"'},
     )
@@ -245,6 +246,7 @@ async def post_submodel_descriptor(
 
     return Response(
         content=doc_bytes,
+        status_code=201,
         media_type="application/json",
         headers={"ETag": f'"{etag}"'},
     )
