@@ -557,13 +557,9 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
         result = await self.session.execute(stmt)
         return [_doc_bytes_and_etag(row.doc) for row in result.all()]
 
-    async def find_by_kind(
-        self, kind: str, limit: int = 100
-    ) -> list[tuple[bytes, str]]:
+    async def find_by_kind(self, kind: str, limit: int = 100) -> list[tuple[bytes, str]]:
         """Find Submodels by kind (Template or Instance)."""
-        stmt = (
-            select(SubmodelTable.doc).where(SubmodelTable.kind == kind).limit(limit)
-        )
+        stmt = select(SubmodelTable.doc).where(SubmodelTable.kind == kind).limit(limit)
         result = await self.session.execute(stmt)
         return [_doc_bytes_and_etag(row.doc) for row in result.all()]
 

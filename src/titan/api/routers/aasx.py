@@ -370,15 +370,55 @@ async def get_package_submodels(
     return {"result": submodels}
 
 
-@router.post("/{package_id}/import", status_code=201)
-async def import_package_contents(
+@router.post("/{package_id}/validate")
+async def validate_package(
     package_id: str,
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
-    """Import shells and submodels from package into the repository.
+    """Validate an AASX package for OPC compliance.
 
-    This creates the actual AAS and Submodel resources from the package.
+    Returns validation results including errors and warnings.
     """
+    from titan.packages.validator import OpcValidator
+
+    stmt = select(AasxPackageTable).where(AasxPackageTable.id == package_id)
+    result = await session.execute(stmt)
+    package = result.scalar_one_or_none()
+
+    if package is None:
+        raise NotFoundError("AasxPackage", package_id)
+
+    content = await _retrieve_package(package.storage_uri)
+    validator = OpcValidator()
+    validation = await validator.validate(BytesIO(content))
+
+    return {
+        "packageId": package_id,
+        "valid": validation.valid,
+        "fileCount": validation.file_count,
+        "totalSize": validation.total_size,
+        "contentHash": validation.content_hash,
+        "errors": [
+            {"code": i.code, "message": i.message, "location": i.location}
+            for i in validation.errors
+        ],
+        "warnings": [
+            {"code": i.code, "message": i.message, "location": i.location}
+            for i in validation.warnings
+        ],
+    }
+
+
+@router.post("/{package_id}/preview")
+async def preview_package_import(
+    package_id: str,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Preview what would happen if package contents are imported.
+
+    Shows which shells/submodels would be created vs skipped due to conflicts.
+    """
+    from titan.packages.manager import PackageManager
     from titan.persistence.repositories import AasRepository, SubmodelRepository
 
     stmt = select(AasxPackageTable).where(AasxPackageTable.id == package_id)
@@ -388,48 +428,86 @@ async def import_package_contents(
     if package is None:
         raise NotFoundError("AasxPackage", package_id)
 
-    # Parse package
     content = await _retrieve_package(package.storage_uri)
-    importer = AasxImporter()
-    parsed = await importer.import_from_stream(BytesIO(content))
+    manager = PackageManager()
 
     aas_repo = AasRepository(session)
     submodel_repo = SubmodelRepository(session)
 
-    created_shells = 0
-    created_submodels = 0
-    skipped_shells = 0
-    skipped_submodels = 0
+    preview = await manager.preview_import(
+        BytesIO(content),
+        aas_repo=aas_repo,
+        submodel_repo=submodel_repo,
+    )
 
-    # Import shells
-    for shell in parsed.shells:
-        if await aas_repo.exists(shell.id):
-            skipped_shells += 1
-            continue
-        await aas_repo.create(shell)
-        created_shells += 1
+    return {
+        "packageId": package_id,
+        **preview,
+    }
 
-    # Import submodels
-    for submodel in parsed.submodels:
-        if await submodel_repo.exists(submodel.id):
-            skipped_submodels += 1
-            continue
-        await submodel_repo.create(submodel)
-        created_submodels += 1
+
+@router.post("/{package_id}/import", status_code=201)
+async def import_package_contents(
+    package_id: str,
+    conflict_resolution: str = "skip",
+    shell_ids: list[str] | None = None,
+    submodel_ids: list[str] | None = None,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Import shells and submodels from package into the repository.
+
+    Supports:
+    - conflict_resolution: "skip" (default), "overwrite", "error", or "rename"
+    - shell_ids: Optional list of specific shell IDs to import
+    - submodel_ids: Optional list of specific submodel IDs to import
+    """
+    from titan.packages.manager import ConflictResolution, PackageManager
+    from titan.persistence.repositories import AasRepository, SubmodelRepository
+
+    stmt = select(AasxPackageTable).where(AasxPackageTable.id == package_id)
+    result = await session.execute(stmt)
+    package = result.scalar_one_or_none()
+
+    if package is None:
+        raise NotFoundError("AasxPackage", package_id)
+
+    # Map conflict resolution string to enum
+    try:
+        resolution = ConflictResolution(conflict_resolution.lower())
+    except ValueError:
+        from titan.api.errors import BadRequestError
+
+        raise BadRequestError(
+            f"Invalid conflict_resolution: {conflict_resolution}. "
+            "Use 'skip', 'overwrite', 'error', or 'rename'."
+        )
+
+    content = await _retrieve_package(package.storage_uri)
+    manager = PackageManager()
+
+    aas_repo = AasRepository(session)
+    submodel_repo = SubmodelRepository(session)
+
+    import_result = await manager.import_package(
+        stream=BytesIO(content),
+        aas_repo=aas_repo,
+        submodel_repo=submodel_repo,
+        conflict_resolution=resolution,
+        shell_ids=shell_ids,
+        submodel_ids=submodel_ids,
+    )
 
     await session.commit()
 
     logger.info(
         f"Imported from package {package_id}: "
-        f"{created_shells} shells, {created_submodels} submodels"
+        f"{import_result.shells_created} shells created, "
+        f"{import_result.submodels_created} submodels created"
     )
 
     return {
         "packageId": package_id,
-        "shellsCreated": created_shells,
-        "shellsSkipped": skipped_shells,
-        "submodelsCreated": created_submodels,
-        "submodelsSkipped": skipped_submodels,
+        **import_result.to_dict(),
     }
 
 

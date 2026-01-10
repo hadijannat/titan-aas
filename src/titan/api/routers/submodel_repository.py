@@ -124,10 +124,16 @@ async def get_all_submodels(
             media_type="application/json",
         )
     else:
-        # Slow path: Need to apply projections or idShort filter
-        if semantic_id and not has_id_short_filter:
+        # Slow path: Need to apply projections or filters not supported at zero-copy level
+        # Use SQL-level filtering where possible
+        if kind and not has_id_short_filter and not semantic_id:
+            # Kind-only filter: use SQL-level filtering
+            results = await repo.find_by_kind(kind, limit=limit)
+        elif semantic_id and not has_id_short_filter and not kind:
+            # SemanticId-only filter: use SQL-level filtering
             results = await repo.find_by_semantic_id(semantic_id, limit=limit)
         else:
+            # Multiple filters or unsupported: fetch all and filter in memory
             results = await repo.list_all(limit=limit, offset=0)
 
         items = []

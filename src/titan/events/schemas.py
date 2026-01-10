@@ -84,9 +84,36 @@ class ConceptDescriptionEvent:
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+class PackageEventType(str, Enum):
+    """Type of package event."""
+
+    UPLOADED = "uploaded"
+    IMPORTED = "imported"
+    EXPORTED = "exported"
+    DELETED = "deleted"
+    VALIDATED = "validated"
+
+
+@dataclass(frozen=True, slots=True)
+class PackageEvent:
+    """Event for AASX package operations."""
+
+    event_type: PackageEventType
+    package_id: str
+    filename: str | None = None
+    shell_count: int = 0
+    submodel_count: int = 0
+    content_hash: str | None = None
+    import_result: dict | None = None  # For IMPORTED events
+    validation_result: dict | None = None  # For VALIDATED events
+    entity: Literal["package"] = "package"
+    event_id: str = field(default_factory=lambda: str(uuid4()))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 # Base event protocol (for type hints)
-Event = AasEvent | SubmodelEvent | SubmodelElementEvent | ConceptDescriptionEvent
+Event = AasEvent | SubmodelEvent | SubmodelElementEvent | ConceptDescriptionEvent | PackageEvent
 
 
 # Union type for all events
-AnyEvent = AasEvent | SubmodelEvent | SubmodelElementEvent | ConceptDescriptionEvent
+AnyEvent = AasEvent | SubmodelEvent | SubmodelElementEvent | ConceptDescriptionEvent | PackageEvent
