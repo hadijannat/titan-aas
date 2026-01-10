@@ -64,6 +64,7 @@ class TestMqttEventBusIntegration:
         mock_mqtt_client: MockMqttClient,
     ) -> None:
         """AAS events published to bus are sent to MQTT broker."""
+
         # Wire handler to event bus
         async def broadcast_handler(event: AnyEvent) -> None:
             if isinstance(event, AasEvent):
@@ -98,6 +99,7 @@ class TestMqttEventBusIntegration:
         mock_mqtt_client: MockMqttClient,
     ) -> None:
         """Submodel events published to bus are sent to MQTT broker."""
+
         async def broadcast_handler(event: AnyEvent) -> None:
             if isinstance(event, SubmodelEvent):
                 await mqtt_handler.handle_submodel_event(event)
@@ -129,6 +131,7 @@ class TestMqttEventBusIntegration:
         mock_mqtt_client: MockMqttClient,
     ) -> None:
         """Deleted events are published to MQTT."""
+
         async def broadcast_handler(event: AnyEvent) -> None:
             if isinstance(event, AasEvent):
                 await mqtt_handler.handle_aas_event(event)
@@ -156,6 +159,7 @@ class TestMqttEventBusIntegration:
         mock_mqtt_client: MockMqttClient,
     ) -> None:
         """Multiple events are all published to MQTT."""
+
         async def broadcast_handler(event: AnyEvent) -> None:
             if isinstance(event, AasEvent):
                 await mqtt_handler.handle_aas_event(event)
