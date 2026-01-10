@@ -116,7 +116,7 @@ class InvalidBase64UrlError(AasApiError):
 class PreconditionFailedError(AasApiError):
     """ETag precondition failed (412)."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             status_code=412,
             code="PreconditionFailed",

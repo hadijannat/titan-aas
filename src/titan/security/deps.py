@@ -14,7 +14,7 @@ Usage:
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Awaitable, Callable
 
 from fastapi import Depends, Header, HTTPException, Request, status
 
@@ -144,7 +144,7 @@ async def require_admin(
     return user
 
 
-def require_permission(permission: Permission):
+def require_permission(permission: Permission) -> Callable[[User], Awaitable[User]]:
     """Create dependency that requires a specific permission.
 
     Usage:

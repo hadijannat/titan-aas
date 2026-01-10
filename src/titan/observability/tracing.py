@@ -19,11 +19,12 @@ Usage:
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
+from starlette.types import ASGIApp
 
 from titan.config import settings
 
@@ -218,11 +219,11 @@ class TracingMiddleware(BaseHTTPMiddleware):
     - Error information
     """
 
-    def __init__(self, app: "ASGIApp") -> None:
+    def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
         self.tracer = get_tracer("titan.api")
 
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Any]) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         """Trace HTTP requests."""
         # Skip tracing for health and metrics endpoints
         if request.url.path in ("/health", "/ready", "/metrics"):

@@ -146,8 +146,8 @@ def create_app() -> FastAPI:
         )
 
     # Register exception handlers
-    app.add_exception_handler(AasApiError, aas_api_exception_handler)  # type: ignore[arg-type]
-    app.add_exception_handler(Exception, generic_exception_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(AasApiError, aas_api_exception_handler)
+    app.add_exception_handler(Exception, generic_exception_handler)
 
     # Include routers
     app.include_router(health.router)

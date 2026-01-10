@@ -6,11 +6,10 @@ Supports conditional requests with If-Modified-Since.
 
 from __future__ import annotations
 
-from typing import Callable
-
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
+from starlette.types import ASGIApp
 
 
 class CachingMiddleware(BaseHTTPMiddleware):
@@ -24,15 +23,15 @@ class CachingMiddleware(BaseHTTPMiddleware):
 
     def __init__(
         self,
-        app,
+        app: ASGIApp,
         default_max_age: int = 60,
         stale_while_revalidate: int = 30,
-    ):
+    ) -> None:
         super().__init__(app)
         self.default_max_age = default_max_age
         self.stale_while_revalidate = stale_while_revalidate
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         """Add caching headers to response."""
         response = await call_next(request)
 

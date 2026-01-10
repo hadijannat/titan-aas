@@ -261,6 +261,34 @@ class XmlDeserializer:
 
         return shells, submodels, concept_descriptions
 
+    # Tags that are known to contain lists of items
+    LIST_CONTAINER_TAGS = frozenset(
+        {
+            "assetAdministrationShells",
+            "submodels",
+            "conceptDescriptions",
+            "submodelElements",
+            "keys",
+            "description",
+            "displayName",
+            "extensions",
+            "qualifiers",
+            "embeddedDataSpecifications",
+            "specificAssetIds",
+            "isCaseOf",
+            "supplementalSemanticIds",
+            "statements",
+            "annotations",
+            "inputVariables",
+            "outputVariables",
+            "inoutputVariables",
+            "valueList",
+            "preferredName",
+            "shortName",
+            "definition",
+        }
+    )
+
     def _element_to_dict(self, element: ET.Element) -> dict[str, Any]:
         """Convert an XML element to a dict suitable for Pydantic validation.
 
@@ -278,7 +306,7 @@ class XmlDeserializer:
             tag = self._strip_ns(child.tag)
 
             # Check if this is a list container
-            if self._is_list_container(child):
+            if self._is_list_container(child, tag):
                 # Parse as list of child elements
                 items = []
                 for item in child:
@@ -336,19 +364,24 @@ class XmlDeserializer:
             # Return as string
             return text
 
-    def _is_list_container(self, element: ET.Element) -> bool:
+    def _is_list_container(self, element: ET.Element, tag: str) -> bool:
         """Check if an element is a container for a list of items.
 
         Args:
             element: XML element
+            tag: The tag name of the element
 
         Returns:
-            True if element contains multiple children with same tag
+            True if element is a known list container or has multiple children
         """
+        # Check if this is a known list container tag
+        if tag in self.LIST_CONTAINER_TAGS:
+            return True
+
         if len(element) == 0:
             return False
 
-        # Check if all children have the same tag
+        # Check if all children have the same tag (heuristic for unknown lists)
         child_tags = [self._strip_ns(child.tag) for child in element]
         return len(set(child_tags)) == 1 and len(child_tags) > 1
 

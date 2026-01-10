@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query, Response
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from titan.persistence.db import get_session
 from titan.persistence.repositories import AasRepository, SubmodelRepository
@@ -54,7 +55,7 @@ async def get_serialization(
             description="Include referenced ConceptDescriptions",
         ),
     ] = True,
-    session=Depends(get_session),
+    session: AsyncSession = Depends(get_session),
 ) -> Response:
     """Export an AAS environment with selected AAS and Submodels.
 
@@ -78,9 +79,9 @@ async def get_serialization(
     # Fetch AAS
     if aas_ids:
         for aas_id in aas_ids:
-            model = await aas_repo.get_model_by_id(aas_id)
-            if model:
-                shells.append(model.model_dump(by_alias=True, exclude_none=True))
+            aas_model = await aas_repo.get_model_by_id(aas_id)
+            if aas_model:
+                shells.append(aas_model.model_dump(by_alias=True, exclude_none=True))
     else:
         # Fetch all (with reasonable limit)
         results = await aas_repo.list_all(limit=1000)
@@ -90,9 +91,9 @@ async def get_serialization(
     # Fetch Submodels
     if submodel_ids:
         for sm_id in submodel_ids:
-            model = await submodel_repo.get_model_by_id(sm_id)
-            if model:
-                submodels.append(model.model_dump(by_alias=True, exclude_none=True))
+            submodel_model = await submodel_repo.get_model_by_id(sm_id)
+            if submodel_model:
+                submodels.append(submodel_model.model_dump(by_alias=True, exclude_none=True))
     else:
         # Fetch all (with reasonable limit)
         results = await submodel_repo.list_all(limit=1000)
@@ -142,7 +143,7 @@ async def get_serialization(
 )
 async def post_serialization(
     environment: dict[str, Any],
-    session=Depends(get_session),
+    session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     """Import an AAS environment with AAS and Submodels.
 

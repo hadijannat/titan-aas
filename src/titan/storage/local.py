@@ -14,10 +14,8 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import AsyncIterator, BinaryIO
+from typing import AsyncIterator, BinaryIO, cast
 from uuid import uuid4
-
-from typing import cast
 
 import aiofiles  # type: ignore[import-untyped]
 import aiofiles.os  # type: ignore[import-untyped]

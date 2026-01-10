@@ -9,11 +9,12 @@ from __future__ import annotations
 import hashlib
 import time
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
+from starlette.types import ASGIApp
 
 if TYPE_CHECKING:
     from redis.asyncio import Redis
@@ -100,7 +101,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     - Lazy Redis initialization (gets Redis at request time)
     """
 
-    def __init__(self, app, config: RateLimitConfig | None = None):
+    def __init__(self, app: ASGIApp, config: RateLimitConfig | None = None) -> None:
         super().__init__(app)
         self.config = config or RateLimitConfig()
         self._limiter: SlidingWindowRateLimiter | None = None
@@ -111,7 +112,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             self._limiter = SlidingWindowRateLimiter(redis, self.config)
         return self._limiter
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         """Apply rate limiting to request."""
         # Check bypass paths
         path = request.url.path

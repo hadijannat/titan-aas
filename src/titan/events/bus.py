@@ -59,7 +59,7 @@ class InMemoryEventBus(EventBus):
         self._queue: asyncio.Queue[AnyEvent] = asyncio.Queue(maxsize=max_size)
         self._handlers: list[EventHandler] = []
         self._running = False
-        self._task: asyncio.Task | None = None
+        self._task: asyncio.Task[None] | None = None
 
     async def publish(self, event: AnyEvent) -> None:
         """Publish an event to the queue.

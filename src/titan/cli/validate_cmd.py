@@ -92,7 +92,7 @@ def validate(
     console.print()
 
     # Validation results
-    results: list[dict] = []
+    results: list[ValidationResult] = []
     passed = 0
     failed = 0
 
@@ -124,14 +124,14 @@ def _validate_file(
     strict: bool,
     verbose: bool,
     console: "Console",
-) -> dict:
+) -> ValidationResult:
     """Validate a single file and return result."""
     import orjson
     from pydantic import ValidationError
 
     from titan.core.model import AssetAdministrationShell, Submodel
 
-    result = {
+    result: ValidationResult = {
         "file": str(file_path),
         "valid": False,
         "type": None,

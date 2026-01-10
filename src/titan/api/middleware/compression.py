@@ -8,11 +8,11 @@ from __future__ import annotations
 
 import gzip
 import io
-from typing import Callable
 
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response, StreamingResponse
+from starlette.types import ASGIApp
 
 # Try to import brotli, fall back to gzip-only if not available
 try:
@@ -51,16 +51,16 @@ class CompressionMiddleware(BaseHTTPMiddleware):
 
     def __init__(
         self,
-        app,
+        app: ASGIApp,
         minimum_size: int = 500,
         compression_level: int = 6,
-    ):
+    ) -> None:
         super().__init__(app)
         self.minimum_size = minimum_size
         self.gzip_level = min(compression_level, 9)
         self.brotli_quality = min(compression_level, 11)
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         """Compress response if appropriate."""
         # Check if client accepts compression
         accept_encoding = request.headers.get("accept-encoding", "")

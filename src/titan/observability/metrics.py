@@ -18,11 +18,12 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, cast
 
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
+from starlette.types import ASGIApp
 
 from titan.config import settings
 
@@ -164,7 +165,7 @@ class MetricsRegistry:
         try:
             from prometheus_client import generate_latest
 
-            return generate_latest(self._registry)
+            return cast(bytes, generate_latest(self._registry))
         except ImportError:
             return b"# prometheus_client not installed\n"
 
@@ -216,11 +217,11 @@ class MetricsMiddleware(BaseHTTPMiddleware):
     - Requests in progress gauge
     """
 
-    def __init__(self, app: "ASGIApp") -> None:
+    def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
         self.metrics = get_metrics()
 
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Any]) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         """Record metrics for HTTP requests."""
         # Skip metrics for health and metrics endpoints
         if request.url.path in ("/health", "/ready", "/metrics"):
