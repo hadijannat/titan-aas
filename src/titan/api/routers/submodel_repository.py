@@ -18,7 +18,7 @@ from __future__ import annotations
 from typing import Any
 
 import orjson
-from fastapi import APIRouter, Depends, Header, Request, Response
+from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -781,7 +781,7 @@ async def post_nested_submodel_element(
         updated_doc = insert_element(doc, id_short_path, element)
     except ElementExistsError as e:
         raise ConflictError("SubmodelElement", e.path)
-    except InvalidPathError as e:
+    except InvalidPathError:
         raise NotFoundError("SubmodelElement", id_short_path)
     except ValueError as e:
         raise BadRequestError(str(e))

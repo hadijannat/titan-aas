@@ -12,7 +12,6 @@ import pytest
 
 from titan.security.abac import (
     ABACEngine,
-    ABACPolicy,
     Action,
     AllowOwnerPolicy,
     CustomPolicy,

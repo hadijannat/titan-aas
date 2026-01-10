@@ -6,8 +6,6 @@ per IDTA-01002 Part 2.
 
 from __future__ import annotations
 
-import pytest
-
 from titan.core.projection import (
     ProjectionModifiers,
     apply_projection,

@@ -264,7 +264,6 @@ def delete_element(
     if len(parts) == 1:
         container = result
         elements = container.get("submodelElements", [])
-        elements_key = "submodelElements"
     else:
         parent_parts = parts[:-1]
         container = _navigate_to_container(result, parent_parts)
@@ -274,10 +273,8 @@ def delete_element(
         model_type = container.get("modelType")
         if model_type in ("SubmodelElementCollection", "SubmodelElementList"):
             elements = container.get("value", [])
-            elements_key = "value"
         else:
             elements = container.get("submodelElements", [])
-            elements_key = "submodelElements"
 
     target = parts[-1]
 
