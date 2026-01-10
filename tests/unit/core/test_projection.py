@@ -123,7 +123,12 @@ class TestExtractMetadata:
             "kind": "Instance",
             "semanticId": {
                 "type": "ExternalReference",
-                "keys": [{"type": "GlobalReference", "value": "https://admin-shell.io/ZVEI/TechnicalData/1/2"}],
+                "keys": [
+                    {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/ZVEI/TechnicalData/1/2",
+                    }
+                ],
             },
             "submodelElements": [
                 {

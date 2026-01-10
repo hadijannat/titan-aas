@@ -107,9 +107,7 @@ class Settings(BaseSettings):
     enable_security_headers: bool = Field(default=True, validation_alias="ENABLE_SECURITY_HEADERS")
     enable_hsts: bool = Field(default=False, validation_alias="ENABLE_HSTS")
     hsts_max_age: int = Field(default=31536000, validation_alias="HSTS_MAX_AGE")  # 1 year
-    hsts_include_subdomains: bool = Field(
-        default=True, validation_alias="HSTS_INCLUDE_SUBDOMAINS"
-    )
+    hsts_include_subdomains: bool = Field(default=True, validation_alias="HSTS_INCLUDE_SUBDOMAINS")
     hsts_preload: bool = Field(default=False, validation_alias="HSTS_PRELOAD")
     csp_policy: str | None = Field(default=None, validation_alias="CSP_POLICY")
     permissions_policy: str | None = Field(default=None, validation_alias="PERMISSIONS_POLICY")

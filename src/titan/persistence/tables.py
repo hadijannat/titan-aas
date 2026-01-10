@@ -355,3 +355,62 @@ class BlobAssetTable(Base):
         # Index for content deduplication
         Index("idx_blob_assets_content_hash", content_hash),
     )
+
+
+class AasxPackageTable(Base):
+    """AASX package table.
+
+    Stores metadata for uploaded AASX packages.
+    Package files are stored in blob storage.
+    """
+
+    __tablename__ = "aasx_packages"
+
+    # Primary key (internal UUID, also used as packageId)
+    id: Mapped[str] = mapped_column(
+        UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid4())
+    )
+
+    # Package filename
+    filename: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # Storage location (blob storage URI)
+    storage_uri: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # Package size in bytes
+    size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+
+    # SHA256 hash of package content
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    # Number of shells in package
+    shell_count: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+
+    # Number of submodels in package
+    submodel_count: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+
+    # Number of concept descriptions in package
+    concept_description_count: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+
+    # JSONB metadata (shell IDs, submodel IDs, etc.)
+    metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    __table_args__ = (
+        # Index for content deduplication
+        Index("idx_aasx_packages_content_hash", content_hash),
+        # Index for filename search
+        Index("idx_aasx_packages_filename", filename),
+    )
