@@ -243,5 +243,7 @@ Key environment variables (see `src/titan/config.py`):
 | `AZURE_CONTAINER` | none | Azure blob container name |
 | `ENABLE_SECURITY_HEADERS` | `true` | Add OWASP security headers |
 | `ENABLE_HSTS` | `false` | Enable HSTS (HTTPS only) |
+| `ENABLE_ABAC` | `false` | Enable ABAC policy evaluation |
+| `ABAC_DEFAULT_DENY` | `true` | Deny when no ABAC policy applies |
 | `ENABLE_METRICS` | `true` | Prometheus metrics |
 | `ENABLE_TRACING` | `true` | OpenTelemetry tracing |

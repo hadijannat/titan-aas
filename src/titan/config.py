@@ -112,5 +112,9 @@ class Settings(BaseSettings):
     csp_policy: str | None = Field(default=None, validation_alias="CSP_POLICY")
     permissions_policy: str | None = Field(default=None, validation_alias="PERMISSIONS_POLICY")
 
+    # ABAC (Attribute-Based Access Control)
+    enable_abac: bool = Field(default=False, validation_alias="ENABLE_ABAC")
+    abac_default_deny: bool = Field(default=True, validation_alias="ABAC_DEFAULT_DENY")
+
 
 settings = Settings()

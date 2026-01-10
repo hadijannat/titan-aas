@@ -36,6 +36,9 @@ class Permission(str, Enum):
     CREATE_DESCRIPTOR = "create:descriptor"
     UPDATE_DESCRIPTOR = "update:descriptor"
     DELETE_DESCRIPTOR = "delete:descriptor"
+    CREATE_CONCEPT_DESCRIPTION = "create:concept_description"
+    UPDATE_CONCEPT_DESCRIPTION = "update:concept_description"
+    DELETE_CONCEPT_DESCRIPTION = "delete:concept_description"
 
     # Admin operations
     ADMIN = "admin:*"
@@ -79,6 +82,8 @@ ROLE_PERMISSIONS: dict[str, set[Permission]] = {
         Permission.UPDATE_SUBMODEL,
         Permission.CREATE_DESCRIPTOR,
         Permission.UPDATE_DESCRIPTOR,
+        Permission.CREATE_CONCEPT_DESCRIPTION,
+        Permission.UPDATE_CONCEPT_DESCRIPTION,
     },
     Role.TITAN_WRITE.value: {
         Permission.READ_AAS,
@@ -91,6 +96,8 @@ ROLE_PERMISSIONS: dict[str, set[Permission]] = {
         Permission.UPDATE_SUBMODEL,
         Permission.CREATE_DESCRIPTOR,
         Permission.UPDATE_DESCRIPTOR,
+        Permission.CREATE_CONCEPT_DESCRIPTION,
+        Permission.UPDATE_CONCEPT_DESCRIPTION,
     },
     Role.ADMIN.value: {perm for perm in Permission},
     Role.TITAN_ADMIN.value: {perm for perm in Permission},

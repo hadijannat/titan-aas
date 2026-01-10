@@ -68,15 +68,34 @@ async def get_submodel_descriptor_repo(
 async def get_all_shell_descriptors(
     request: Request,
     limit: LimitParam = DEFAULT_LIMIT,
+    asset_kind: str | None = None,
+    asset_type: str | None = None,
+    id_short: str | None = None,
     repo: AasDescriptorRepository = Depends(get_aas_descriptor_repo),
 ) -> Response:
     """Get all AAS Descriptors.
 
     Returns a paginated list of all AAS descriptors in the registry.
+    Supports filtering by assetKind, assetType, and idShort (SSP-004).
     """
     results = await repo.list_all(limit=limit, offset=0)
 
-    items = [orjson.loads(doc_bytes) for doc_bytes, _ in results]
+    items = []
+    for doc_bytes, _ in results:
+        doc = orjson.loads(doc_bytes)
+
+        # Apply filters (SSP-004 Query Profile)
+        if id_short and doc.get("idShort") != id_short:
+            continue
+
+        if asset_kind or asset_type:
+            asset_info = doc.get("assetInformation", {})
+            if asset_kind and asset_info.get("assetKind") != asset_kind:
+                continue
+            if asset_type and asset_info.get("assetType") != asset_type:
+                continue
+
+        items.append(doc)
 
     response_data = {
         "result": items,
@@ -197,6 +216,82 @@ async def delete_shell_descriptor_by_id(
 
 
 # =============================================================================
+# Shell Descriptors Bulk Operations (SSP-003)
+# =============================================================================
+
+
+@router.post("/shell-descriptors/$bulk", status_code=201)
+async def bulk_create_shell_descriptors(
+    descriptors: list[AssetAdministrationShellDescriptor],
+    repo: AasDescriptorRepository = Depends(get_aas_descriptor_repo),
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """Bulk create or update AAS Descriptors.
+
+    Creates new descriptors or updates existing ones.
+    Returns a summary of created and updated counts.
+    """
+    created = 0
+    updated = 0
+
+    for descriptor in descriptors:
+        if await repo.exists(descriptor.id):
+            await repo.update(descriptor.id, descriptor)
+            updated += 1
+        else:
+            await repo.create(descriptor)
+            created += 1
+
+    await session.commit()
+
+    result = {
+        "created": created,
+        "updated": updated,
+        "total": len(descriptors),
+    }
+
+    return Response(
+        content=canonical_bytes(result),
+        status_code=201,
+        media_type="application/json",
+    )
+
+
+@router.delete("/shell-descriptors/$bulk")
+async def bulk_delete_shell_descriptors(
+    identifiers: list[str],
+    repo: AasDescriptorRepository = Depends(get_aas_descriptor_repo),
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """Bulk delete AAS Descriptors.
+
+    Accepts a list of identifiers (not Base64URL encoded).
+    Returns a summary of deleted and not found counts.
+    """
+    deleted = 0
+    not_found = 0
+
+    for identifier in identifiers:
+        if await repo.delete(identifier):
+            deleted += 1
+        else:
+            not_found += 1
+
+    await session.commit()
+
+    result = {
+        "deleted": deleted,
+        "notFound": not_found,
+        "total": len(identifiers),
+    }
+
+    return Response(
+        content=canonical_bytes(result),
+        media_type="application/json",
+    )
+
+
+# =============================================================================
 # Submodel Descriptors (Submodel Registry)
 # =============================================================================
 
@@ -206,19 +301,28 @@ async def get_all_submodel_descriptors(
     request: Request,
     limit: LimitParam = DEFAULT_LIMIT,
     semantic_id: str | None = None,
+    id_short: str | None = None,
     repo: SubmodelDescriptorRepository = Depends(get_submodel_descriptor_repo),
 ) -> Response:
     """Get all Submodel Descriptors.
 
     Returns a paginated list of all Submodel descriptors in the registry.
-    Optionally filter by semanticId.
+    Supports filtering by semanticId and idShort (SSP-004).
     """
     if semantic_id:
         results = await repo.find_by_semantic_id(semantic_id, limit=limit)
     else:
         results = await repo.list_all(limit=limit, offset=0)
 
-    items = [orjson.loads(doc_bytes) for doc_bytes, _ in results]
+    items = []
+    for doc_bytes, _ in results:
+        doc = orjson.loads(doc_bytes)
+
+        # Apply idShort filter (SSP-004)
+        if id_short and doc.get("idShort") != id_short:
+            continue
+
+        items.append(doc)
 
     response_data = {
         "result": items,
@@ -336,3 +440,79 @@ async def delete_submodel_descriptor_by_id(
 
     await session.commit()
     return Response(status_code=204)
+
+
+# =============================================================================
+# Submodel Descriptors Bulk Operations (SSP-003)
+# =============================================================================
+
+
+@router.post("/submodel-descriptors/$bulk", status_code=201)
+async def bulk_create_submodel_descriptors(
+    descriptors: list[SubmodelDescriptor],
+    repo: SubmodelDescriptorRepository = Depends(get_submodel_descriptor_repo),
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """Bulk create or update Submodel Descriptors.
+
+    Creates new descriptors or updates existing ones.
+    Returns a summary of created and updated counts.
+    """
+    created = 0
+    updated = 0
+
+    for descriptor in descriptors:
+        if await repo.exists(descriptor.id):
+            await repo.update(descriptor.id, descriptor)
+            updated += 1
+        else:
+            await repo.create(descriptor)
+            created += 1
+
+    await session.commit()
+
+    result = {
+        "created": created,
+        "updated": updated,
+        "total": len(descriptors),
+    }
+
+    return Response(
+        content=canonical_bytes(result),
+        status_code=201,
+        media_type="application/json",
+    )
+
+
+@router.delete("/submodel-descriptors/$bulk")
+async def bulk_delete_submodel_descriptors(
+    identifiers: list[str],
+    repo: SubmodelDescriptorRepository = Depends(get_submodel_descriptor_repo),
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """Bulk delete Submodel Descriptors.
+
+    Accepts a list of identifiers (not Base64URL encoded).
+    Returns a summary of deleted and not found counts.
+    """
+    deleted = 0
+    not_found = 0
+
+    for identifier in identifiers:
+        if await repo.delete(identifier):
+            deleted += 1
+        else:
+            not_found += 1
+
+    await session.commit()
+
+    result = {
+        "deleted": deleted,
+        "notFound": not_found,
+        "total": len(identifiers),
+    }
+
+    return Response(
+        content=canonical_bytes(result),
+        media_type="application/json",
+    )

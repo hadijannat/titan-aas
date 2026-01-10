@@ -22,9 +22,9 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from titan.api.errors import ConflictError, NotFoundError
-from titan.api.pagination import CursorParam, LimitParam, DEFAULT_LIMIT
-from titan.compat.aasx import AasxImporter, AasxExporter
+from titan.api.errors import NotFoundError
+from titan.api.pagination import DEFAULT_LIMIT, CursorParam, LimitParam
+from titan.compat.aasx import AasxImporter
 from titan.persistence.db import get_session
 from titan.persistence.tables import AasxPackageTable
 from titan.storage.factory import get_blob_storage
@@ -258,7 +258,7 @@ async def update_package(
     package.shell_count = len(parsed.shells)
     package.submodel_count = len(parsed.submodels)
     package.concept_description_count = len(parsed.concept_descriptions)
-    package.metadata = {
+    package.package_info = {
         "shellIds": shell_ids,
         "submodelIds": submodel_ids,
         "conceptDescriptionIds": concept_description_ids,
@@ -322,15 +322,15 @@ async def get_package_shells(
     importer = AasxImporter()
     parsed = await importer.import_from_stream(BytesIO(content))
 
-    shells = [
-        {
+    shells = []
+    for shell in parsed.shells:
+        asset_info = shell.asset_information
+        shells.append({
             "id": shell.id,
             "idShort": shell.id_short,
-            "assetKind": shell.asset_information.asset_kind.value if shell.asset_information else None,
-            "globalAssetId": shell.asset_information.global_asset_id if shell.asset_information else None,
-        }
-        for shell in parsed.shells
-    ]
+            "assetKind": asset_info.asset_kind.value if asset_info else None,
+            "globalAssetId": asset_info.global_asset_id if asset_info else None,
+        })
 
     return {"result": shells}
 

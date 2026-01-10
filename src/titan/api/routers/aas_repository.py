@@ -42,6 +42,8 @@ from titan.core.projection import ProjectionModifiers, apply_projection, extract
 from titan.events import EventType, get_event_bus, publish_aas_deleted, publish_aas_event
 from titan.persistence.db import get_session
 from titan.persistence.repositories import AasRepository
+from titan.security.deps import require_permission
+from titan.security.rbac import Permission
 
 router = APIRouter(prefix="/shells", tags=["AAS Repository"])
 
@@ -84,7 +86,10 @@ def _match_asset_ids(doc: dict, asset_ids: list[str]) -> bool:
     return False
 
 
-@router.get("")
+@router.get(
+    "",
+    dependencies=[Depends(require_permission(Permission.READ_AAS))],
+)
 async def get_all_shells(
     request: Request,
     limit: LimitParam = DEFAULT_LIMIT,
@@ -143,7 +148,11 @@ async def get_all_shells(
         return json_bytes_response(canonical_bytes(response_data))
 
 
-@router.post("", status_code=201)
+@router.post(
+    "",
+    status_code=201,
+    dependencies=[Depends(require_permission(Permission.CREATE_AAS))],
+)
 async def post_shell(
     aas: AssetAdministrationShell,
     repo: AasRepository = Depends(get_aas_repo),
@@ -185,7 +194,17 @@ async def post_shell(
     )
 
 
-@router.get("/{aas_identifier}")
+@router.get(
+    "/{aas_identifier}",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_AAS,
+                resource_id_params=["aas_identifier"],
+            )
+        )
+    ],
+)
 async def get_shell_by_id(
     aas_identifier: str,
     request: Request,
@@ -258,7 +277,17 @@ async def get_shell_by_id(
         )
 
 
-@router.put("/{aas_identifier}")
+@router.put(
+    "/{aas_identifier}",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.UPDATE_AAS,
+                resource_id_params=["aas_identifier"],
+            )
+        )
+    ],
+)
 async def put_shell_by_id(
     aas_identifier: str,
     aas: AssetAdministrationShell,
@@ -314,7 +343,18 @@ async def put_shell_by_id(
     )
 
 
-@router.delete("/{aas_identifier}", status_code=204)
+@router.delete(
+    "/{aas_identifier}",
+    status_code=204,
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.DELETE_AAS,
+                resource_id_params=["aas_identifier"],
+            )
+        )
+    ],
+)
 async def delete_shell_by_id(
     aas_identifier: str,
     repo: AasRepository = Depends(get_aas_repo),
@@ -351,7 +391,17 @@ async def delete_shell_by_id(
     return Response(status_code=204)
 
 
-@router.get("/{aas_identifier}/$reference")
+@router.get(
+    "/{aas_identifier}/$reference",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_AAS,
+                resource_id_params=["aas_identifier"],
+            )
+        )
+    ],
+)
 async def get_shell_reference(
     aas_identifier: str,
     repo: AasRepository = Depends(get_aas_repo),
