@@ -55,9 +55,7 @@ class UsagePolicy:
                     ],
                 }
             ],
-            "odrl:prohibition": [
-                {"odrl:action": {"odrl:type": p}} for p in self.prohibitions
-            ],
+            "odrl:prohibition": [{"odrl:action": {"odrl:type": p}} for p in self.prohibitions],
         }
 
 
@@ -276,9 +274,7 @@ class CatenaXConnector:
             }
 
             if filter_expression:
-                catalog_request["querySpec"] = {
-                    "filterExpression": [filter_expression]
-                }
+                catalog_request["querySpec"] = {"filterExpression": [filter_expression]}
 
             # Placeholder - would POST to EDC /v3/catalog/request
             logger.info(f"Queried catalog at: {provider_url}")

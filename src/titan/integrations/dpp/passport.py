@@ -418,9 +418,7 @@ class DppGenerator:
             manufacturer=manufacturer,
             data=pcf_data.to_dict(),
             compliance_status=(
-                ComplianceStatus.COMPLIANT
-                if pcf_data.verified
-                else ComplianceStatus.PARTIAL
+                ComplianceStatus.COMPLIANT if pcf_data.verified else ComplianceStatus.PARTIAL
             ),
             verification_url=self.qr_generator.generate_url(f"pcf-{submodel.id}"),
         )

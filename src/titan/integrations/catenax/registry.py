@@ -57,7 +57,8 @@ class SubmodelDescriptorDtr:
         result: dict[str, Any] = {
             "id": self.id,
             "idShort": self.id_short,
-            "endpoints": self.endpoints or [
+            "endpoints": self.endpoints
+            or [
                 {
                     "interface": "SUBMODEL-3.0",
                     "protocolInformation": {
