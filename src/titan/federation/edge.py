@@ -352,9 +352,7 @@ class EdgeController:
 
         return total_pulled
 
-    async def _pull_entity_type(
-        self, client: Any, entity_type: str, endpoint: str
-    ) -> int:
+    async def _pull_entity_type(self, client: Any, entity_type: str, endpoint: str) -> int:
         """Pull a specific entity type from hub.
 
         Args:
@@ -381,9 +379,7 @@ class EdgeController:
 
                 response = await client.get(url, params=params)
                 if response.status_code != 200:
-                    logger.error(
-                        f"Failed to pull {entity_type}: {response.status_code}"
-                    )
+                    logger.error(f"Failed to pull {entity_type}: {response.status_code}")
                     break
 
                 data = response.json()
@@ -415,9 +411,7 @@ class EdgeController:
 
         return pulled
 
-    async def _process_pulled_item(
-        self, entity_type: str, item: dict[str, Any]
-    ) -> None:
+    async def _process_pulled_item(self, entity_type: str, item: dict[str, Any]) -> None:
         """Process a single pulled item.
 
         Checks for conflicts and either applies update or queues conflict.
@@ -457,9 +451,7 @@ class EdgeController:
                 await self._apply_pulled_item(entity_type, item)
                 logger.debug(f"Applied update {entity_type}: {item_id}")
 
-    async def _get_local_item(
-        self, entity_type: str, item_id: str
-    ) -> dict[str, Any] | None:
+    async def _get_local_item(self, entity_type: str, item_id: str) -> dict[str, Any] | None:
         """Get local version of an item.
 
         Args:
@@ -473,9 +465,7 @@ class EdgeController:
         # In production, this would query the local database
         return None
 
-    async def _apply_pulled_item(
-        self, entity_type: str, item: dict[str, Any]
-    ) -> None:
+    async def _apply_pulled_item(self, entity_type: str, item: dict[str, Any]) -> None:
         """Apply a pulled item to local storage.
 
         Args:

@@ -329,19 +329,21 @@ async def get_sync_history(
 
     history = []
     for log in logs:
-        history.append({
-            "id": log.id,
-            "peerId": log.peer_id,
-            "direction": log.sync_direction,
-            "entityType": log.entity_type,
-            "itemsProcessed": log.items_processed,
-            "itemsFailed": log.items_failed,
-            "conflictsDetected": log.conflicts_detected,
-            "status": log.status,
-            "startedAt": log.started_at.isoformat() if log.started_at else None,
-            "completedAt": log.completed_at.isoformat() if log.completed_at else None,
-            "errorMessage": log.error_message,
-        })
+        history.append(
+            {
+                "id": log.id,
+                "peerId": log.peer_id,
+                "direction": log.sync_direction,
+                "entityType": log.entity_type,
+                "itemsProcessed": log.items_processed,
+                "itemsFailed": log.items_failed,
+                "conflictsDetected": log.conflicts_detected,
+                "status": log.status,
+                "startedAt": log.started_at.isoformat() if log.started_at else None,
+                "completedAt": log.completed_at.isoformat() if log.completed_at else None,
+                "errorMessage": log.error_message,
+            }
+        )
 
     return {
         "history": history,
@@ -382,19 +384,21 @@ async def list_conflicts(
 
     items = []
     for conflict in conflicts:
-        items.append({
-            "id": conflict.id,
-            "peerId": conflict.peer_id,
-            "entityType": conflict.entity_type,
-            "entityId": conflict.entity_id,
-            "localEtag": conflict.local_etag,
-            "remoteEtag": conflict.remote_etag,
-            "detectedAt": conflict.created_at.isoformat(),
-            "isResolved": conflict.resolved_at is not None,
-            "resolutionStrategy": conflict.resolution_strategy,
-            "resolvedAt": conflict.resolved_at.isoformat() if conflict.resolved_at else None,
-            "resolvedBy": conflict.resolved_by,
-        })
+        items.append(
+            {
+                "id": conflict.id,
+                "peerId": conflict.peer_id,
+                "entityType": conflict.entity_type,
+                "entityId": conflict.entity_id,
+                "localEtag": conflict.local_etag,
+                "remoteEtag": conflict.remote_etag,
+                "detectedAt": conflict.created_at.isoformat(),
+                "isResolved": conflict.resolved_at is not None,
+                "resolutionStrategy": conflict.resolution_strategy,
+                "resolvedAt": conflict.resolved_at.isoformat() if conflict.resolved_at else None,
+                "resolvedBy": conflict.resolved_by,
+            }
+        )
 
     return {
         "conflicts": items,
@@ -538,9 +542,7 @@ async def resolve_all_conflicts(
         )
 
     # Get unresolved conflicts from database
-    stmt = select(FederationConflictTable).where(
-        FederationConflictTable.resolved_at.is_(None)
-    )
+    stmt = select(FederationConflictTable).where(FederationConflictTable.resolved_at.is_(None))
     if peer_id:
         stmt = stmt.where(FederationConflictTable.peer_id == peer_id)
 

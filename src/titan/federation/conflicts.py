@@ -322,9 +322,7 @@ class ConflictManager:
         unresolved = self.list_unresolved(peer_id)
 
         for conflict in unresolved:
-            results[conflict.id] = self.resolve_conflict(
-                conflict.id, strategy, resolved_by
-            )
+            results[conflict.id] = self.resolve_conflict(conflict.id, strategy, resolved_by)
 
         return results
 
@@ -334,9 +332,7 @@ class ConflictManager:
         Returns:
             Number of conflicts removed
         """
-        resolved_ids = [
-            cid for cid, c in self._conflicts.items() if c.is_resolved
-        ]
+        resolved_ids = [cid for cid, c in self._conflicts.items() if c.is_resolved]
         for cid in resolved_ids:
             del self._conflicts[cid]
         return len(resolved_ids)

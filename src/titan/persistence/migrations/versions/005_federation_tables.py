@@ -42,18 +42,14 @@ def upgrade() -> None:
             nullable=False,
             comment="aas, submodel, concept_description",
         ),
-        sa.Column(
-            "last_sync_cursor", sa.String(255), nullable=True, comment="Pagination cursor"
-        ),
+        sa.Column("last_sync_cursor", sa.String(255), nullable=True, comment="Pagination cursor"),
         sa.Column(
             "last_sync_timestamp",
             sa.DateTime(timezone=True),
             nullable=True,
             comment="Last successful sync time",
         ),
-        sa.Column(
-            "items_synced", sa.BigInteger, nullable=False, server_default="0"
-        ),
+        sa.Column("items_synced", sa.BigInteger, nullable=False, server_default="0"),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),

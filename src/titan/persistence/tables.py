@@ -472,9 +472,7 @@ class FederationConflictTable(Base):
     local_doc: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     remote_doc: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     resolution_strategy: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    resolved_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     resolved_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -500,9 +498,7 @@ class FederationPendingChangeTable(Base):
     priority: Mapped[str] = mapped_column(String(10), nullable=False, default="normal")
     attempts: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
-    target_peer_id: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, index=True
-    )
+    target_peer_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -533,12 +529,8 @@ class FederationSyncLogTable(Base):
     items_processed: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
     items_failed: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
     conflicts_detected: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
-    started_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
-    completed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="running")
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(

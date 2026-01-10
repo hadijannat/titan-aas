@@ -63,9 +63,7 @@ class FederationSync:
         peers = self.registry.list_healthy()
         start_time = datetime.now(UTC)
 
-        logger.info(
-            f"Federation sync started: mode={self.mode.value}, peers={len(peers)}"
-        )
+        logger.info(f"Federation sync started: mode={self.mode.value}, peers={len(peers)}")
 
         if not peers:
             return {
@@ -142,9 +140,7 @@ class FederationSync:
 
         return summary
 
-    async def _sync_with_peer(
-        self, client: httpx.AsyncClient, peer: Peer
-    ) -> SyncResult:
+    async def _sync_with_peer(self, client: httpx.AsyncClient, peer: Peer) -> SyncResult:
         """Sync with a single peer.
 
         Args:
@@ -177,9 +173,7 @@ class FederationSync:
 
         return result
 
-    async def _push_to_peer(
-        self, client: httpx.AsyncClient, peer: Peer
-    ) -> int:
+    async def _push_to_peer(self, client: httpx.AsyncClient, peer: Peer) -> int:
         """Push local changes to a peer.
 
         Args:
@@ -196,9 +190,7 @@ class FederationSync:
         logger.debug(f"Push to peer {peer.id} (stub)")
         return 0
 
-    async def _pull_from_peer(
-        self, client: httpx.AsyncClient, peer: Peer
-    ) -> tuple[int, int]:
+    async def _pull_from_peer(self, client: httpx.AsyncClient, peer: Peer) -> tuple[int, int]:
         """Pull updates from a peer.
 
         Args:
@@ -259,8 +251,7 @@ class FederationSync:
                 response = await client.get(url, params=params)
                 if response.status_code != 200:
                     logger.warning(
-                        f"Pull {entity_type} from {peer.id} failed: "
-                        f"{response.status_code}"
+                        f"Pull {entity_type} from {peer.id} failed: {response.status_code}"
                     )
                     break
 
