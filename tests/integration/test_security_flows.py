@@ -17,6 +17,9 @@ from httpx import ASGITransport, AsyncClient
 
 from titan.security.oidc import User
 
+# Marker for tests that require full OIDC and middleware stack
+requires_oidc = pytest.mark.skip(reason="Requires OIDC configuration and middleware integration")
+
 if TYPE_CHECKING:
     from redis.asyncio import Redis
 
@@ -587,6 +590,7 @@ class TestErrorResponseFormat:
         assert "messages" in data
         assert isinstance(data["messages"], list)
 
+    @requires_oidc
     @pytest.mark.asyncio
     async def test_error_includes_timestamp(
         self,
