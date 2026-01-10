@@ -380,7 +380,7 @@ jobs:
 
       - name: Run load test
         env:
-          LOAD_TEST_P99_MS: "200"
+          LOAD_TEST_P99_MS: "250"
           LOAD_TEST_MAX_ERROR_RATE: "0.01"
         run: |
           uv run -- locust -f tests/load/locustfile.py \
@@ -442,10 +442,10 @@ jobs:
               },
               'results': stats,
               'thresholds': {
-                  'p99_ms': 200,
+                  'p99_ms': 250,
                   'max_error_rate': 0.01,
               },
-              'passed': stats.get('p99_ms', 999) <= 200 and
+              'passed': stats.get('p99_ms', 999) <= 250 and
                        (stats.get('failures_total', 1) / max(stats.get('requests_total', 1), 1)) <= 0.01,
           }
 

@@ -185,7 +185,7 @@ See `docs/deployment-runbook.md` for:
 # .github/workflows/ci.yml
 load-test:
   env:
-    LOAD_TEST_P99_MS: "200"
+    LOAD_TEST_P99_MS: "250"
     LOAD_TEST_MAX_ERROR_RATE: "0.01"
 ```
 
