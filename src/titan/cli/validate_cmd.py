@@ -9,12 +9,21 @@ Usage:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypedDict
 
 import typer
 
 if TYPE_CHECKING:
     from rich.console import Console
+
+
+class ValidationResult(TypedDict):
+    file: str
+    valid: bool
+    type: str | None
+    id: str | None
+    errors: list[str]
+
 
 app = typer.Typer(help="Validate AAS/Submodel JSON files")
 

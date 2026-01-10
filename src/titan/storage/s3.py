@@ -10,7 +10,7 @@ Supports:
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, AsyncIterator, BinaryIO
+from typing import TYPE_CHECKING, AsyncIterator, BinaryIO, cast
 
 if TYPE_CHECKING:
     import aioboto3
@@ -166,7 +166,8 @@ class S3BlobStorage(BlobStorage):
                     Key=key,
                 )
                 async with response["Body"] as stream:
-                    return await stream.read()
+                    data = await stream.read()
+                    return cast(bytes, data)
             except s3.exceptions.NoSuchKey:
                 raise FileNotFoundError(f"Blob not found: {metadata.storage_uri}")
 
@@ -259,7 +260,7 @@ class S3BlobStorage(BlobStorage):
                 Params={"Bucket": self.bucket, "Key": key},
                 ExpiresIn=expires_in,
             )
-            return url
+            return cast(str, url)
 
     async def close(self) -> None:
         """Close the S3 session."""

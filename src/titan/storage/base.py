@@ -76,7 +76,7 @@ class BlobStorage(ABC):
         ...
 
     @abstractmethod
-    async def stream(self, metadata: BlobMetadata) -> AsyncIterator[bytes]:
+    def stream(self, metadata: BlobMetadata) -> AsyncIterator[bytes]:
         """Stream blob content in chunks.
 
         Args:

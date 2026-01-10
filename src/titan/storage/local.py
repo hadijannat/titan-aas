@@ -17,8 +17,10 @@ from pathlib import Path
 from typing import AsyncIterator, BinaryIO
 from uuid import uuid4
 
-import aiofiles
-import aiofiles.os
+from typing import cast
+
+import aiofiles  # type: ignore[import-untyped]
+import aiofiles.os  # type: ignore[import-untyped]
 
 from titan.storage.base import BlobMetadata, BlobStorage
 
@@ -111,7 +113,7 @@ class LocalBlobStorage(BlobStorage):
         async with aiofiles.open(blob_path, "rb") as f:
             content = await f.read()
 
-        return content
+        return cast(bytes, content)
 
     async def stream(self, metadata: BlobMetadata) -> AsyncIterator[bytes]:
         """Stream blob content in chunks."""
@@ -152,7 +154,7 @@ class LocalBlobStorage(BlobStorage):
     async def exists(self, metadata: BlobMetadata) -> bool:
         """Check if a blob exists in local filesystem."""
         blob_path = Path(metadata.storage_uri)
-        return await aiofiles.os.path.exists(blob_path)
+        return cast(bool, await aiofiles.os.path.exists(blob_path))
 
 
 # Global storage instance

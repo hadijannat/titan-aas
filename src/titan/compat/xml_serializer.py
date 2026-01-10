@@ -188,7 +188,7 @@ class XmlSerializer:
         if isinstance(value, bool):
             return "true" if value else "false"
         elif isinstance(value, Enum):
-            return value.value
+            return str(value.value)
         return str(value)
 
 

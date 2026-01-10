@@ -66,7 +66,7 @@ async def externalize_submodel_doc(
 
 
 async def _externalize_elements(
-    elements: list[dict[str, Any]],
+    elements: list[Any],
     parent_path: str | None,
     parent_is_list: bool,
     submodel_id: str,
