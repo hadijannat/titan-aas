@@ -35,9 +35,7 @@ class Settings(BaseSettings):
     oidc_audience: str | None = Field(default=None, validation_alias="OIDC_AUDIENCE")
     oidc_client_id: str | None = Field(default=None, validation_alias="OIDC_CLIENT_ID")
     oidc_roles_claim: str | None = Field(default="roles", validation_alias="OIDC_ROLES_CLAIM")
-    oidc_jwks_cache_seconds: int = Field(
-        default=3600, validation_alias="OIDC_JWKS_CACHE_SECONDS"
-    )
+    oidc_jwks_cache_seconds: int = Field(default=3600, validation_alias="OIDC_JWKS_CACHE_SECONDS")
 
     # Observability
     enable_tracing: bool = Field(default=True, validation_alias="ENABLE_TRACING")

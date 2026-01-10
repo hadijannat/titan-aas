@@ -155,6 +155,7 @@ class TokenValidator:
         if self._jwks is not None and self._jwks_fetched_at is not None:
             age = (now - self._jwks_fetched_at).total_seconds()
             if age < self.config.jwks_cache_seconds:
+                assert self._jwks is not None
                 return self._jwks
 
         # Fetch JWKS
@@ -172,6 +173,7 @@ class TokenValidator:
         except Exception as e:
             if self._jwks is not None:
                 logger.warning(f"Failed to refresh JWKS, using cached: {e}")
+                assert self._jwks is not None
                 return self._jwks
             raise InvalidTokenError(f"Failed to fetch JWKS: {e}") from e
 
