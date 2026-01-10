@@ -7,9 +7,10 @@ Enables multi-instance deployment with:
 - Conflict resolution
 """
 
+from titan.federation.discovery import FederatedDiscovery
+from titan.federation.edge import EdgeConfig, EdgeController, EdgeStatus
 from titan.federation.peer import Peer, PeerRegistry
 from titan.federation.sync import FederationSync, SyncMode
-from titan.federation.discovery import FederatedDiscovery
 
 __all__ = [
     "Peer",
@@ -17,4 +18,7 @@ __all__ = [
     "FederationSync",
     "SyncMode",
     "FederatedDiscovery",
+    "EdgeController",
+    "EdgeConfig",
+    "EdgeStatus",
 ]
