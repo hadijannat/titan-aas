@@ -24,16 +24,13 @@ TARGETS = {
     # Throughput targets
     "min_rps": 15000,  # Minimum requests per second
     "target_rps": 20000,  # Target requests per second
-
     # Latency targets (milliseconds)
     "p50_ms": 10,  # Median latency
     "p95_ms": 50,  # 95th percentile
     "p99_ms": 100,  # 99th percentile
     "max_ms": 500,  # Maximum acceptable latency
-
     # Error rate targets
     "max_error_rate": 0.001,  # 0.1% max error rate
-
     # Cache performance
     "min_cache_hit_ratio": 0.85,  # 85% cache hit ratio
 }
