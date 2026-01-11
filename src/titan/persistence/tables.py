@@ -408,6 +408,7 @@ class AasxPackageTable(Base):
         ForeignKey("aasx_packages.id", ondelete="SET NULL"),
         nullable=True,
     )
+    tags: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(

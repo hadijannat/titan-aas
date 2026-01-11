@@ -78,6 +78,13 @@ class MetricsRegistry:
     modbus_connection_state: Any = None
     modbus_polling_duration_seconds: Any = None
 
+    # Package versioning metrics
+    package_versions_created_total: Any = None
+    package_versions_rollback_total: Any = None
+    package_version_creation_duration_seconds: Any = None
+    package_version_comparison_duration_seconds: Any = None
+    package_version_storage_bytes: Any = None
+
     # Internal state
     _initialized: bool = field(default=False, repr=False)
     _registry: Any = field(default=None, repr=False)
@@ -273,6 +280,36 @@ class MetricsRegistry:
                 "Modbus register polling duration in seconds",
                 ["host", "register_type"],
                 buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5),
+            )
+
+            # Package versioning metrics
+            self.package_versions_created_total = Counter(
+                "titan_package_versions_created_total",
+                "Total number of package versions created",
+                ["package_id"],
+            )
+
+            self.package_versions_rollback_total = Counter(
+                "titan_package_versions_rollback_total",
+                "Total number of package rollbacks performed",
+                ["package_id", "target_version"],
+            )
+
+            self.package_version_creation_duration_seconds = Histogram(
+                "titan_package_version_creation_duration_seconds",
+                "Duration of package version creation operations",
+                buckets=(0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0),
+            )
+
+            self.package_version_comparison_duration_seconds = Histogram(
+                "titan_package_version_comparison_duration_seconds",
+                "Duration of package version comparison operations",
+                buckets=(0.5, 1.0, 2.0, 5.0, 10.0, 30.0, 60.0),
+            )
+
+            self.package_version_storage_bytes = Gauge(
+                "titan_package_version_storage_bytes",
+                "Total storage used by package versions",
             )
 
             self._initialized = True
@@ -696,3 +733,67 @@ def record_modbus_polling_duration(host: str, register_type: str, duration: floa
             host=host,
             register_type=register_type,
         ).observe(duration)
+
+
+# -----------------------------------------------------------------------------
+# Package Versioning Metrics Helper Functions
+# -----------------------------------------------------------------------------
+
+
+def record_package_version_created(package_id: str) -> None:
+    """Record package version creation.
+
+    Args:
+        package_id: Package identifier
+    """
+    metrics = get_metrics()
+    if metrics.package_versions_created_total:
+        metrics.package_versions_created_total.labels(package_id=package_id).inc()
+
+
+def record_package_version_rollback(package_id: str, target_version: int) -> None:
+    """Record package version rollback.
+
+    Args:
+        package_id: Package identifier
+        target_version: Version number being rolled back to
+    """
+    metrics = get_metrics()
+    if metrics.package_versions_rollback_total:
+        metrics.package_versions_rollback_total.labels(
+            package_id=package_id,
+            target_version=str(target_version),
+        ).inc()
+
+
+def record_package_version_creation_duration(duration: float) -> None:
+    """Record package version creation duration.
+
+    Args:
+        duration: Creation duration in seconds
+    """
+    metrics = get_metrics()
+    if metrics.package_version_creation_duration_seconds:
+        metrics.package_version_creation_duration_seconds.observe(duration)
+
+
+def record_package_version_comparison_duration(duration: float) -> None:
+    """Record package version comparison duration.
+
+    Args:
+        duration: Comparison duration in seconds
+    """
+    metrics = get_metrics()
+    if metrics.package_version_comparison_duration_seconds:
+        metrics.package_version_comparison_duration_seconds.observe(duration)
+
+
+def set_package_version_storage_bytes(size_bytes: float) -> None:
+    """Set total package version storage size.
+
+    Args:
+        size_bytes: Total storage size in bytes
+    """
+    metrics = get_metrics()
+    if metrics.package_version_storage_bytes:
+        metrics.package_version_storage_bytes.set(size_bytes)

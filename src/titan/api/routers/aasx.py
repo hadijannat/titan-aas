@@ -13,11 +13,12 @@ from __future__ import annotations
 
 import hashlib
 import logging
+from datetime import UTC, datetime
 from io import BytesIO
 from typing import Any
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,7 +28,7 @@ from titan.api.pagination import DEFAULT_LIMIT, CursorParam, LimitParam
 from titan.compat.aasx import AasxImporter
 from titan.persistence.db import get_session
 from titan.persistence.tables import AasxPackageTable
-from titan.security.deps import require_permission
+from titan.security.deps import get_optional_user, require_permission
 from titan.security.rbac import Permission
 from titan.storage.factory import get_blob_storage
 
@@ -232,9 +233,102 @@ async def download_package(
 async def update_package(
     package_id: str,
     file: UploadFile = File(...),
+    create_version: bool = Query(False, description="Create new version instead of overwriting"),
+    comment: str | None = Form(None),
     session: AsyncSession = Depends(get_session),
+    user=Depends(get_optional_user),
 ) -> dict[str, Any]:
-    """Update an existing AASX package."""
+    """Update an existing AASX package.
+
+    Args:
+        package_id: ID of the package to update
+        file: New AASX file content
+        create_version: If True, creates a new version instead of overwriting (default: False)
+        comment: Optional version comment (only used if create_version=True)
+        user: Current user (optional, for version audit trail)
+
+    Returns:
+        Updated package metadata (or new version metadata if create_version=True)
+    """
+    # If create_version=True, delegate to version creation endpoint
+    if create_version:
+        from titan.packages.manager import PackageManager
+
+        # Read new file content
+        content = await file.read()
+        filename = file.filename or "package.aasx"
+
+        # Parse package to validate and extract metadata
+        importer = AasxImporter()
+        try:
+            parsed = await importer.import_from_stream(BytesIO(content))
+        except ValueError as e:
+            from titan.api.errors import BadRequestError
+
+            raise BadRequestError(str(e))
+
+        # Store new content in blob storage
+        storage_uri, content_hash, size_bytes = await _store_package(content, filename)
+
+        # Create new version using PackageManager
+        manager = PackageManager()
+        created_by = user.sub if user else None
+
+        try:
+            new_version_id = await manager.create_version(
+                session=session,
+                package_id=package_id,
+                new_content=content,
+                filename=filename,
+                storage_uri=storage_uri,
+                created_by=created_by,
+                comment=comment,
+            )
+        except ValueError as e:
+            from titan.api.errors import BadRequestError
+
+            raise BadRequestError(str(e))
+
+        # Get the new version record
+        stmt = select(AasxPackageTable).where(AasxPackageTable.id == new_version_id)
+        result = await session.execute(stmt)
+        new_package = result.scalar_one()
+
+        logger.info(
+            f"Created version {new_package.version} of package {package_id} via PUT "
+            f"(new ID: {new_version_id}, comment: {comment})"
+        )
+
+        # Emit PackageVersionCreated event
+        from titan.events.runtime import get_event_bus
+        from titan.events.schemas import PackageEvent, PackageEventType
+
+        event_bus = get_event_bus()
+        await event_bus.publish(
+            PackageEvent(
+                event_type=PackageEventType.VERSION_CREATED,
+                package_id=new_version_id,
+                parent_package_id=package_id,
+                filename=new_package.filename,
+                version=new_package.version,
+                version_comment=comment,
+                created_by=created_by,
+                content_hash=content_hash,
+            )
+        )
+
+        return {
+            "packageId": new_version_id,
+            "parentPackageId": package_id,
+            "version": new_package.version,
+            "filename": new_package.filename,
+            "sizeBytes": new_package.size_bytes,
+            "comment": new_package.version_comment,
+            "createdBy": new_package.created_by,
+            "createdAt": new_package.created_at.isoformat(),
+        }
+
+    # Original overwrite behavior (backward compatible)
     # Check if package exists
     stmt = select(AasxPackageTable).where(AasxPackageTable.id == package_id)
     result = await session.execute(stmt)
@@ -323,6 +417,578 @@ async def delete_package(
     await session.commit()
 
     logger.info(f"Deleted AASX package {package_id}")
+
+
+# ===== Versioning Endpoints =====
+
+
+@router.post(
+    "/{package_id}/versions",
+    status_code=201,
+    dependencies=[Depends(require_permission(Permission.UPDATE_AAS))],
+)
+async def create_package_version(
+    package_id: str,
+    file: UploadFile = File(...),
+    comment: str | None = Form(None),
+    session: AsyncSession = Depends(get_session),
+    user=Depends(get_optional_user),
+) -> dict[str, Any]:
+    """Create a new version of an existing package.
+
+    Creates a new version with an incremented version number, linking back
+    to the previous version. The previous version remains accessible.
+
+    Args:
+        package_id: ID of the package to create a version for
+        file: New AASX file content
+        comment: Optional description of changes in this version
+        user: Current user (optional, for audit trail)
+
+    Returns:
+        Metadata of the newly created version
+    """
+    from titan.packages.manager import PackageManager
+
+    # Read new file content
+    content = await file.read()
+    filename = file.filename or "package.aasx"
+
+    # Parse package to validate and extract metadata
+    importer = AasxImporter()
+    try:
+        _ = await importer.import_from_stream(BytesIO(content))
+    except ValueError as e:
+        from titan.api.errors import BadRequestError
+
+        raise BadRequestError(str(e))
+
+    # Store new content in blob storage
+    storage_uri, content_hash, size_bytes = await _store_package(content, filename)
+
+    # Create new version using PackageManager
+    manager = PackageManager()
+    created_by = user.sub if user else None
+
+    try:
+        new_version_id = await manager.create_version(
+            session=session,
+            package_id=package_id,
+            new_content=content,
+            filename=filename,
+            storage_uri=storage_uri,
+            created_by=created_by,
+            comment=comment,
+        )
+    except ValueError as e:
+        from titan.api.errors import BadRequestError
+
+        raise BadRequestError(str(e))
+
+    # Get the new version record
+    stmt = select(AasxPackageTable).where(AasxPackageTable.id == new_version_id)
+    result = await session.execute(stmt)
+    new_package = result.scalar_one()
+
+    logger.info(
+        f"Created version {new_package.version} of package {package_id} "
+        f"(new ID: {new_version_id}, comment: {comment})"
+    )
+
+    # Emit PackageVersionCreated event to event bus
+    from titan.events.runtime import get_event_bus
+    from titan.events.schemas import PackageEvent, PackageEventType
+
+    event_bus = get_event_bus()
+    await event_bus.publish(
+        PackageEvent(
+            event_type=PackageEventType.VERSION_CREATED,
+            package_id=new_version_id,
+            parent_package_id=package_id,
+            filename=new_package.filename,
+            version=new_package.version,
+            version_comment=comment,
+            created_by=created_by,
+            content_hash=content_hash,
+        )
+    )
+
+    return {
+        "packageId": new_version_id,
+        "parentPackageId": package_id,
+        "version": new_package.version,
+        "filename": new_package.filename,
+        "sizeBytes": new_package.size_bytes,
+        "comment": new_package.version_comment,
+        "createdBy": new_package.created_by,
+        "createdAt": new_package.created_at.isoformat(),
+    }
+
+
+@router.get(
+    "/{package_id}/versions",
+    dependencies=[Depends(require_permission(Permission.READ_AAS))],
+)
+async def list_package_versions(
+    package_id: str,
+    limit: int = Query(50, le=1000),
+    cursor: str | None = None,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """List version history for a package.
+
+    Returns all versions in the version chain, ordered from oldest to newest.
+
+    Args:
+        package_id: ID of any package in the version chain
+        limit: Maximum number of versions to return (default: 50, max: 1000)
+        cursor: Pagination cursor (version number to start after)
+
+    Returns:
+        List of version metadata with pagination info
+    """
+    from titan.packages.manager import PackageManager
+
+    manager = PackageManager()
+
+    try:
+        versions = await manager.list_versions(session, package_id)
+    except ValueError as e:
+        from titan.api.errors import BadRequestError
+
+        raise BadRequestError(str(e))
+
+    # Apply cursor-based pagination
+    if cursor:
+        try:
+            cursor_version = int(cursor)
+            versions = [v for v in versions if v.version > cursor_version]
+        except ValueError:
+            from titan.api.errors import BadRequestError
+
+            raise BadRequestError(f"Invalid cursor: {cursor}")
+
+    # Determine next cursor
+    next_cursor = None
+    if len(versions) > limit:
+        versions = versions[:limit]
+        next_cursor = str(versions[-1].version) if versions else None
+
+    items = [
+        {
+            "version": v.version,
+            "comment": v.comment,
+            "createdBy": v.created_by,
+            "createdAt": v.created_at.isoformat(),
+            "contentHash": v.content_hash,
+            "parentVersion": v.parent_version,
+        }
+        for v in versions
+    ]
+
+    return {
+        "packageId": package_id,
+        "totalVersions": len(versions),
+        "result": items,
+        "paging_metadata": {"cursor": next_cursor},
+    }
+
+
+@router.get(
+    "/{package_id}/versions/{version}",
+    dependencies=[Depends(require_permission(Permission.READ_AAS))],
+)
+async def get_package_version(
+    package_id: str,
+    version: int,
+    session: AsyncSession = Depends(get_session),
+) -> StreamingResponse:
+    """Download a specific version of a package.
+
+    Traverses the version chain to find the target version and streams
+    the AASX file content.
+
+    Args:
+        package_id: ID of any package in the version chain
+        version: Version number to retrieve
+
+    Returns:
+        AASX package content as streaming response
+    """
+    from titan.packages.manager import PackageManager
+
+    manager = PackageManager()
+
+    # Get all versions to find the target
+    try:
+        versions = await manager.list_versions(session, package_id)
+    except ValueError:
+        raise NotFoundError("AasxPackage", package_id)
+
+    # Find the target version
+    target = next((v for v in versions if v.version == version), None)
+    if not target:
+        raise NotFoundError("PackageVersion", f"{package_id}/v{version}")
+
+    # Get the package record for this version
+    # We need to traverse the version chain to find the package ID for this version
+    from titan.packages.manager import PackageManager
+
+    # Start from the package_id and traverse to find all package IDs in chain
+    stmt = select(AasxPackageTable).where(AasxPackageTable.id == package_id)
+    result = await session.execute(stmt)
+    current = result.scalar_one_or_none()
+
+    if not current:
+        raise NotFoundError("AasxPackage", package_id)
+
+    # Traverse backward to root
+    visited = {current.id: current}
+    while current.previous_version_id:
+        stmt = select(AasxPackageTable).where(AasxPackageTable.id == current.previous_version_id)
+        result = await session.execute(stmt)
+        current = result.scalar_one_or_none()
+        if not current:
+            break
+        visited[current.id] = current
+
+    # Find the package with matching version number
+    version_package = next((pkg for pkg in visited.values() if pkg.version == version), None)
+    if not version_package:
+        raise NotFoundError("PackageVersion", f"{package_id}/v{version}")
+
+    # Retrieve content from blob storage
+    content = await _retrieve_package(version_package.storage_uri)
+
+    return StreamingResponse(
+        iter([content]),
+        media_type="application/asset-administration-shell-package",
+        headers={
+            "Content-Disposition": f'attachment; filename="{version_package.filename}"',
+            "Content-Length": str(version_package.size_bytes),
+            "X-Package-Version": str(version),
+        },
+    )
+
+
+@router.post(
+    "/{package_id}/versions/{version}/rollback",
+    status_code=201,
+    dependencies=[Depends(require_permission(Permission.UPDATE_AAS))],
+)
+async def rollback_package_version(
+    package_id: str,
+    version: int,
+    comment: str | None = Form(None),
+    session: AsyncSession = Depends(get_session),
+    user=Depends(get_optional_user),
+) -> dict[str, Any]:
+    """Rollback to a previous version.
+
+    Creates a new version that is a copy of the target version. This is
+    non-destructive - all versions remain accessible.
+
+    Args:
+        package_id: ID of any package in the version chain
+        version: Version number to rollback to
+        comment: Optional description for the rollback version
+        user: Current user (optional, for audit trail)
+
+    Returns:
+        Metadata of the new rollback version
+    """
+    from titan.packages.manager import PackageManager
+
+    manager = PackageManager()
+    created_by = user.sub if user else None
+
+    # If no comment provided, generate one
+    if not comment:
+        comment = f"Rollback to version {version}"
+
+    try:
+        new_version_id = await manager.rollback_to_version(
+            session=session,
+            package_id=package_id,
+            target_version=version,
+        )
+    except ValueError as e:
+        from titan.api.errors import BadRequestError
+
+        raise BadRequestError(str(e))
+
+    # Get the new version record
+    stmt = select(AasxPackageTable).where(AasxPackageTable.id == new_version_id)
+    result = await session.execute(stmt)
+    new_package = result.scalar_one()
+
+    # Update created_by and comment
+    new_package.created_by = created_by
+    new_package.version_comment = comment
+    await session.commit()
+    await session.refresh(new_package)
+
+    logger.info(
+        f"Rolled back package {package_id} to version {version} "
+        f"(new version: {new_package.version}, new ID: {new_version_id})"
+    )
+
+    # Emit PackageVersionRolledBack event to event bus
+    from titan.events.runtime import get_event_bus
+    from titan.events.schemas import PackageEvent, PackageEventType
+
+    event_bus = get_event_bus()
+    await event_bus.publish(
+        PackageEvent(
+            event_type=PackageEventType.VERSION_ROLLED_BACK,
+            package_id=new_version_id,
+            parent_package_id=package_id,
+            filename=new_package.filename,
+            version=new_package.version,
+            version_comment=comment,
+            created_by=created_by,
+            rolled_back_from=version,
+        )
+    )
+
+    return {
+        "packageId": new_version_id,
+        "parentPackageId": package_id,
+        "version": new_package.version,
+        "rolledBackFrom": version,
+        "filename": new_package.filename,
+        "sizeBytes": new_package.size_bytes,
+        "comment": new_package.version_comment,
+        "createdBy": new_package.created_by,
+        "createdAt": new_package.created_at.isoformat(),
+    }
+
+
+@router.get(
+    "/{package_id}/versions/{v1}/compare/{v2}",
+    dependencies=[Depends(require_permission(Permission.READ_AAS))],
+)
+async def compare_package_versions(
+    package_id: str,
+    v1: int,
+    v2: int,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Compare two package versions.
+
+    Returns a high-level summary of differences including added, removed,
+    and modified shells, submodels, and concept descriptions.
+
+    Args:
+        package_id: ID of any package in the version chain
+        v1: First version number
+        v2: Second version number
+
+    Returns:
+        PackageComparison with structural differences
+    """
+    from titan.packages.differ import PackageDiffer
+
+    differ = PackageDiffer()
+
+    try:
+        comparison = await differ.compare(session, package_id, v1, v2)
+    except ValueError as e:
+        from titan.api.errors import BadRequestError
+
+        raise BadRequestError(str(e))
+
+    return {
+        "packageId": package_id,
+        "version1": v1,
+        "version2": v2,
+        **comparison.to_dict(),
+    }
+
+
+@router.get(
+    "/{package_id}/versions/{v1}/diff/{v2}",
+    dependencies=[Depends(require_permission(Permission.READ_AAS))],
+)
+async def diff_package_versions(
+    package_id: str,
+    v1: int,
+    v2: int,
+    format: str = Query("json", pattern="^(json)$"),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Generate detailed diff between two package versions.
+
+    Returns a JSON Patch (RFC 6902) format diff showing the operations
+    needed to transform version v1 into version v2.
+
+    Args:
+        package_id: ID of any package in the version chain
+        v1: Base version number
+        v2: Target version number
+        format: Output format (currently only "json" supported)
+
+    Returns:
+        JSON Patch operations array
+    """
+    from titan.packages.differ import PackageDiffer
+
+    differ = PackageDiffer()
+
+    try:
+        operations = await differ.diff(session, package_id, v1, v2)
+    except ValueError as e:
+        from titan.api.errors import BadRequestError
+
+        raise BadRequestError(str(e))
+
+    return {
+        "packageId": package_id,
+        "version1": v1,
+        "version2": v2,
+        "format": format,
+        "operations": operations,
+        "operationCount": len(operations),
+    }
+
+
+@router.post(
+    "/{package_id}/versions/{version}/tags",
+    dependencies=[Depends(require_permission(Permission.UPDATE_AAS))],
+)
+async def tag_package_version(
+    package_id: str,
+    version: int,
+    tags: list[str],
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Add tags to a specific package version.
+
+    Tags enable semantic versioning and deployment stage tracking
+    (e.g., ["production", "v2.1.0", "stable"]).
+
+    Args:
+        package_id: ID of any package in the version chain
+        version: Version number to tag
+        tags: List of tags to add to the version
+
+    Returns:
+        Updated version metadata with tags
+    """
+    from titan.packages.manager import PackageManager
+
+    # Find the specific version in the chain
+    manager = PackageManager(session)
+    versions = await manager.list_versions(package_id)
+
+    target_pkg = None
+    for v in versions:
+        if v.version == version:
+            # Get the actual package record
+            stmt = select(AasxPackageTable).where(AasxPackageTable.id == package_id)
+            result = await session.execute(stmt)
+            current = result.scalar_one_or_none()
+
+            if not current:
+                from titan.api.errors import NotFoundError
+
+                raise NotFoundError(f"Package not found: {package_id}")
+
+            # Traverse to find the target version
+            while current:
+                if current.version == version:
+                    target_pkg = current
+                    break
+                if current.previous_version_id:
+                    stmt = select(AasxPackageTable).where(
+                        AasxPackageTable.id == current.previous_version_id
+                    )
+                    result = await session.execute(stmt)
+                    current = result.scalar_one_or_none()
+                else:
+                    break
+            break
+
+    if not target_pkg:
+        from titan.api.errors import NotFoundError
+
+        raise NotFoundError(f"Version {version} not found for package {package_id}")
+
+    # Update tags (merge with existing tags if any)
+    existing_tags = target_pkg.tags or []
+    new_tags = list(set(existing_tags + tags))  # Deduplicate
+    target_pkg.tags = new_tags
+
+    await session.commit()
+
+    return {
+        "packageId": target_pkg.id,
+        "version": target_pkg.version,
+        "tags": new_tags,
+        "updatedAt": datetime.now(UTC).isoformat(),
+    }
+
+
+@router.get(
+    "/{package_id}/versions/tags/{tag}",
+    dependencies=[Depends(require_permission(Permission.READ_AAS))],
+)
+async def get_version_by_tag(
+    package_id: str,
+    tag: str,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Retrieve version metadata by tag name.
+
+    Args:
+        package_id: ID of any package in the version chain
+        tag: Tag name to search for
+
+    Returns:
+        Version metadata for the tagged version
+    """
+    # Traverse the version chain to find the tagged version
+    stmt = select(AasxPackageTable).where(AasxPackageTable.id == package_id)
+    result = await session.execute(stmt)
+    current = result.scalar_one_or_none()
+
+    if not current:
+        from titan.api.errors import NotFoundError
+
+        raise NotFoundError(f"Package not found: {package_id}")
+
+    # Traverse backward to check all versions
+    tagged_pkg = None
+    visited = [current]
+    while current.previous_version_id:
+        stmt = select(AasxPackageTable).where(
+            AasxPackageTable.id == current.previous_version_id
+        )
+        result = await session.execute(stmt)
+        current = result.scalar_one_or_none()
+        if current:
+            visited.append(current)
+
+    # Check all visited packages for the tag
+    for pkg in visited:
+        if pkg.tags and tag in pkg.tags:
+            tagged_pkg = pkg
+            break
+
+    if not tagged_pkg:
+        from titan.api.errors import NotFoundError
+
+        raise NotFoundError(f"No version found with tag '{tag}' for package {package_id}")
+
+    return {
+        "packageId": tagged_pkg.id,
+        "version": tagged_pkg.version,
+        "tags": tagged_pkg.tags,
+        "comment": tagged_pkg.version_comment,
+        "createdBy": tagged_pkg.created_by,
+        "createdAt": tagged_pkg.created_at.isoformat(),
+        "downloadUrl": f"/packages/{tagged_pkg.id}",
+    }
 
 
 @router.get(

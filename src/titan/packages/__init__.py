@@ -17,6 +17,7 @@ from titan.packages.dependency_manager import (
     DependencyValidationResult,
     PackageDependency,
 )
+from titan.packages.differ import PackageComparison, PackageDiffer
 from titan.packages.manager import (
     BatchExportResult,
     BatchImportResult,
@@ -46,4 +47,6 @@ __all__ = [
     "PackageDependency",
     "DependencyGraph",
     "DependencyValidationResult",
+    "PackageDiffer",
+    "PackageComparison",
 ]

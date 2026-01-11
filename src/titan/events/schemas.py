@@ -92,6 +92,8 @@ class PackageEventType(str, Enum):
     EXPORTED = "exported"
     DELETED = "deleted"
     VALIDATED = "validated"
+    VERSION_CREATED = "version_created"
+    VERSION_ROLLED_BACK = "version_rolled_back"
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,6 +108,12 @@ class PackageEvent:
     content_hash: str | None = None
     import_result: dict | None = None  # For IMPORTED events
     validation_result: dict | None = None  # For VALIDATED events
+    # Version-related fields
+    version: int | None = None  # Version number for VERSION_CREATED/VERSION_ROLLED_BACK
+    parent_package_id: str | None = None  # Previous version ID
+    version_comment: str | None = None  # Version description
+    created_by: str | None = None  # User who created the version
+    rolled_back_from: int | None = None  # Original version for rollbacks
     entity: Literal["package"] = "package"
     event_id: str = field(default_factory=lambda: str(uuid4()))
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
