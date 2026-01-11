@@ -153,7 +153,7 @@ class ModbusClient:
             response = await self._client.read_coils(
                 address=address,
                 count=count,
-                slave=self.config.unit_id,
+                device_id=self.config.unit_id,
             )
 
             if response.isError():
@@ -184,7 +184,7 @@ class ModbusClient:
             response = await self._client.read_discrete_inputs(
                 address=address,
                 count=count,
-                slave=self.config.unit_id,
+                device_id=self.config.unit_id,
             )
 
             if response.isError():
@@ -215,7 +215,7 @@ class ModbusClient:
             response = await self._client.read_holding_registers(
                 address=address,
                 count=count,
-                slave=self.config.unit_id,
+                device_id=self.config.unit_id,
             )
 
             if response.isError():
@@ -246,7 +246,7 @@ class ModbusClient:
             response = await self._client.read_input_registers(
                 address=address,
                 count=count,
-                slave=self.config.unit_id,
+                device_id=self.config.unit_id,
             )
 
             if response.isError():
@@ -277,7 +277,7 @@ class ModbusClient:
             response = await self._client.write_coil(
                 address=address,
                 value=value,
-                slave=self.config.unit_id,
+                device_id=self.config.unit_id,
             )
 
             if response.isError():
@@ -314,7 +314,7 @@ class ModbusClient:
             response = await self._client.write_register(
                 address=address,
                 value=value,
-                slave=self.config.unit_id,
+                device_id=self.config.unit_id,
             )
 
             if response.isError():
@@ -346,7 +346,7 @@ class ModbusClient:
             response = await self._client.write_coils(
                 address=address,
                 values=values,
-                slave=self.config.unit_id,
+                device_id=self.config.unit_id,
             )
 
             if response.isError():
@@ -386,7 +386,7 @@ class ModbusClient:
             response = await self._client.write_registers(
                 address=address,
                 values=values,
-                slave=self.config.unit_id,
+                device_id=self.config.unit_id,
             )
 
             if response.isError():

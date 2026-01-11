@@ -54,6 +54,8 @@ from titan.api.v1 import create_v1_app
 from titan.api.versioning import ApiVersion
 from titan.cache import close_redis, get_redis
 from titan.config import settings
+from titan.connectors.modbus.connection import close_modbus, get_modbus_connection_manager
+from titan.connectors.modbus.handler import ModbusEventHandler
 from titan.connectors.mqtt import MqttEventHandler, close_mqtt, get_mqtt_publisher
 from titan.connectors.mqtt_subscriber import close_mqtt_subscriber, get_mqtt_subscriber
 from titan.connectors.opcua.connection import close_opcua, get_opcua_connection_manager
@@ -164,12 +166,27 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await get_event_bus().subscribe(opcua_event_handler)
         logger.info("OPC-UA event handler subscribed")
 
+    # Wire Modbus event handler to event bus (optional, industrial IoT integration)
+    modbus_manager = await get_modbus_connection_manager()
+    if modbus_manager is not None:
+        modbus_client = await modbus_manager.ensure_connected()
+        modbus_handler = ModbusEventHandler(modbus_client)
+
+        async def modbus_event_handler(event: AnyEvent) -> None:
+            """Route events to Modbus handler."""
+            if isinstance(event, SubmodelElementEvent):
+                await modbus_handler.handle_element_event(event)
+
+        await get_event_bus().subscribe(modbus_event_handler)
+        logger.info("Modbus event handler subscribed")
+
     logger.info("Titan-AAS startup complete")
 
     yield
 
     # Shutdown
     logger.info("Shutting down Titan-AAS")
+    await close_modbus()
     await close_opcua()
     await close_mqtt_subscriber()
     await close_mqtt()

@@ -97,6 +97,15 @@ class Settings(BaseSettings):
     modbus_reconnect_interval: float = Field(
         default=5.0, validation_alias="MODBUS_RECONNECT_INTERVAL"
     )
+    modbus_reconnect_delay_max: float = Field(
+        default=60.0, validation_alias="MODBUS_RECONNECT_DELAY_MAX"
+    )
+    modbus_reconnect_delay_multiplier: float = Field(
+        default=2.0, validation_alias="MODBUS_RECONNECT_MULTIPLIER"
+    )
+    modbus_max_reconnect_attempts: int = Field(
+        default=10, validation_alias="MODBUS_MAX_RECONNECT_ATTEMPTS"
+    )
     modbus_mapping_config: str | None = Field(
         default=None, validation_alias="MODBUS_MAPPING_CONFIG"
     )

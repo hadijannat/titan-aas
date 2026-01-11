@@ -158,7 +158,7 @@ class TestModbusClient:
             assert result is not None
             assert result == [True, False, True]
             mock_modbus_tcp_client.read_coils.assert_called_once_with(
-                address=0, count=3, slave=1
+                address=0, count=3, device_id=1
             )
 
     @pytest.mark.asyncio
@@ -197,7 +197,7 @@ class TestModbusClient:
             assert result is not None
             assert result == [100, 200, 300]
             mock_modbus_tcp_client.read_holding_registers.assert_called_once_with(
-                address=0, count=3, slave=1
+                address=0, count=3, device_id=1
             )
 
     @pytest.mark.asyncio
@@ -223,7 +223,7 @@ class TestModbusClient:
 
             assert result is True
             mock_modbus_tcp_client.write_coil.assert_called_once_with(
-                address=0, value=True, slave=1
+                address=0, value=True, device_id=1
             )
 
     @pytest.mark.asyncio
@@ -243,7 +243,7 @@ class TestModbusClient:
 
             assert result is True
             mock_modbus_tcp_client.write_register.assert_called_once_with(
-                address=100, value=500, slave=1
+                address=100, value=500, device_id=1
             )
 
     @pytest.mark.asyncio
@@ -281,7 +281,7 @@ class TestModbusClient:
 
             assert result is True
             mock_modbus_tcp_client.write_registers.assert_called_once_with(
-                address=100, values=[100, 200, 300], slave=1
+                address=100, values=[100, 200, 300], device_id=1
             )
 
 

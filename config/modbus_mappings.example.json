@@ -1,0 +1,92 @@
+{
+  "mappings": [
+    {
+      "submodel_id": "urn:example:submodel:sensors:1",
+      "element_path": "Temperature",
+      "register_address": 100,
+      "register_type": "holding_register",
+      "data_type": "float",
+      "scale_factor": 0.1,
+      "offset": 0.0,
+      "direction": "read",
+      "description": "Temperature sensor in tenths of degrees Celsius (23.5°C = register value 235)"
+    },
+    {
+      "submodel_id": "urn:example:submodel:sensors:1",
+      "element_path": "Pressure",
+      "register_address": 101,
+      "register_type": "input_register",
+      "data_type": "float",
+      "scale_factor": 0.01,
+      "offset": 0.0,
+      "direction": "read",
+      "description": "Pressure sensor in hundredths of bar (15.25 bar = register value 1525)"
+    },
+    {
+      "submodel_id": "urn:example:submodel:sensors:1",
+      "element_path": "FlowRate",
+      "register_address": 102,
+      "register_type": "input_register",
+      "data_type": "int",
+      "scale_factor": 1.0,
+      "offset": 0.0,
+      "direction": "read",
+      "description": "Flow rate in liters per minute (direct value)"
+    },
+    {
+      "submodel_id": "urn:example:submodel:actuators:1",
+      "element_path": "MotorRunning",
+      "register_address": 10,
+      "register_type": "coil",
+      "data_type": "bool",
+      "scale_factor": 1.0,
+      "offset": 0.0,
+      "direction": "both",
+      "description": "Motor on/off control (bidirectional: read status and write control)"
+    },
+    {
+      "submodel_id": "urn:example:submodel:actuators:1",
+      "element_path": "ValveOpen",
+      "register_address": 11,
+      "register_type": "coil",
+      "data_type": "bool",
+      "scale_factor": 1.0,
+      "offset": 0.0,
+      "direction": "write",
+      "description": "Valve control (write-only: open/close command)"
+    },
+    {
+      "submodel_id": "urn:example:submodel:actuators:1",
+      "element_path": "SpeedSetpoint",
+      "register_address": 200,
+      "register_type": "holding_register",
+      "data_type": "int",
+      "scale_factor": 1.0,
+      "offset": 0.0,
+      "direction": "both",
+      "description": "Motor speed setpoint in RPM (0-3000 RPM, bidirectional)"
+    },
+    {
+      "submodel_id": "urn:example:submodel:meters:1",
+      "element_path": "EnergyConsumption",
+      "register_address": 300,
+      "register_type": "input_register",
+      "data_type": "float",
+      "scale_factor": 0.001,
+      "offset": 0.0,
+      "direction": "read",
+      "description": "Energy meter reading in kWh with milliwatt-hour precision (12.345 kWh = register value 12345)"
+    },
+    {
+      "submodel_id": "urn:example:submodel:alarms:1",
+      "element_path": "HighTemperatureAlarm",
+      "register_address": 0,
+      "register_type": "discrete_input",
+      "data_type": "bool",
+      "scale_factor": 1.0,
+      "offset": 0.0,
+      "direction": "read",
+      "description": "High temperature alarm status (read-only discrete input)"
+    }
+  ]
+}

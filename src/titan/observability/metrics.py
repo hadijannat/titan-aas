@@ -70,6 +70,14 @@ class MetricsRegistry:
     opcua_write_errors_total: Any = None
     opcua_connection_state: Any = None
 
+    # Modbus metrics
+    modbus_reads_total: Any = None
+    modbus_writes_total: Any = None
+    modbus_read_errors_total: Any = None
+    modbus_write_errors_total: Any = None
+    modbus_connection_state: Any = None
+    modbus_polling_duration_seconds: Any = None
+
     # Internal state
     _initialized: bool = field(default=False, repr=False)
     _registry: Any = field(default=None, repr=False)
@@ -226,6 +234,45 @@ class MetricsRegistry:
                 "OPC-UA connection state (0=disconnected, 1=connecting, 2=connected, "
                 "3=reconnecting, 4=failed)",
                 ["endpoint"],
+            )
+
+            # Modbus metrics
+            self.modbus_reads_total = Counter(
+                "titan_modbus_reads_total",
+                "Total Modbus register reads",
+                ["host"],
+            )
+
+            self.modbus_writes_total = Counter(
+                "titan_modbus_writes_total",
+                "Total Modbus register writes",
+                ["host"],
+            )
+
+            self.modbus_read_errors_total = Counter(
+                "titan_modbus_read_errors_total",
+                "Total Modbus read errors",
+                ["host"],
+            )
+
+            self.modbus_write_errors_total = Counter(
+                "titan_modbus_write_errors_total",
+                "Total Modbus write errors",
+                ["host"],
+            )
+
+            self.modbus_connection_state = Gauge(
+                "titan_modbus_connection_state",
+                "Modbus connection state (0=disconnected, 1=connecting, 2=connected, "
+                "3=reconnecting, 4=failed)",
+                ["host"],
+            )
+
+            self.modbus_polling_duration_seconds = Histogram(
+                "titan_modbus_polling_duration_seconds",
+                "Modbus register polling duration in seconds",
+                ["host", "register_type"],
+                buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5),
             )
 
             self._initialized = True
@@ -571,3 +618,81 @@ def set_opcua_connection_state(endpoint: str, state: int) -> None:
     metrics = get_metrics()
     if metrics.opcua_connection_state:
         metrics.opcua_connection_state.labels(endpoint=endpoint).set(state)
+
+
+# -----------------------------------------------------------------------------
+# Modbus Metrics Helper Functions
+# -----------------------------------------------------------------------------
+
+
+def record_modbus_read(host: str) -> None:
+    """Record Modbus register read.
+
+    Args:
+        host: Modbus server hostname
+    """
+    metrics = get_metrics()
+    if metrics.modbus_reads_total:
+        metrics.modbus_reads_total.labels(host=host).inc()
+
+
+def record_modbus_write(host: str) -> None:
+    """Record Modbus register write.
+
+    Args:
+        host: Modbus server hostname
+    """
+    metrics = get_metrics()
+    if metrics.modbus_writes_total:
+        metrics.modbus_writes_total.labels(host=host).inc()
+
+
+def record_modbus_read_error(host: str) -> None:
+    """Record Modbus read error.
+
+    Args:
+        host: Modbus server hostname
+    """
+    metrics = get_metrics()
+    if metrics.modbus_read_errors_total:
+        metrics.modbus_read_errors_total.labels(host=host).inc()
+
+
+def record_modbus_write_error(host: str) -> None:
+    """Record Modbus write error.
+
+    Args:
+        host: Modbus server hostname
+    """
+    metrics = get_metrics()
+    if metrics.modbus_write_errors_total:
+        metrics.modbus_write_errors_total.labels(host=host).inc()
+
+
+def set_modbus_connection_state(host: str, state: int) -> None:
+    """Set Modbus connection state.
+
+    Args:
+        host: Modbus server hostname
+        state: Connection state (0=disconnected, 1=connecting, 2=connected,
+               3=reconnecting, 4=failed)
+    """
+    metrics = get_metrics()
+    if metrics.modbus_connection_state:
+        metrics.modbus_connection_state.labels(host=host).set(state)
+
+
+def record_modbus_polling_duration(host: str, register_type: str, duration: float) -> None:
+    """Record Modbus polling duration.
+
+    Args:
+        host: Modbus server hostname
+        register_type: Type of register being polled
+        duration: Polling duration in seconds
+    """
+    metrics = get_metrics()
+    if metrics.modbus_polling_duration_seconds:
+        metrics.modbus_polling_duration_seconds.labels(
+            host=host,
+            register_type=register_type,
+        ).observe(duration)
