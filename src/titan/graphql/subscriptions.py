@@ -19,17 +19,19 @@ Example:
         }
     }
 """
-
+# ruff: noqa: UP037
+# Note: Lazy types are required to avoid circular imports with schema.py
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
-from typing import TYPE_CHECKING
 
 import strawberry
 from strawberry.types import Info
 
-if TYPE_CHECKING:
-    from titan.graphql.schema import ConceptDescription, Shell, Submodel
+# Use Strawberry's LazyType to avoid circular import
+Shell = strawberry.LazyType["Shell", "titan.graphql.schema"]
+Submodel = strawberry.LazyType["Submodel", "titan.graphql.schema"]
+ConceptDescription = strawberry.LazyType["ConceptDescription", "titan.graphql.schema"]
 
 
 @strawberry.type

@@ -157,9 +157,7 @@ class TestCreatePackageVersion:
         # Mock PackageManager to raise ValueError
         with patch("titan.api.routers.aasx.PackageManager") as mock_manager_class:
             mock_manager = MagicMock()
-            mock_manager.create_version = AsyncMock(
-                side_effect=ValueError("Package not found")
-            )
+            mock_manager.create_version = AsyncMock(side_effect=ValueError("Package not found"))
             mock_manager_class.return_value = mock_manager
 
             with patch("titan.api.routers.aasx._store_package"):
@@ -228,7 +226,7 @@ class TestListPackageVersions:
             versions = [
                 PackageVersion(
                     version=i,
-                    created_at=MagicMock(isoformat=lambda: f"2026-01-11T10:{i:02d}:00"),
+                    created_at=MagicMock(isoformat=lambda i=i: f"2026-01-11T10:{i:02d}:00"),
                     created_by=f"user{i}",
                     comment=f"Version {i}",
                     content_hash=f"hash{i}",
@@ -337,9 +335,7 @@ class TestRollbackPackageVersion:
     @patch("titan.api.routers.aasx.get_session")
     @patch("titan.api.routers.aasx.get_event_bus")
     @patch("titan.api.routers.aasx.get_optional_user")
-    def test_rollback_success(
-        self, mock_user, mock_event_bus, mock_get_session, client
-    ):
+    def test_rollback_success(self, mock_user, mock_event_bus, mock_get_session, client):
         """Rolling back to a previous version succeeds."""
         # Mock user
         mock_user.return_value = MagicMock(sub="user123")
@@ -452,9 +448,7 @@ class TestUpdatePackageWithVersioning:
     @patch("titan.api.routers.aasx.get_session")
     @patch("titan.api.routers.aasx._store_package")
     @patch("titan.api.routers.aasx._delete_package_file")
-    def test_put_with_create_version_false(
-        self, mock_delete, mock_store, mock_get_session, client
-    ):
+    def test_put_with_create_version_false(self, mock_delete, mock_store, mock_get_session, client):
         """PUT with create_version=false overwrites (backward compatible)."""
         # Mock storage
         mock_store.return_value = (

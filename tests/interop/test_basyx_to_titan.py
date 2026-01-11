@@ -12,7 +12,6 @@ Test scenarios:
 from __future__ import annotations
 
 import io
-from typing import Any
 
 import pytest
 from basyx.aas import model as basyx_model
@@ -58,7 +57,10 @@ class TestBaSyxExportTitanImport:
         assert titan_shell.id_short == basyx_aas_simple.id_short
 
         # Verify asset information
-        assert titan_shell.asset_information.global_asset_id == basyx_aas_simple.asset_information.global_asset_id
+        assert (
+            titan_shell.asset_information.global_asset_id
+            == basyx_aas_simple.asset_information.global_asset_id
+        )
 
     @pytest.mark.asyncio
     async def test_import_complex_shell(
@@ -150,10 +152,12 @@ class TestBaSyxExportTitanImport:
             ),
             submodel=[
                 basyx_model.ModelReference(
-                    (basyx_model.Key(
-                        type_=basyx_model.KeyTypes.SUBMODEL,
-                        value=submodel.id,
-                    ),)
+                    (
+                        basyx_model.Key(
+                            type_=basyx_model.KeyTypes.SUBMODEL,
+                            value=submodel.id,
+                        ),
+                    )
                 )
             ],
         )
@@ -233,10 +237,12 @@ class TestBaSyxExportTitanImport:
             ),
             submodel=[
                 basyx_model.ModelReference(
-                    (basyx_model.Key(
-                        type_=basyx_model.KeyTypes.SUBMODEL,
-                        value=submodel.id,
-                    ),)
+                    (
+                        basyx_model.Key(
+                            type_=basyx_model.KeyTypes.SUBMODEL,
+                            value=submodel.id,
+                        ),
+                    )
                 )
             ],
         )
@@ -295,10 +301,12 @@ class TestBaSyxExportTitanImport:
             ),
             submodel=[
                 basyx_model.ModelReference(
-                    (basyx_model.Key(
-                        type_=basyx_model.KeyTypes.SUBMODEL,
-                        value=submodel.id,
-                    ),)
+                    (
+                        basyx_model.Key(
+                            type_=basyx_model.KeyTypes.SUBMODEL,
+                            value=submodel.id,
+                        ),
+                    )
                 )
             ],
         )
@@ -369,7 +377,11 @@ class TestRoundTrip:
         # Export from BaSyx
         basyx_buffer = io.BytesIO()
         # Find the shell ID from the object store
-        shells = [obj for obj in basyx_object_store if isinstance(obj, basyx_model.AssetAdministrationShell)]
+        shells = [
+            obj
+            for obj in basyx_object_store
+            if isinstance(obj, basyx_model.AssetAdministrationShell)
+        ]
         with basyx_aasx.AASXWriter(basyx_buffer) as writer:
             writer.write_aas(
                 aas_ids=shells[0].id,
@@ -389,7 +401,10 @@ class TestRoundTrip:
 
         assert final_shell.id == original_shell.id
         assert final_shell.id_short == original_shell.idShort
-        assert final_shell.asset_information.global_asset_id == original_shell.asset_information.global_asset_id
+        assert (
+            final_shell.asset_information.global_asset_id
+            == original_shell.asset_information.global_asset_id
+        )
 
     @pytest.mark.asyncio
     async def test_submodel_round_trip(self) -> None:

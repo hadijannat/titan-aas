@@ -15,7 +15,6 @@ Test scenarios:
 from __future__ import annotations
 
 import io
-from typing import Any
 
 import pytest
 from basyx.aas import model as basyx_model
@@ -28,10 +27,8 @@ from titan.core.model import (
     AssetInformation,
     AssetKind,
     DataTypeDefXsd,
-    File,
     Key,
     KeyTypes,
-    LangStringNameType,
     LangStringTextType,
     MultiLanguageProperty,
     Property,
@@ -81,13 +78,18 @@ class TestTitanExportBaSyxImport:
             reader.read_into(object_store, file_store)
 
         # Verify shell was imported
-        shells = [obj for obj in object_store if isinstance(obj, basyx_model.AssetAdministrationShell)]
+        shells = [
+            obj for obj in object_store if isinstance(obj, basyx_model.AssetAdministrationShell)
+        ]
         assert len(shells) == 1
 
         basyx_shell = shells[0]
         assert basyx_shell.id == titan_shell.id
         assert basyx_shell.id_short == titan_shell.id_short
-        assert basyx_shell.asset_information.global_asset_id == titan_shell.asset_information.global_asset_id
+        assert (
+            basyx_shell.asset_information.global_asset_id
+            == titan_shell.asset_information.global_asset_id
+        )
 
     @pytest.mark.asyncio
     async def test_shell_with_properties_submodel(self) -> None:
@@ -159,7 +161,9 @@ class TestTitanExportBaSyxImport:
             reader.read_into(object_store, file_store)
 
         # Verify shell
-        shells = [obj for obj in object_store if isinstance(obj, basyx_model.AssetAdministrationShell)]
+        shells = [
+            obj for obj in object_store if isinstance(obj, basyx_model.AssetAdministrationShell)
+        ]
         assert len(shells) == 1
         assert shells[0].id == shell.id
 
@@ -179,7 +183,7 @@ class TestTitanExportBaSyxImport:
         string_prop = props_by_idshort["StringProperty"]
         assert isinstance(string_prop, basyx_model.Property)
         assert string_prop.value == "test_value"
-        assert string_prop.value_type == str
+        assert string_prop.value_type is str
 
         int_prop = props_by_idshort["IntProperty"]
         assert int_prop.value == 42  # BaSyx parses as actual int
@@ -187,11 +191,12 @@ class TestTitanExportBaSyxImport:
 
         double_prop = props_by_idshort["DoubleProperty"]
         assert double_prop.value == 3.14159  # BaSyx parses as actual float
-        assert double_prop.value_type == float  # BaSyx uses built-in float for DOUBLE
+        # BaSyx uses built-in float for DOUBLE
+        assert double_prop.value_type is float
 
         bool_prop = props_by_idshort["BooleanProperty"]
         assert bool_prop.value is True  # BaSyx parses as actual bool
-        assert bool_prop.value_type == bool
+        assert bool_prop.value_type is bool
 
     @pytest.mark.asyncio
     async def test_submodel_element_collection(self) -> None:
@@ -525,9 +530,11 @@ class TestSemanticEquivalence:
         props_by_idshort = {prop.id_short: prop for prop in basyx_sm.submodel_element}
 
         # BaSyx uses its own datatypes from basyx.aas.model.datatypes for some types
-        assert props_by_idshort["xs_string"].value_type == str
+        assert props_by_idshort["xs_string"].value_type is str
         assert props_by_idshort["xs_int"].value_type == basyx_datatypes.Int
-        assert props_by_idshort["xs_double"].value_type == float  # BaSyx uses built-in float for DOUBLE
-        assert props_by_idshort["xs_float"].value_type == basyx_datatypes.Float  # BaSyx uses custom Float for FLOAT
-        assert props_by_idshort["xs_boolean"].value_type == bool
+        # BaSyx uses built-in float for DOUBLE
+        assert props_by_idshort["xs_double"].value_type is float
+        # BaSyx uses custom Float for FLOAT
+        assert props_by_idshort["xs_float"].value_type == basyx_datatypes.Float
+        assert props_by_idshort["xs_boolean"].value_type is bool
         assert props_by_idshort["xs_date"].value_type == basyx_datatypes.Date

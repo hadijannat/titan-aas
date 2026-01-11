@@ -145,7 +145,8 @@ class XmlSerializer:
                         # Use modelType to determine element-specific tag
                         model_type = item.get("modelType", "submodelElement")
                         # Convert to camelCase with lowercase first letter
-                        # e.g., "Property" -> "property", "SubmodelElementCollection" -> "submodelElementCollection"
+                        # e.g., "Property" -> "property",
+                        # "SubmodelElementCollection" -> "submodelElementCollection"
                         item_tag = model_type[0].lower() + model_type[1:]
                         self._value_to_element(item, item_tag, container)
                 # Special handling for "value" lists that contain SubmodelElements

@@ -100,7 +100,7 @@ async def test_create_shell_mutation_duplicate_id(
     }
 
     # Create first shell
-    response1 = await client.post(
+    response1 = await test_client.post(
         "/graphql",
         json={"query": mutation, "variables": variables},
     )
@@ -109,7 +109,7 @@ async def test_create_shell_mutation_duplicate_id(
     assert result1["success"] is True
 
     # Attempt to create duplicate
-    response2 = await client.post(
+    response2 = await test_client.post(
         "/graphql",
         json={"query": mutation, "variables": variables},
     )
@@ -149,7 +149,7 @@ async def test_delete_shell_mutation_success(
         }
     }
 
-    create_response = await client.post(
+    create_response = await test_client.post(
         "/graphql",
         json={"query": create_mutation, "variables": create_variables},
     )
@@ -172,7 +172,7 @@ async def test_delete_shell_mutation_success(
 
     delete_variables = {"id": "https://example.com/shells/to-delete"}
 
-    delete_response = await client.post(
+    delete_response = await test_client.post(
         "/graphql",
         json={"query": delete_mutation, "variables": delete_variables},
     )

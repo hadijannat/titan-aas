@@ -139,7 +139,9 @@ class AasxImporter:
 
                     # Extract thumbnail (PNG or JPEG in aasx directory)
                     elif "thumbnail" in lower_name and (
-                        lower_name.endswith(".png") or lower_name.endswith(".jpg") or lower_name.endswith(".jpeg")
+                        lower_name.endswith(".png")
+                        or lower_name.endswith(".jpg")
+                        or lower_name.endswith(".jpeg")
                     ):
                         package.thumbnail = zf.read(name)
                         logger.debug(f"Extracted thumbnail: {name}")
