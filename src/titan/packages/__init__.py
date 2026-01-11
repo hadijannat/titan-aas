@@ -2,6 +2,7 @@
 
 Provides enhanced package lifecycle management including:
 - Package versioning
+- Dependency tracking with graph analysis
 - OPC compliance validation
 - Semantic validation (IEC 61360 DataSpecifications)
 - Batch import/export operations
@@ -9,6 +10,13 @@ Provides enhanced package lifecycle management including:
 - Advanced conflict resolution
 """
 
+from titan.packages.dependency_manager import (
+    DependencyGraph,
+    DependencyManager,
+    DependencyType,
+    DependencyValidationResult,
+    PackageDependency,
+)
 from titan.packages.manager import (
     BatchExportResult,
     BatchImportResult,
@@ -33,4 +41,9 @@ __all__ = [
     "ValidationLevel",
     "SemanticValidator",
     "SemanticValidationResult",
+    "DependencyManager",
+    "DependencyType",
+    "PackageDependency",
+    "DependencyGraph",
+    "DependencyValidationResult",
 ]

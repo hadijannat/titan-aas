@@ -432,6 +432,58 @@ class AasxPackageTable(Base):
     )
 
 
+class AasxPackageDependencyTable(Base):
+    """Package dependency tracking table.
+
+    Tracks dependencies between AASX packages for validation and installation order.
+    Supports semantic versioning constraints and circular dependency detection.
+    """
+
+    __tablename__ = "aasx_package_dependencies"
+
+    # Primary key
+    id: Mapped[str] = mapped_column(
+        UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid4())
+    )
+
+    # Source package (the one that has dependencies)
+    package_id: Mapped[str] = mapped_column(
+        UUID(as_uuid=False),
+        ForeignKey("aasx_packages.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    # Target package (the dependency)
+    depends_on_id: Mapped[str] = mapped_column(
+        UUID(as_uuid=False),
+        ForeignKey("aasx_packages.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    # Dependency type
+    dependency_type: Mapped[str] = mapped_column(String(50), nullable=False)
+
+    # Version constraint (semantic versioning)
+    version_constraint: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Human-readable description
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Timestamp
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    __table_args__ = (
+        # Indexes for efficient queries
+        Index("idx_pkg_deps_package_id", package_id),
+        Index("idx_pkg_deps_depends_on_id", depends_on_id),
+        # Unique constraint to prevent duplicate dependencies (in migration)
+    )
+
+
 # =============================================================================
 # Federation Sync Tables
 # =============================================================================
