@@ -13,7 +13,9 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # Skip all tests in this module until authentication is properly configured
-pytestmark = pytest.mark.skip(reason="GraphQL mutations require authentication - TODO: add auth setup")
+pytestmark = pytest.mark.skip(
+    reason="GraphQL mutations require authentication - TODO: add auth setup"
+)
 
 
 @pytest.mark.asyncio
