@@ -21,6 +21,7 @@ dependencies = [
   "redis>=5.0",
   "aiofiles>=23.2",
   "aiomqtt>=2.0",
+  "asyncua>=1.1.5",
   "python-dotenv>=1.0",
   "typer>=0.12",
   "httpx>=0.27",
@@ -100,6 +101,8 @@ warn_unused_ignores = true
 [[tool.mypy.overrides]]
 module = [
   "aioboto3",
+  "asyncua",
+  "asyncua.*",
   "azure",
   "azure.*",
   "alembic",

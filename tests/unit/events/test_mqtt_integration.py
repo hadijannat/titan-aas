@@ -24,9 +24,7 @@ class MockMqttClient:
     def __init__(self) -> None:
         self.published: list[tuple[str, bytes]] = []
 
-    async def publish(
-        self, topic: str, payload: bytes, qos: int = 0, retain: bool = False
-    ) -> None:
+    async def publish(self, topic: str, payload: bytes, qos: int = 0, retain: bool = False) -> None:
         self.published.append((topic, payload))
 
 

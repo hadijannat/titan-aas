@@ -43,9 +43,7 @@ class TestMqttPublisher:
         publisher = MqttPublisher.__new__(MqttPublisher)
         publisher.connection_manager = mock_connection_manager
         publisher.topic_config = MagicMock()
-        publisher.topic_config.get_config = MagicMock(
-            return_value=MagicMock(qos=1, retain=False)
-        )
+        publisher.topic_config.get_config = MagicMock(return_value=MagicMock(qos=1, retain=False))
         publisher.TOPIC_PREFIX = "titan"
         return publisher
 
@@ -190,9 +188,7 @@ class TestMqttMetrics:
         publisher = MqttPublisher.__new__(MqttPublisher)
         publisher.connection_manager = mock_connection_manager
         publisher.topic_config = MagicMock()
-        publisher.topic_config.get_config = MagicMock(
-            return_value=MagicMock(qos=1, retain=False)
-        )
+        publisher.topic_config.get_config = MagicMock(return_value=MagicMock(qos=1, retain=False))
         publisher.TOPIC_PREFIX = "titan"
         return publisher
 
@@ -240,9 +236,7 @@ class TestMqttMetrics:
             mock_state.assert_called_once_with("localhost", 0)
 
     @pytest.mark.asyncio
-    async def test_connection_state_on_reconnect_failure(
-        self, mqtt_config: MqttConfig
-    ) -> None:
+    async def test_connection_state_on_reconnect_failure(self, mqtt_config: MqttConfig) -> None:
         """Max reconnect attempts records FAILED state."""
         # Create real connection manager to test reconnection logic
         manager = MqttConnectionManager(mqtt_config)

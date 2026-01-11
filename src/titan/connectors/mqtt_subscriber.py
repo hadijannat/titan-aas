@@ -129,9 +129,7 @@ class HandlerRegistry:
 class CallbackHandler(MessageHandler):
     """Handler that wraps a callback function."""
 
-    def __init__(
-        self, callback: Callable[[MqttMessage], Coroutine[Any, Any, None]]
-    ) -> None:
+    def __init__(self, callback: Callable[[MqttMessage], Coroutine[Any, Any, None]]) -> None:
         self._callback = callback
 
     def matches(self, topic: str) -> bool:
@@ -240,9 +238,7 @@ class MqttSubscriber:
                 message_iter = client.messages.__aiter__()
                 while self._running:
                     try:
-                        message = await asyncio.wait_for(
-                            message_iter.__anext__(), timeout=1.0
-                        )
+                        message = await asyncio.wait_for(message_iter.__anext__(), timeout=1.0)
                         await self._handle_message(message)
                     except TimeoutError:
                         continue
@@ -298,9 +294,7 @@ class ElementValueHandler(MessageHandler):
     """
 
     # Regex to extract submodel_id_b64 and path from topic
-    TOPIC_PATTERN = re.compile(
-        r"^titan/element/([^/]+)/(.+)/value$"
-    )
+    TOPIC_PATTERN = re.compile(r"^titan/element/([^/]+)/(.+)/value$")
 
     def __init__(self, session_factory: Callable[[], AsyncSession]) -> None:
         self._session_factory = session_factory
@@ -359,9 +353,7 @@ class ElementValueHandler(MessageHandler):
             try:
                 updated_doc = update_element_value(doc, id_short_path, value)
             except ElementNotFoundError:
-                logger.warning(
-                    f"Element not found: {id_short_path} in {submodel_id_b64}"
-                )
+                logger.warning(f"Element not found: {id_short_path} in {submodel_id_b64}")
                 return
             except InvalidPathError as e:
                 logger.warning(f"Invalid path: {e}")
@@ -375,9 +367,7 @@ class ElementValueHandler(MessageHandler):
                     logger.warning(f"Submodel not found for update: {identifier}")
                     return
                 await session.commit()
-                logger.info(
-                    f"Updated element via MQTT: {submodel_id_b64}/{id_short_path}"
-                )
+                logger.info(f"Updated element via MQTT: {submodel_id_b64}/{id_short_path}")
             except Exception as e:
                 logger.error(f"Failed to save element update: {e}")
                 await session.rollback()
@@ -390,14 +380,10 @@ class CommandHandler(MessageHandler):
     Payload: Command-specific JSON
     """
 
-    TOPIC_PATTERN = re.compile(
-        r"^titan/([^/]+)/([^/]+)/command/(.+)$"
-    )
+    TOPIC_PATTERN = re.compile(r"^titan/([^/]+)/([^/]+)/command/(.+)$")
 
     def __init__(self) -> None:
-        self._command_handlers: dict[
-            str, Callable[[str, str, Any], Coroutine[Any, Any, None]]
-        ] = {}
+        self._command_handlers: dict[str, Callable[[str, str, Any], Coroutine[Any, Any, None]]] = {}
 
     def register_command(
         self,

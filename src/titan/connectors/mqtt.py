@@ -253,9 +253,7 @@ class MqttConnectionManager:
                 self._reset_backoff()
                 set_mqtt_connection_state(self.config.broker, 2)  # connected
 
-                logger.info(
-                    f"Connected to MQTT broker at {self.config.broker}:{self.config.port}"
-                )
+                logger.info(f"Connected to MQTT broker at {self.config.broker}:{self.config.port}")
                 return True
 
             except Exception as e:
@@ -345,8 +343,7 @@ class MqttConnectionManager:
                 )
                 self._current_delay = delay
                 logger.warning(
-                    f"Reconnect attempt {self._reconnect_attempts} failed, "
-                    f"retrying in {delay:.1f}s"
+                    f"Reconnect attempt {self._reconnect_attempts} failed, retrying in {delay:.1f}s"
                 )
 
                 await asyncio.sleep(delay)

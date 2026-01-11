@@ -67,6 +67,26 @@ class Settings(BaseSettings):
         validation_alias="MQTT_SUBSCRIBE_TOPICS",
     )
 
+    # OPC-UA Configuration
+    opcua_enabled: bool = Field(default=False, validation_alias="OPCUA_ENABLED")
+    opcua_endpoint: str | None = Field(default=None, validation_alias="OPCUA_ENDPOINT")
+    opcua_security_mode: str = Field(default="None", validation_alias="OPCUA_SECURITY_MODE")
+    opcua_username: str | None = Field(default=None, validation_alias="OPCUA_USERNAME")
+    opcua_password: str | None = Field(default=None, validation_alias="OPCUA_PASSWORD")
+    opcua_timeout: int = Field(default=5, validation_alias="OPCUA_TIMEOUT")
+    opcua_reconnect_delay_initial: float = Field(
+        default=1.0, validation_alias="OPCUA_RECONNECT_DELAY_INITIAL"
+    )
+    opcua_reconnect_delay_max: float = Field(
+        default=60.0, validation_alias="OPCUA_RECONNECT_DELAY_MAX"
+    )
+    opcua_reconnect_delay_multiplier: float = Field(
+        default=2.0, validation_alias="OPCUA_RECONNECT_MULTIPLIER"
+    )
+    opcua_max_reconnect_attempts: int = Field(
+        default=10, validation_alias="OPCUA_MAX_RECONNECT_ATTEMPTS"
+    )
+
     # Event Bus
     event_bus_backend: str = Field(default="redis", validation_alias="EVENT_BUS_BACKEND")
     event_bus_stream_name: str = Field(default="titan:events", validation_alias="EVENT_BUS_STREAM")
