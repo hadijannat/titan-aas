@@ -108,6 +108,8 @@ module = [
   "azure.*",
   "alembic",
   "alembic.*",
+  "basyx",
+  "basyx.*",
   "brotli",
   "google",
   "google.*",
@@ -180,4 +182,5 @@ dev = [
     "aioboto3>=13.0",
     "ruff>=0.6",
     "mypy>=1.10",
+    "basyx-python-sdk>=2.0.0",
 ]

@@ -301,8 +301,10 @@ class AasxExporter:
             parts: list[tuple[str, str]] = []
 
             # Write environment JSON/XML
+            # Use "data.json" / "data.xml" for BaSyx compatibility
+            # (IDTA Part 5 allows both data.* and aas-environment.* naming)
             if use_json:
-                env_path = "aasx/aas-environment.json"
+                env_path = "aasx/data.json"
                 env_content = self._create_environment_json(shells, submodels, concept_descriptions)
                 zf.writestr(env_path, env_content)
                 parts.append((env_path, "application/json"))
@@ -310,7 +312,7 @@ class AasxExporter:
                 # XML export using XmlSerializer
                 from titan.compat.xml_serializer import XmlSerializer
 
-                env_path = "aasx/aas-environment.xml"
+                env_path = "aasx/data.xml"
                 serializer = XmlSerializer()
                 env_content = serializer.serialize_environment(
                     shells, submodels, concept_descriptions
@@ -323,15 +325,22 @@ class AasxExporter:
                 full_path = f"aasx/supplementary-files/{file_path}"
                 zf.writestr(full_path, content)
 
+            # Write aasx-origin file (marker for AASX packages)
+            zf.writestr("aasx/aasx-origin", "")
+
             # Write OPC metadata
             content_types = self._create_content_types(parts)
             zf.writestr("[Content_Types].xml", content_types)
 
-            rels = self._create_rels(parts)
-            zf.writestr("_rels/.rels", rels)
+            # Write package-level relationships (_rels/.rels)
+            # This should ONLY point to aasx-origin per IDTA Part 5
+            root_rels = self._create_root_rels()
+            zf.writestr("_rels/.rels", root_rels)
 
-            # Write aasx-origin file (marker for AASX packages)
-            zf.writestr("aasx/aasx-origin", "")
+            # Write aasx-origin relationships (aasx/_rels/aasx-origin.rels)
+            # This points to the actual AAS spec file (data.xml or data.json)
+            origin_rels = self._create_origin_rels(env_path)
+            zf.writestr("aasx/_rels/aasx-origin.rels", origin_rels)
 
         buffer.seek(0)
         return buffer
@@ -384,12 +393,15 @@ class AasxExporter:
 
         return ET.tostring(root, encoding="unicode", xml_declaration=True)
 
-    def _create_rels(self, parts: list[tuple[str, str]]) -> str:
-        """Create _rels/.rels file."""
+    def _create_root_rels(self) -> str:
+        """Create _rels/.rels file (package-level relationships).
+
+        Per IDTA Part 5, this should ONLY contain relationship to aasx-origin.
+        """
         ns = "http://schemas.openxmlformats.org/package/2006/relationships"
         root = ET.Element("Relationships", xmlns=ns)
 
-        # Add relationship to aasx-origin
+        # Add relationship to aasx-origin (ONLY this relationship at root level)
         ET.SubElement(
             root,
             "Relationship",
@@ -398,15 +410,28 @@ class AasxExporter:
             Id="rId1",
         )
 
+        return ET.tostring(root, encoding="unicode", xml_declaration=True)
+
+    def _create_origin_rels(self, env_path: str) -> str:
+        """Create aasx/_rels/aasx-origin.rels file.
+
+        This file contains relationships from aasx-origin to the actual
+        AAS spec files (data.xml or data.json).
+
+        Args:
+            env_path: Path to the environment file (e.g., "aasx/data.xml")
+        """
+        ns = "http://schemas.openxmlformats.org/package/2006/relationships"
+        root = ET.Element("Relationships", xmlns=ns)
+
         # Add relationship to AAS spec file
-        for i, (part_path, _) in enumerate(parts, start=2):
-            ET.SubElement(
-                root,
-                "Relationship",
-                Type=self.AAS_SPEC_REL_TYPE,
-                Target=f"/{part_path}",
-                Id=f"rId{i}",
-            )
+        ET.SubElement(
+            root,
+            "Relationship",
+            Type=self.AAS_SPEC_REL_TYPE,
+            Target=f"/{env_path}",
+            Id="rId1",
+        )
 
         return ET.tostring(root, encoding="unicode", xml_declaration=True)
 
