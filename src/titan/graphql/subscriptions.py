@@ -19,6 +19,7 @@ Example:
         }
     }
 """
+
 # ruff: noqa: UP037
 # Note: Lazy types are required to avoid circular imports with schema.py
 from __future__ import annotations

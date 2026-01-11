@@ -961,9 +961,7 @@ async def get_version_by_tag(
     tagged_pkg = None
     visited = [current]
     while current.previous_version_id:
-        stmt = select(AasxPackageTable).where(
-            AasxPackageTable.id == current.previous_version_id
-        )
+        stmt = select(AasxPackageTable).where(AasxPackageTable.id == current.previous_version_id)
         result = await session.execute(stmt)
         current = result.scalar_one_or_none()
         if current:

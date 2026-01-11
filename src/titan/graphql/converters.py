@@ -313,9 +313,7 @@ def shell_from_input(input_data: Any) -> AssetAdministrationShell:
         AssetKind.INSTANCE: PydanticAssetKind.INSTANCE,
         AssetKind.NOT_APPLICABLE: PydanticAssetKind.NOT_APPLICABLE,
     }
-    pydantic_asset_kind = asset_kind_map.get(
-        input_data.asset_kind, PydanticAssetKind.INSTANCE
-    )
+    pydantic_asset_kind = asset_kind_map.get(input_data.asset_kind, PydanticAssetKind.INSTANCE)
 
     # Create asset information (use camelCase field names)
     asset_info = PydanticAssetInfo(

@@ -104,10 +104,12 @@ def basyx_aas_complex() -> tuple[
                 value_type=float,
                 value="23.5",
                 semantic_id=model.ExternalReference(
-                    (model.Key(
-                        type_=model.KeyTypes.GLOBAL_REFERENCE,
-                        value="https://example.com/cd/Temperature",
-                    ),)
+                    (
+                        model.Key(
+                            type_=model.KeyTypes.GLOBAL_REFERENCE,
+                            value="https://example.com/cd/Temperature",
+                        ),
+                    )
                 ),
             ),
         ],
@@ -163,10 +165,12 @@ def basyx_aas_complex() -> tuple[
         asset_information=asset_info,
         submodel=[
             model.ModelReference(
-                (model.Key(
-                    type_=model.KeyTypes.SUBMODEL,
-                    value=sm.id,
-                ),)
+                (
+                    model.Key(
+                        type_=model.KeyTypes.SUBMODEL,
+                        value=sm.id,
+                    ),
+                )
             )
             for sm in submodels
         ],

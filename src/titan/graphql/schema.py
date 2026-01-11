@@ -519,7 +519,7 @@ class Mutation:
             # Convert to GraphQL type (use the model we created)
             gql_shell = shell_to_graphql(shell_model)
 
-            return ShellMutationResult(success=True, shell=gql_shell)
+            return ShellMutationResult(success=True, shell=gql_shell)  # nosec B604
 
         except ValueError as e:
             await session.rollback()
@@ -804,7 +804,7 @@ class Mutation:
             # Convert to GraphQL type
             gql_shell = shell_to_graphql(existing)
 
-            return ShellMutationResult(success=True, shell=gql_shell)
+            return ShellMutationResult(success=True, shell=gql_shell)  # nosec B604
 
         except ValueError as e:
             await session.rollback()
@@ -942,9 +942,7 @@ class Mutation:
             # Convert to GraphQL type
             gql_cd = concept_description_to_graphql(cd_model)
 
-            return ConceptDescriptionMutationResult(
-                success=True, concept_description=gql_cd
-            )
+            return ConceptDescriptionMutationResult(success=True, concept_description=gql_cd)
 
         except ValueError as e:
             await session.rollback()
@@ -1027,9 +1025,7 @@ class Mutation:
             # Convert to GraphQL type
             gql_cd = concept_description_to_graphql(existing)
 
-            return ConceptDescriptionMutationResult(
-                success=True, concept_description=gql_cd
-            )
+            return ConceptDescriptionMutationResult(success=True, concept_description=gql_cd)
 
         except ValueError as e:
             await session.rollback()
@@ -1126,9 +1122,7 @@ class Mutation:
         perm_error = check_permission(ctx, Permission.CREATE_AAS)
         if perm_error:
             # Return error for all inputs
-            return [
-                ShellMutationResult(success=False, error=perm_error) for _ in inputs
-            ]
+            return [ShellMutationResult(success=False, error=perm_error) for _ in inputs]
 
         results: list[ShellMutationResult] = []
 
@@ -1138,7 +1132,7 @@ class Mutation:
                 repo = AasRepository(session)
                 await repo.create(shell_model)
                 gql_shell = shell_to_graphql(shell_model)
-                results.append(ShellMutationResult(success=True, shell=gql_shell))
+                results.append(ShellMutationResult(success=True, shell=gql_shell))  # nosec B604
             except ValueError as e:
                 results.append(
                     ShellMutationResult(
