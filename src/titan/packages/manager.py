@@ -23,6 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from titan.compat.aasx import AasxExporter, AasxImporter, AasxPackage
 from titan.core.model import AssetAdministrationShell, ConceptDescription, Submodel
+from titan.packages.semantic_validator import SemanticValidationResult, SemanticValidator
 from titan.packages.validator import OpcValidator, ValidationLevel, ValidationResult
 from titan.persistence.tables import AasxPackageTable
 
@@ -36,6 +37,42 @@ class ConflictResolution(Enum):
     OVERWRITE = "overwrite"  # Replace existing items
     ERROR = "error"  # Raise error on conflict
     RENAME = "rename"  # Import with modified ID
+    MERGE = "merge"  # Deep merge with existing (SubmodelElementCollections)
+    NEWER = "newer"  # Keep newer by timestamp
+
+
+@dataclass
+class BatchImportResult:
+    """Result of batch import operation."""
+
+    total_packages: int
+    successful: int = 0
+    failed: int = 0
+    results: list[dict[str, Any]] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
+
+    @property
+    def success_rate(self) -> float:
+        """Calculate success rate as percentage."""
+        if self.total_packages == 0:
+            return 0.0
+        return (self.successful / self.total_packages) * 100
+
+
+@dataclass
+class BatchExportResult:
+    """Result of batch export operation."""
+
+    total_packages: int
+    successful: int = 0
+    failed: int = 0
+    packages: list[bytes] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
+
+    @property
+    def total_size_bytes(self) -> int:
+        """Total size of all exported packages."""
+        return sum(len(pkg) for pkg in self.packages)
 
 
 @dataclass
@@ -374,6 +411,210 @@ class PackageManager:
             output.seek(0)
 
         return output
+
+    async def validate_semantics(
+        self,
+        shells: list[AssetAdministrationShell],
+        submodels: list[Submodel],
+        concept_descriptions: list[ConceptDescription],
+    ) -> SemanticValidationResult:
+        """Perform semantic validation on AAS content.
+
+        Validates semantic correctness beyond structural compliance:
+        - ConceptDescription reference integrity
+        - IEC 61360 DataSpecification content
+        - Value type consistency with ConceptDescriptions
+        - Semantic ID chain validation
+
+        Args:
+            shells: List of Asset Administration Shells
+            submodels: List of Submodels
+            concept_descriptions: List of Concept Descriptions
+
+        Returns:
+            SemanticValidationResult with issues found
+        """
+        validator = SemanticValidator()
+        return await validator.validate_package(shells, submodels, concept_descriptions)
+
+    async def batch_import(
+        self,
+        packages: list[tuple[BinaryIO, str]],  # (stream, filename)
+        aas_repo: Any,
+        submodel_repo: Any,
+        conflict_resolution: ConflictResolution = ConflictResolution.SKIP,
+    ) -> BatchImportResult:
+        """Import multiple AASX packages in parallel.
+
+        Processes packages concurrently with error isolation - one failure
+        doesn't stop others. Uses asyncio.gather() for parallel execution.
+
+        Args:
+            packages: List of (stream, filename) tuples
+            aas_repo: AAS repository for persistence
+            submodel_repo: Submodel repository for persistence
+            conflict_resolution: How to handle conflicts
+
+        Returns:
+            BatchImportResult with summary and per-package results
+        """
+        import asyncio
+
+        result = BatchImportResult(total_packages=len(packages))
+
+        async def import_single(stream: BinaryIO, filename: str) -> dict[str, Any]:
+            """Import a single package with error handling."""
+            try:
+                pkg_result = await self.import_package(
+                    stream=stream,
+                    aas_repo=aas_repo,
+                    submodel_repo=submodel_repo,
+                    conflict_resolution=conflict_resolution,
+                )
+
+                return {
+                    "filename": filename,
+                    "success": pkg_result.success,
+                    "shells_created": pkg_result.shells_created,
+                    "submodels_created": pkg_result.submodels_created,
+                    "errors": pkg_result.errors,
+                }
+
+            except Exception as e:
+                logger.error(f"Failed to import package {filename}: {e}")
+                return {
+                    "filename": filename,
+                    "success": False,
+                    "error": str(e),
+                }
+
+        # Execute imports in parallel
+        tasks = [import_single(stream, filename) for stream, filename in packages]
+        pkg_results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Process results
+        for pkg_result in pkg_results:
+            if isinstance(pkg_result, Exception):
+                result.failed += 1
+                result.errors.append(f"Unexpected error: {pkg_result}")
+            elif isinstance(pkg_result, dict):
+                result.results.append(pkg_result)
+                if pkg_result.get("success"):
+                    result.successful += 1
+                else:
+                    result.failed += 1
+                    error_msg = pkg_result.get("error") or ", ".join(pkg_result.get("errors", []))
+                    if error_msg:
+                        result.errors.append(f"{pkg_result['filename']}: {error_msg}")
+
+        logger.info(
+            f"Batch import complete: {result.successful}/{result.total_packages} successful "
+            f"({result.success_rate:.1f}%)"
+        )
+
+        return result
+
+    async def batch_export(
+        self,
+        shell_submodel_pairs: list[tuple[list[str], list[str]]],  # [(shell_ids, submodel_ids)]
+        aas_repo: Any,
+        submodel_repo: Any,
+        cd_repo: Any | None = None,
+        use_json: bool = True,
+    ) -> BatchExportResult:
+        """Export multiple AASX packages in parallel.
+
+        Creates multiple packages concurrently. Each tuple in shell_submodel_pairs
+        defines one package.
+
+        Args:
+            shell_submodel_pairs: List of (shell_ids, submodel_ids) tuples
+            aas_repo: AAS repository
+            submodel_repo: Submodel repository
+            cd_repo: ConceptDescription repository (optional)
+            use_json: Use JSON serialization (True) or XML (False)
+
+        Returns:
+            BatchExportResult with exported packages and summary
+
+        Example:
+            # Export 3 packages: 2 shells, 1 submodel-only
+            result = await manager.batch_export([
+                (["shell1"], []),           # Package 1: shell1 only
+                (["shell2"], ["sm1", "sm2"]),  # Package 2: shell2 + 2 submodels
+                ([], ["sm3"]),              # Package 3: sm3 only
+            ])
+        """
+        import asyncio
+
+        result = BatchExportResult(total_packages=len(shell_submodel_pairs))
+
+        async def export_single(shell_ids: list[str], submodel_ids: list[str]) -> bytes | None:
+            """Export a single package with error handling."""
+            try:
+                # Fetch shells
+                shells = []
+                for shell_id in shell_ids:
+                    shell = await aas_repo.get(shell_id)
+                    if shell:
+                        shells.append(shell)
+
+                # Fetch submodels
+                submodels = []
+                for sm_id in submodel_ids:
+                    sm = await submodel_repo.get(sm_id)
+                    if sm:
+                        submodels.append(sm)
+
+                # Fetch concept descriptions if repo provided
+                concept_descriptions = None
+                if cd_repo:
+                    all_cds = await cd_repo.get_all(limit=1000)
+                    concept_descriptions = all_cds if all_cds else None
+
+                if not shells and not submodels:
+                    logger.warning("No content found for export")
+                    return None
+
+                # Export
+                stream = await self.export_to_stream(
+                    shells=shells,
+                    submodels=submodels,
+                    concept_descriptions=concept_descriptions,
+                    options=ExportOptions(use_json=use_json),
+                )
+
+                stream.seek(0)
+                return stream.read()
+
+            except Exception as e:
+                logger.error(f"Failed to export package: {e}")
+                result.errors.append(
+                    f"Export failed ({len(shell_ids)} shells, {len(submodel_ids)} submodels): {e}"
+                )
+                return None
+
+        # Execute exports in parallel
+        tasks = [export_single(shell_ids, sm_ids) for shell_ids, sm_ids in shell_submodel_pairs]
+        exports = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Process results
+        for export_result in exports:
+            if isinstance(export_result, Exception):
+                result.failed += 1
+                result.errors.append(f"Unexpected error: {export_result}")
+            elif export_result is not None:
+                result.successful += 1
+                result.packages.append(export_result)
+            else:
+                result.failed += 1
+
+        logger.info(
+            f"Batch export complete: {result.successful}/{result.total_packages} successful, "
+            f"total size: {result.total_size_bytes / 1024 / 1024:.2f} MB"
+        )
+
+        return result
 
     async def create_version(
         self,
