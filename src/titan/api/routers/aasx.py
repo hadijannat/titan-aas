@@ -553,3 +553,110 @@ def _extract_semantic_id(submodel) -> str | None:
     if submodel.semantic_id.keys:
         return submodel.semantic_id.keys[0].value
     return None
+
+
+@router.post(
+    "/export-xml",
+    dependencies=[Depends(require_permission(Permission.READ_AAS))],
+)
+async def export_xml(
+    shell_ids: list[str] | None = None,
+    submodel_ids: list[str] | None = None,
+    include_concept_descriptions: bool = True,
+    session: AsyncSession = Depends(get_session),
+) -> StreamingResponse:
+    """Export AAS content to AASX package with XML serialization.
+
+    Creates an AASX package containing the specified shells and submodels,
+    serialized as XML (IDTA-01001 Part 1) instead of JSON.
+
+    Args:
+        shell_ids: Optional list of shell IDs to export (None = all)
+        submodel_ids: Optional list of submodel IDs to export (None = all)
+        include_concept_descriptions: Include concept descriptions (default: True)
+        session: Database session
+
+    Returns:
+        AASX package as application/octet-stream
+
+    Raises:
+        NotFoundError: If no entities found to export
+    """
+    from titan.compat.aasx import AasxExporter
+    from titan.persistence.repositories import (
+        AasRepository,
+        ConceptDescriptionRepository,
+        SubmodelRepository,
+    )
+
+    aas_repo = AasRepository(session)
+    submodel_repo = SubmodelRepository(session)
+    cd_repo = ConceptDescriptionRepository(session)
+
+    # Fetch shells
+    shells = []
+    if shell_ids:
+        for shell_id in shell_ids:
+            shell = await aas_repo.get(shell_id)
+            if shell:
+                shells.append(shell)
+    else:
+        # Get all shells if no IDs specified
+        all_shells = await aas_repo.get_all(limit=1000)  # Reasonable limit
+        shells = all_shells
+
+    # Fetch submodels
+    submodels = []
+    if submodel_ids:
+        for sm_id in submodel_ids:
+            sm = await submodel_repo.get(sm_id)
+            if sm:
+                submodels.append(sm)
+    else:
+        # Get all submodels if no IDs specified
+        all_submodels = await submodel_repo.get_all(limit=1000)
+        submodels = all_submodels
+
+    # Fetch concept descriptions if requested
+    concept_descriptions = []
+    if include_concept_descriptions:
+        all_cds = await cd_repo.get_all(limit=1000)
+        concept_descriptions = all_cds
+
+    # Check if we have anything to export
+    if not shells and not submodels:
+        raise NotFoundError("No entities found to export")
+
+    # Export to AASX with XML serialization
+    exporter = AasxExporter()
+    stream = await exporter.export_to_stream(
+        shells=shells,
+        submodels=submodels,
+        output_stream=BytesIO(),
+        concept_descriptions=concept_descriptions if concept_descriptions else None,
+        use_json=False,  # Use XML serialization
+    )
+
+    stream.seek(0)
+
+    # Generate filename
+    filename = "export.aasx"
+    if shell_ids and len(shell_ids) == 1:
+        # Use shell idShort if exporting single shell
+        shell = shells[0] if shells else None
+        if shell and shell.id_short:
+            filename = f"{shell.id_short}.aasx"
+    elif submodel_ids and len(submodel_ids) == 1:
+        # Use submodel idShort if exporting single submodel
+        sm = submodels[0] if submodels else None
+        if sm and sm.id_short:
+            filename = f"{sm.id_short}.aasx"
+
+    return StreamingResponse(
+        stream,
+        media_type="application/asset-administration-shell-package",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
