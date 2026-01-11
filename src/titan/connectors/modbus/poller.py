@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
 
 from titan.connectors.modbus.client import ModbusClient
 

@@ -361,6 +361,9 @@ class TestModbusPoller:
 
         callback = MagicMock()
         poll_id = poller.start_polling(config, callback)
+        assert poll_id
+        assert poll_id
+        assert poll_id
 
         assert poll_id == "holding_register:100"
         assert poller.is_running
@@ -381,6 +384,9 @@ class TestModbusPoller:
 
         callback = MagicMock()
         poll_id = poller.start_polling(config, callback)
+        assert poll_id
+        assert poll_id
+        assert poll_id
 
         result = poller.stop_polling(poll_id)
 
@@ -414,6 +420,7 @@ class TestModbusPoller:
         )
 
         poll_id = poller.start_polling(config, callback)
+        assert poll_id
 
         # Wait for first poll
         await asyncio.sleep(0.1)
@@ -450,6 +457,7 @@ class TestModbusPoller:
         )
 
         poll_id = poller.start_polling(config, callback)
+        assert poll_id
 
         # Wait for first poll
         await asyncio.sleep(0.1)
@@ -506,6 +514,7 @@ class TestModbusPoller:
         )
 
         poll_id = poller.start_polling(config, callback)
+        assert poll_id
 
         # Wait for failed poll
         await asyncio.sleep(0.1)
