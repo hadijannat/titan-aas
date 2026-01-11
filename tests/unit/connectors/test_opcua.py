@@ -64,7 +64,7 @@ class TestOpcUaClient:
             endpoint_url="opc.tcp://localhost:4840",
             security_mode=OpcUaSecurityMode.NONE,
             username="admin",
-            password="password123",
+            password="password123",  # noqa: S106
         )
         client = OpcUaClient(config)
 
@@ -204,6 +204,157 @@ class TestOpcUaClient:
             result = await opcua_client.write_node("ns=2;s=InvalidNode", 100)
             assert result is False
 
+    @pytest.mark.asyncio
+    async def test_subscribe_not_connected(self, opcua_client: OpcUaClient) -> None:
+        """Subscribing when not connected returns None."""
+        callback = MagicMock()
+        result = await opcua_client.subscribe(["ns=2;s=Temperature"], callback)
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_subscribe_success(
+        self, opcua_client: OpcUaClient, mock_asyncua_client: MagicMock
+    ) -> None:
+        """Subscribe to node value changes successfully."""
+        # Mock subscription and node
+        mock_subscription = MagicMock()
+        mock_subscription.subscribe_data_change = AsyncMock(return_value="handle_1")
+        mock_asyncua_client.create_subscription = AsyncMock(return_value=mock_subscription)
+
+        mock_node = MagicMock()
+        mock_asyncua_client.get_node = MagicMock(return_value=mock_node)
+
+        callback = MagicMock()
+
+        with patch("asyncua.Client", return_value=mock_asyncua_client):
+            await opcua_client.connect()
+
+            result = await opcua_client.subscribe(
+                ["ns=2;s=Temperature", "ns=2;s=Pressure"], callback, interval=2.0
+            )
+
+            assert result is not None
+            assert result.startswith("sub_")
+            mock_asyncua_client.create_subscription.assert_called_once()
+            assert mock_subscription.subscribe_data_change.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_subscribe_error(
+        self, opcua_client: OpcUaClient, mock_asyncua_client: MagicMock
+    ) -> None:
+        """Subscribing with error returns None."""
+        mock_asyncua_client.create_subscription = AsyncMock(
+            side_effect=Exception("Subscription failed")
+        )
+
+        callback = MagicMock()
+
+        with patch("asyncua.Client", return_value=mock_asyncua_client):
+            await opcua_client.connect()
+
+            result = await opcua_client.subscribe(["ns=2;s=Temperature"], callback)
+            assert result is None
+
+    @pytest.mark.asyncio
+    async def test_unsubscribe_success(
+        self, opcua_client: OpcUaClient, mock_asyncua_client: MagicMock
+    ) -> None:
+        """Unsubscribe from value changes successfully."""
+        # First subscribe
+        mock_subscription = MagicMock()
+        mock_subscription.subscribe_data_change = AsyncMock(return_value="handle_1")
+        mock_subscription.delete = AsyncMock()
+        mock_asyncua_client.create_subscription = AsyncMock(return_value=mock_subscription)
+
+        mock_node = MagicMock()
+        mock_asyncua_client.get_node = MagicMock(return_value=mock_node)
+
+        callback = MagicMock()
+
+        with patch("asyncua.Client", return_value=mock_asyncua_client):
+            await opcua_client.connect()
+
+            subscription_id = await opcua_client.subscribe(["ns=2;s=Temperature"], callback)
+            assert subscription_id is not None
+
+            # Then unsubscribe
+            result = await opcua_client.unsubscribe(subscription_id)
+            assert result is True
+            mock_subscription.delete.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_unsubscribe_not_found(self, opcua_client: OpcUaClient) -> None:
+        """Unsubscribing non-existent subscription returns False."""
+        result = await opcua_client.unsubscribe("sub_nonexistent")
+        assert result is False
+
+    @pytest.mark.asyncio
+    async def test_browse_not_connected(self, opcua_client: OpcUaClient) -> None:
+        """Browsing when not connected returns empty list."""
+        result = await opcua_client.browse("i=84")
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_browse_success(
+        self, opcua_client: OpcUaClient, mock_asyncua_client: MagicMock
+    ) -> None:
+        """Browse child nodes successfully."""
+        # Mock node and children
+        mock_child1 = MagicMock()
+        mock_child1.nodeid = "ns=2;s=Child1"
+        mock_child1.read_browse_name = AsyncMock(
+            return_value=MagicMock(to_string=lambda: "2:Child1")
+        )
+        mock_child1.read_node_class = AsyncMock(
+            return_value=MagicMock(__str__=lambda self: "Variable")
+        )
+        mock_child1.read_display_name = AsyncMock(
+            return_value=MagicMock(to_string=lambda: "Child Node 1")
+        )
+
+        mock_child2 = MagicMock()
+        mock_child2.nodeid = "ns=2;s=Child2"
+        mock_child2.read_browse_name = AsyncMock(
+            return_value=MagicMock(to_string=lambda: "2:Child2")
+        )
+        mock_child2.read_node_class = AsyncMock(
+            return_value=MagicMock(__str__=lambda self: "Object")
+        )
+        mock_child2.read_display_name = AsyncMock(
+            return_value=MagicMock(to_string=lambda: "Child Node 2")
+        )
+
+        mock_node = MagicMock()
+        mock_node.get_children = AsyncMock(return_value=[mock_child1, mock_child2])
+        mock_asyncua_client.get_node = MagicMock(return_value=mock_node)
+
+        with patch("asyncua.Client", return_value=mock_asyncua_client):
+            await opcua_client.connect()
+
+            result = await opcua_client.browse("i=84")
+
+            assert len(result) == 2
+            assert result[0]["nodeid"] == "ns=2;s=Child1"
+            assert result[0]["browse_name"] == "2:Child1"
+            assert result[0]["node_class"] == "Variable"
+            assert result[0]["display_name"] == "Child Node 1"
+            assert result[1]["nodeid"] == "ns=2;s=Child2"
+
+    @pytest.mark.asyncio
+    async def test_browse_error(
+        self, opcua_client: OpcUaClient, mock_asyncua_client: MagicMock
+    ) -> None:
+        """Browsing with error returns empty list."""
+        mock_node = MagicMock()
+        mock_node.get_children = AsyncMock(side_effect=Exception("Browse failed"))
+        mock_asyncua_client.get_node = MagicMock(return_value=mock_node)
+
+        with patch("asyncua.Client", return_value=mock_asyncua_client):
+            await opcua_client.connect()
+
+            result = await opcua_client.browse("i=84")
+            assert result == []
+
 
 class TestOpcUaConfig:
     """Test OPC-UA configuration."""
@@ -225,7 +376,7 @@ class TestOpcUaConfig:
             endpoint_url="opc.tcp://remote-server:4840",
             security_mode=OpcUaSecurityMode.SIGN,
             username="user1",
-            password="pass123",
+            password="pass123",  # noqa: S106
             timeout=15.0,
             reconnect_interval=20,
         )

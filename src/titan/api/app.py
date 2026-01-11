@@ -5,7 +5,7 @@ Creates the application with:
 - Registry endpoints (/shell-descriptors, /submodel-descriptors)
 - Discovery endpoints
 - WebSocket for real-time events
-- Lifecycle management for database, cache, and MQTT connections
+- Lifecycle management for database, cache, MQTT, and OPC-UA connections
 - OIDC authentication and RBAC authorization
 - OpenTelemetry tracing and Prometheus metrics
 - IDTA-compliant error handling
@@ -56,7 +56,9 @@ from titan.cache import close_redis, get_redis
 from titan.config import settings
 from titan.connectors.mqtt import MqttEventHandler, close_mqtt, get_mqtt_publisher
 from titan.connectors.mqtt_subscriber import close_mqtt_subscriber, get_mqtt_subscriber
-from titan.events import AasEvent, AnyEvent, SubmodelEvent
+from titan.connectors.opcua.connection import close_opcua, get_opcua_connection_manager
+from titan.connectors.opcua.handler import OpcUaEventHandler
+from titan.events import AasEvent, AnyEvent, SubmodelElementEvent, SubmodelEvent
 from titan.events.runtime import get_event_bus, start_event_bus, stop_event_bus
 from titan.observability import configure_logging
 from titan.observability.metrics import MetricsMiddleware, get_metrics
@@ -81,9 +83,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     - Initialize database connection pool
     - Initialize Redis connection
     - Initialize MQTT connection (if configured)
+    - Initialize OPC-UA connection (if configured)
     - Wire WebSocket event handler to event bus
 
     On shutdown:
+    - Close OPC-UA connection
     - Close MQTT connection
     - Close Redis connection
     - Close database connections
@@ -143,12 +147,30 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             await mqtt_subscriber.start(topics)
             logger.info(f"MQTT subscriber started on {len(topics)} topics")
 
+    # Wire OPC-UA event handler to event bus (optional, industrial IoT integration)
+    opcua_manager = await get_opcua_connection_manager()
+    if opcua_manager is not None:
+        opcua_handler = OpcUaEventHandler(opcua_manager)
+
+        async def opcua_event_handler(event: AnyEvent) -> None:
+            """Route events to OPC-UA handler."""
+            if isinstance(event, AasEvent):
+                await opcua_handler.handle_aas_event(event)
+            elif isinstance(event, SubmodelEvent):
+                await opcua_handler.handle_submodel_event(event)
+            elif isinstance(event, SubmodelElementEvent):
+                await opcua_handler.handle_element_event(event)
+
+        await get_event_bus().subscribe(opcua_event_handler)
+        logger.info("OPC-UA event handler subscribed")
+
     logger.info("Titan-AAS startup complete")
 
     yield
 
     # Shutdown
     logger.info("Shutting down Titan-AAS")
+    await close_opcua()
     await close_mqtt_subscriber()
     await close_mqtt()
     await stop_event_bus()

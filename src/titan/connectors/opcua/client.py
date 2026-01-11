@@ -5,6 +5,7 @@ Enables reading and writing AAS data from/to OPC UA servers.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from dataclasses import dataclass
 from enum import Enum
@@ -34,7 +35,7 @@ class OpcUaConfig:
     private_key_path: str | None = None
     application_uri: str = "urn:titan:opcua:client"
     timeout: float = 10.0
-    reconnect_interval: int = 5
+    reconnect_interval: float = 5.0
 
 
 @dataclass
@@ -79,7 +80,6 @@ class OpcUaClient:
 
         try:
             from asyncua import Client as AsyncUaClient
-            from asyncua import ua
 
             # Create asyncua client
             self._client = AsyncUaClient(url=self.config.endpoint_url)
@@ -109,15 +109,13 @@ class OpcUaClient:
                 self._client.set_password(self.config.password)
 
             # Connect with timeout
-            import asyncio
-
             await asyncio.wait_for(self._client.connect(), timeout=self.config.timeout)
 
             self._connected = True
             logger.info(f"Successfully connected to OPC UA server: {self.config.endpoint_url}")
             return True
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.error(
                 f"Connection timeout after {self.config.timeout}s: {self.config.endpoint_url}"
             )
@@ -161,8 +159,6 @@ class OpcUaClient:
             return None
 
         try:
-            from asyncua import ua
-
             # Get node object
             node = self._client.get_node(node_id)
 
@@ -239,8 +235,6 @@ class OpcUaClient:
             return None
 
         try:
-            from asyncua import ua
-
             # Create subscription handler
             class SubscriptionHandler:
                 """Handler for OPC UA subscription data change notifications."""
@@ -329,21 +323,45 @@ class OpcUaClient:
         """Browse child nodes of a node.
 
         Args:
-            node_id: Parent node ID (default: Objects folder)
+            node_id: Parent node ID (default: Objects folder "i=84")
 
         Returns:
-            List of child node info
+            List of child node info with nodeid, browse_name, node_class, and display_name
         """
-        if not self._connected:
+        if not self._connected or not self._client:
+            logger.warning("Not connected to OPC UA server")
             return []
 
         try:
-            # Placeholder - would browse using asyncua
-            # node = self._client.get_node(node_id)
-            # children = await node.get_children()
 
-            logger.debug(f"Browse node: {node_id}")
-            return []  # Would return actual children
+            # Get parent node
+            node = self._client.get_node(node_id)
+
+            # Browse children
+            children = await node.get_children()
+
+            # Collect information about each child
+            result = []
+            for child in children:
+                try:
+                    # Get node attributes
+                    browse_name = await child.read_browse_name()
+                    node_class = await child.read_node_class()
+                    display_name = await child.read_display_name()
+
+                    result.append({
+                        "nodeid": str(child.nodeid),
+                        "browse_name": browse_name.to_string(),
+                        "node_class": str(node_class),
+                        "display_name": display_name.to_string(),
+                    })
+
+                except Exception as child_error:
+                    logger.warning(f"Error reading child node: {child_error}")
+                    continue
+
+            logger.debug(f"Browse node {node_id}: found {len(result)} children")
+            return result
 
         except Exception as e:
             logger.error(f"Failed to browse node {node_id}: {e}")

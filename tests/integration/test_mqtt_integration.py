@@ -10,7 +10,7 @@ import asyncio
 import json
 import time
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import orjson
 import paho.mqtt.client as mqtt_client
@@ -195,7 +195,8 @@ class TestMqttSubscriberIntegration:
         """Publish element value to MQTT, verify subscriber receives it."""
         # Create mock session factory
         mock_session = MagicMock()
-        mock_session_factory = lambda: mock_session
+        def mock_session_factory() -> MagicMock:
+            return mock_session
 
         # Create connection manager
         connection_manager = MqttConnectionManager(mqtt_broker_config)

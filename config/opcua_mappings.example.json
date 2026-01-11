@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "OPC-UA to AAS mapping configuration example",
+  "mappings": [
+    {
+      "submodel_id": "urn:example:submodel:sensors:1",
+      "element_path": "Temperature",
+      "node_id": "ns=2;s=Sensor.Temperature",
+      "data_type": "xs:double",
+      "direction": "bidirectional"
+    },
+    {
+      "submodel_id": "urn:example:submodel:sensors:1",
+      "element_path": "Pressure",
+      "node_id": "ns=2;s=Sensor.Pressure",
+      "data_type": "xs:double",
+      "direction": "read"
+    },
+    {
+      "submodel_id": "urn:example:submodel:actuators:1",
+      "element_path": "ValvePosition",
+      "node_id": "ns=2;s=Actuator.Valve.Position",
+      "data_type": "xs:int",
+      "direction": "write"
+    },
+    {
+      "submodel_id": "urn:example:submodel:actuators:1",
+      "element_path": "MotorSpeed",
+      "node_id": "ns=2;s=Actuator.Motor.Speed",
+      "data_type": "xs:double",
+      "direction": "bidirectional"
+    },
+    {
+      "submodel_id": "urn:example:submodel:status:1",
+      "element_path": "ProductionStatus.CurrentBatch",
+      "node_id": "ns=2;s=Production.Status.CurrentBatch",
+      "data_type": "xs:string",
+      "direction": "read"
+    },
+    {
+      "submodel_id": "urn:example:submodel:status:1",
+      "element_path": "ProductionStatus.ItemsProduced",
+      "node_id": "ns=2;s=Production.Status.ItemsProduced",
+      "data_type": "xs:int",
+      "direction": "read"
+    }
+  ]
+}

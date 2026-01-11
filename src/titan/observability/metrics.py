@@ -63,6 +63,13 @@ class MetricsRegistry:
     mqtt_processing_errors_total: Any = None
     mqtt_connection_state: Any = None
 
+    # OPC-UA metrics
+    opcua_reads_total: Any = None
+    opcua_writes_total: Any = None
+    opcua_read_errors_total: Any = None
+    opcua_write_errors_total: Any = None
+    opcua_connection_state: Any = None
+
     # Internal state
     _initialized: bool = field(default=False, repr=False)
     _registry: Any = field(default=None, repr=False)
@@ -187,6 +194,38 @@ class MetricsRegistry:
                 "MQTT connection state (0=disconnected, 1=connecting, 2=connected, "
                 "3=reconnecting, 4=failed)",
                 ["broker"],
+            )
+
+            # OPC-UA metrics
+            self.opcua_reads_total = Counter(
+                "titan_opcua_reads_total",
+                "Total OPC-UA node reads",
+                ["endpoint"],
+            )
+
+            self.opcua_writes_total = Counter(
+                "titan_opcua_writes_total",
+                "Total OPC-UA node writes",
+                ["endpoint"],
+            )
+
+            self.opcua_read_errors_total = Counter(
+                "titan_opcua_read_errors_total",
+                "Total OPC-UA read errors",
+                ["endpoint"],
+            )
+
+            self.opcua_write_errors_total = Counter(
+                "titan_opcua_write_errors_total",
+                "Total OPC-UA write errors",
+                ["endpoint"],
+            )
+
+            self.opcua_connection_state = Gauge(
+                "titan_opcua_connection_state",
+                "OPC-UA connection state (0=disconnected, 1=connecting, 2=connected, "
+                "3=reconnecting, 4=failed)",
+                ["endpoint"],
             )
 
             self._initialized = True
@@ -470,3 +509,65 @@ def set_mqtt_connection_state(broker: str, state: int) -> None:
     metrics = get_metrics()
     if metrics.mqtt_connection_state:
         metrics.mqtt_connection_state.labels(broker=broker).set(state)
+
+
+# -----------------------------------------------------------------------------
+# OPC-UA Metrics Helper Functions
+# -----------------------------------------------------------------------------
+
+
+def record_opcua_read(endpoint: str) -> None:
+    """Record OPC-UA node read.
+
+    Args:
+        endpoint: OPC-UA server endpoint
+    """
+    metrics = get_metrics()
+    if metrics.opcua_reads_total:
+        metrics.opcua_reads_total.labels(endpoint=endpoint).inc()
+
+
+def record_opcua_write(endpoint: str) -> None:
+    """Record OPC-UA node write.
+
+    Args:
+        endpoint: OPC-UA server endpoint
+    """
+    metrics = get_metrics()
+    if metrics.opcua_writes_total:
+        metrics.opcua_writes_total.labels(endpoint=endpoint).inc()
+
+
+def record_opcua_read_error(endpoint: str) -> None:
+    """Record OPC-UA read error.
+
+    Args:
+        endpoint: OPC-UA server endpoint
+    """
+    metrics = get_metrics()
+    if metrics.opcua_read_errors_total:
+        metrics.opcua_read_errors_total.labels(endpoint=endpoint).inc()
+
+
+def record_opcua_write_error(endpoint: str) -> None:
+    """Record OPC-UA write error.
+
+    Args:
+        endpoint: OPC-UA server endpoint
+    """
+    metrics = get_metrics()
+    if metrics.opcua_write_errors_total:
+        metrics.opcua_write_errors_total.labels(endpoint=endpoint).inc()
+
+
+def set_opcua_connection_state(endpoint: str, state: int) -> None:
+    """Set OPC-UA connection state.
+
+    Args:
+        endpoint: OPC-UA server endpoint
+        state: Connection state (0=disconnected, 1=connecting, 2=connected,
+               3=reconnecting, 4=failed)
+    """
+    metrics = get_metrics()
+    if metrics.opcua_connection_state:
+        metrics.opcua_connection_state.labels(endpoint=endpoint).set(state)
