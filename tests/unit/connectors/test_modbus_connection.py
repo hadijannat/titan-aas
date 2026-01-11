@@ -41,9 +41,7 @@ class TestModbusConnectionManager:
         assert connection_manager.metrics.connection_attempts == 0
 
     @pytest.mark.asyncio
-    async def test_connect_success(
-        self, connection_manager: ModbusConnectionManager
-    ) -> None:
+    async def test_connect_success(self, connection_manager: ModbusConnectionManager) -> None:
         """Successfully connect to Modbus server."""
         with patch.object(ModbusClient, "connect", new_callable=AsyncMock) as mock_connect:
             mock_connect.return_value = True
@@ -72,9 +70,7 @@ class TestModbusConnectionManager:
             assert connection_manager.metrics.connection_attempts == 1  # Not incremented
 
     @pytest.mark.asyncio
-    async def test_connect_failure(
-        self, connection_manager: ModbusConnectionManager
-    ) -> None:
+    async def test_connect_failure(self, connection_manager: ModbusConnectionManager) -> None:
         """Connection failure sets disconnected state."""
         with patch.object(ModbusClient, "connect", new_callable=AsyncMock) as mock_connect:
             mock_connect.return_value = False
@@ -87,9 +83,7 @@ class TestModbusConnectionManager:
             assert connection_manager.metrics.successful_connections == 0
 
     @pytest.mark.asyncio
-    async def test_connect_exception(
-        self, connection_manager: ModbusConnectionManager
-    ) -> None:
+    async def test_connect_exception(self, connection_manager: ModbusConnectionManager) -> None:
         """Connection exception sets disconnected state."""
         with patch.object(
             ModbusClient,

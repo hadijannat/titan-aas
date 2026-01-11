@@ -179,9 +179,7 @@ class ModbusPoller:
                 logger.error(f"Error polling {poll_id}: {e}")
                 await asyncio.sleep(config.interval)
 
-    async def _read_register(
-        self, config: PollConfig
-    ) -> list[int] | list[bool] | None:
+    async def _read_register(self, config: PollConfig) -> list[int] | list[bool] | None:
         """Read a register based on type.
 
         Args:
@@ -193,17 +191,11 @@ class ModbusPoller:
         if config.register_type == "coil":
             return await self.client.read_coils(config.register_address, config.count)
         elif config.register_type == "discrete_input":
-            return await self.client.read_discrete_inputs(
-                config.register_address, config.count
-            )
+            return await self.client.read_discrete_inputs(config.register_address, config.count)
         elif config.register_type == "holding_register":
-            return await self.client.read_holding_registers(
-                config.register_address, config.count
-            )
+            return await self.client.read_holding_registers(config.register_address, config.count)
         elif config.register_type == "input_register":
-            return await self.client.read_input_registers(
-                config.register_address, config.count
-            )
+            return await self.client.read_input_registers(config.register_address, config.count)
         else:
             logger.error(f"Invalid register type: {config.register_type}")
             return None

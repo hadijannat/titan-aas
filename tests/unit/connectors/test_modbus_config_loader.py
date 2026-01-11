@@ -310,9 +310,7 @@ class TestModbusConfigLoader:
         # Verify
         assert len(loaded_mapper.mappings) == len(original_mappings)
 
-        for original, loaded in zip(
-            original_mappings, loaded_mapper.mappings, strict=True
-        ):
+        for original, loaded in zip(original_mappings, loaded_mapper.mappings, strict=True):
             assert loaded.submodel_id == original.submodel_id
             assert loaded.element_path == original.element_path
             assert loaded.register_address == original.register_address

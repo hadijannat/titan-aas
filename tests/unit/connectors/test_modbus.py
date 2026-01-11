@@ -401,9 +401,7 @@ class TestModbusPoller:
         assert result is False
 
     @pytest.mark.asyncio
-    async def test_polling_value_change_callback(
-        self, modbus_client_mock: MagicMock
-    ) -> None:
+    async def test_polling_value_change_callback(self, modbus_client_mock: MagicMock) -> None:
         """Callback fires when value changes."""
         poller = ModbusPoller(modbus_client_mock)
         callback = MagicMock()

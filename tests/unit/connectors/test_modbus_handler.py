@@ -267,9 +267,7 @@ class TestModbusValueSyncHandler:
         assert len(handler.poller._poll_tasks) == 2
 
     @pytest.mark.asyncio
-    async def test_start_sync_no_readable_mappings(
-        self, modbus_client_mock: MagicMock
-    ) -> None:
+    async def test_start_sync_no_readable_mappings(self, modbus_client_mock: MagicMock) -> None:
         """Start sync with no readable mappings."""
         # Create mapper with only writable mapping
         mappings = [
@@ -314,9 +312,7 @@ class TestModbusValueSyncHandler:
         assert handler.mapper is not None
         assert len(handler.mapper.mappings) == 0
 
-    def test_sync_handler_with_no_event_publisher(
-        self, modbus_client_mock: MagicMock
-    ) -> None:
+    def test_sync_handler_with_no_event_publisher(self, modbus_client_mock: MagicMock) -> None:
         """Create sync handler without event publisher."""
         handler = ModbusValueSyncHandler(modbus_client_mock)
 

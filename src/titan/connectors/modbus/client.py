@@ -378,9 +378,7 @@ class ModbusClient:
             # Validate all values
             for i, value in enumerate(values):
                 if not 0 <= value <= 65535:
-                    logger.error(
-                        f"Invalid register value at index {i}: {value} (must be 0-65535)"
-                    )
+                    logger.error(f"Invalid register value at index {i}: {value} (must be 0-65535)")
                     return False
 
             response = await self._client.write_registers(

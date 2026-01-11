@@ -61,9 +61,7 @@ class ModbusEventHandler:
 
             # Check if this mapping supports writes
             if not mapping.can_write:
-                logger.debug(
-                    f"Mapping for {event.id_short_path} is read-only, skipping write"
-                )
+                logger.debug(f"Mapping for {event.id_short_path} is read-only, skipping write")
                 return
 
             # Deserialize value from event
@@ -81,9 +79,7 @@ class ModbusEventHandler:
             success = False
             if mapping.register_type == "coil":
                 if isinstance(register_value, bool):
-                    success = await self.client.write_coil(
-                        mapping.register_address, register_value
-                    )
+                    success = await self.client.write_coil(mapping.register_address, register_value)
             elif mapping.register_type == "holding_register":
                 if isinstance(register_value, int):
                     success = await self.client.write_register(
@@ -97,8 +93,7 @@ class ModbusEventHandler:
                 )
             else:
                 logger.error(
-                    f"Failed to write to Modbus {mapping.register_type}:"
-                    f"{mapping.register_address}"
+                    f"Failed to write to Modbus {mapping.register_type}:{mapping.register_address}"
                 )
 
         except ValueError as e:
@@ -161,9 +156,7 @@ class ModbusValueSyncHandler:
             def create_callback(
                 submodel_id: str, element_path: str, mapper_mapping: Any
             ) -> Callable[[int, list[int] | list[bool]], None]:
-                def on_value_change(
-                    address: int, values: list[int] | list[bool]
-                ) -> None:
+                def on_value_change(address: int, values: list[int] | list[bool]) -> None:
                     """Callback when Modbus register value changes."""
                     if not values:
                         return
@@ -183,9 +176,7 @@ class ModbusValueSyncHandler:
 
                 return on_value_change
 
-            callback = create_callback(
-                mapping.submodel_id, mapping.element_path, mapping
-            )
+            callback = create_callback(mapping.submodel_id, mapping.element_path, mapping)
 
             poll_id = self.poller.start_polling(poll_config, callback)
             logger.info(

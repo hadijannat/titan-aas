@@ -98,9 +98,7 @@ class TestModbusClientIntegration:
     """Test Modbus client with real server."""
 
     @pytest.mark.asyncio
-    async def test_connect_to_server(
-        self, modbus_config: ModbusConfig, modbus_server: Any
-    ) -> None:
+    async def test_connect_to_server(self, modbus_config: ModbusConfig, modbus_server: Any) -> None:
         """Connect to Modbus server."""
         client = ModbusClient(modbus_config)
 
@@ -146,9 +144,7 @@ class TestModbusClientIntegration:
         await client.disconnect()
 
     @pytest.mark.asyncio
-    async def test_read_write_coils(
-        self, modbus_config: ModbusConfig, modbus_server: Any
-    ) -> None:
+    async def test_read_write_coils(self, modbus_config: ModbusConfig, modbus_server: Any) -> None:
         """Read and write coils."""
         client = ModbusClient(modbus_config)
         await client.connect()
@@ -240,9 +236,7 @@ class TestModbusPollerIntegration:
         await client.disconnect()
 
     @pytest.mark.asyncio
-    async def test_polling_debounce(
-        self, modbus_config: ModbusConfig, modbus_server: Any
-    ) -> None:
+    async def test_polling_debounce(self, modbus_config: ModbusConfig, modbus_server: Any) -> None:
         """Poller debouncing prevents spurious callbacks."""
         client = ModbusClient(modbus_config)
         await client.connect()
@@ -371,9 +365,7 @@ class TestModbusConnectionManagerIntegration:
         assert manager.metrics.disconnections == 1
 
     @pytest.mark.asyncio
-    async def test_health_check(
-        self, modbus_config: ModbusConfig, modbus_server: Any
-    ) -> None:
+    async def test_health_check(self, modbus_config: ModbusConfig, modbus_server: Any) -> None:
         """Test health check reports correct status."""
         manager = ModbusConnectionManager(modbus_config)
 

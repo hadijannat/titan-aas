@@ -102,9 +102,7 @@ class ModbusConfigLoader:
                 mapping = ModbusConfigLoader._parse_mapping(mapping_dict)
                 mappings.append(mapping)
             except (ValueError, TypeError, KeyError) as e:
-                raise ConfigValidationError(
-                    f"Invalid mapping at index {i}: {e}"
-                ) from e
+                raise ConfigValidationError(f"Invalid mapping at index {i}: {e}") from e
 
         logger.info(f"Loaded {len(mappings)} Modbus mappings")
         return ModbusMapper(mappings)
@@ -158,9 +156,7 @@ class ModbusConfigLoader:
 
         # Validate register address range
         if not 0 <= register_address <= 65535:
-            raise ValueError(
-                f"register_address must be 0-65535, got {register_address}"
-            )
+            raise ValueError(f"register_address must be 0-65535, got {register_address}")
 
         # Create mapping (validation happens in __post_init__)
         return RegisterMapping(

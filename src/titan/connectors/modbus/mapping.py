@@ -78,9 +78,7 @@ class RegisterMapping:
         # Validate write operations
         if self.direction in ("write", "both"):
             if self.register_type in ("discrete_input", "input_register"):
-                raise ValueError(
-                    f"Cannot write to read-only register type: {self.register_type}"
-                )
+                raise ValueError(f"Cannot write to read-only register type: {self.register_type}")
 
     @property
     def can_read(self) -> bool:
@@ -223,9 +221,7 @@ class ModbusMapper:
         """
         return self._by_element.get((submodel_id, element_path))
 
-    def get_by_register(
-        self, register_type: str, register_address: int
-    ) -> RegisterMapping | None:
+    def get_by_register(self, register_type: str, register_address: int) -> RegisterMapping | None:
         """Find mapping by Modbus register.
 
         Args:
