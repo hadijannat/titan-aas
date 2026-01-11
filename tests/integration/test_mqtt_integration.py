@@ -230,13 +230,17 @@ class TestMqttSubscriberIntegration:
             }
         )
 
-        publish_result = publisher.publish(topic, payload)
+        publish_result = publisher.publish(topic, payload, retain=True)
         publish_result.wait_for_publish()
         publisher.disconnect()
         publisher.loop_stop()
 
-        # Wait for subscriber to process
-        await asyncio.sleep(3)
+        # Wait for subscriber to process (subscribe can lag in CI)
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
+            if subscriber.metrics.messages_received > 0:
+                break
+            await asyncio.sleep(0.2)
 
         # Verify message was received (check metrics)
         assert subscriber.metrics.messages_received > 0

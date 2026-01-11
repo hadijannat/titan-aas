@@ -87,6 +87,23 @@ class Settings(BaseSettings):
         default=10, validation_alias="OPCUA_MAX_RECONNECT_ATTEMPTS"
     )
 
+    # Modbus Configuration
+    modbus_enabled: bool = Field(default=False, validation_alias="MODBUS_ENABLED")
+    modbus_host: str | None = Field(default=None, validation_alias="MODBUS_HOST")
+    modbus_port: int = Field(default=502, validation_alias="MODBUS_PORT")
+    modbus_mode: str = Field(default="tcp", validation_alias="MODBUS_MODE")  # tcp or rtu
+    modbus_unit_id: int = Field(default=1, validation_alias="MODBUS_UNIT_ID")
+    modbus_timeout: float = Field(default=3.0, validation_alias="MODBUS_TIMEOUT")
+    modbus_reconnect_interval: float = Field(
+        default=5.0, validation_alias="MODBUS_RECONNECT_INTERVAL"
+    )
+    modbus_mapping_config: str | None = Field(
+        default=None, validation_alias="MODBUS_MAPPING_CONFIG"
+    )
+    # RTU-specific
+    modbus_serial_port: str | None = Field(default=None, validation_alias="MODBUS_SERIAL_PORT")
+    modbus_baudrate: int = Field(default=9600, validation_alias="MODBUS_BAUDRATE")
+
     # Event Bus
     event_bus_backend: str = Field(default="redis", validation_alias="EVENT_BUS_BACKEND")
     event_bus_stream_name: str = Field(default="titan:events", validation_alias="EVENT_BUS_STREAM")
