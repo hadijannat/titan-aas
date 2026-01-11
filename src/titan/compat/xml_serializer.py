@@ -148,6 +148,17 @@ class XmlSerializer:
                         # e.g., "Property" -> "property", "SubmodelElementCollection" -> "submodelElementCollection"
                         item_tag = model_type[0].lower() + model_type[1:]
                         self._value_to_element(item, item_tag, container)
+                # Special handling for "value" lists that contain SubmodelElements
+                # (e.g., SubmodelElementCollection.value, AnnotatedRelationshipElement.annotations)
+                elif tag == "value" and "modelType" in value[0]:
+                    for item in value:
+                        model_type = item.get("modelType", "submodelElement")
+                        item_tag = model_type[0].lower() + model_type[1:]
+                        self._value_to_element(item, item_tag, container)
+                # Special handling for LangString types (language + text)
+                elif tag == "value" and "language" in value[0] and "text" in value[0]:
+                    for item in value:
+                        self._value_to_element(item, "langStringTextType", container)
                 # Special handling for Reference objects: always use "reference" tag
                 elif "type" in value[0] and "keys" in value[0]:
                     for item in value:

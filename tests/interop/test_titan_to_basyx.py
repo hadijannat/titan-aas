@@ -250,11 +250,15 @@ class TestTitanExportBaSyxImport:
         assert len(submodels) == 1
         basyx_sm = submodels[0]
 
-        assert len(basyx_sm.submodel_element) == 1
-        collection = basyx_sm.submodel_element[0]
+        # BaSyx uses NamespaceSet (set) for submodel_element, convert to list
+        smes = list(basyx_sm.submodel_element)
+        assert len(smes) == 1
+        collection = smes[0]
         assert isinstance(collection, basyx_model.SubmodelElementCollection)
         assert collection.id_short == "SensorData"
-        assert len(collection.value) == 2
+        # Collection.value is also a NamespaceSet
+        collection_items = list(collection.value)
+        assert len(collection_items) == 2
 
     @pytest.mark.asyncio
     async def test_multi_language_property(self) -> None:
@@ -304,17 +308,19 @@ class TestTitanExportBaSyxImport:
         # Verify MultiLanguageProperty
         submodels = [obj for obj in object_store if isinstance(obj, basyx_model.Submodel)]
         basyx_sm = submodels[0]
-        mlp = basyx_sm.submodel_element[0]
+        # BaSyx uses NamespaceSet for submodel_element
+        smes = list(basyx_sm.submodel_element)
+        mlp = smes[0]
 
         assert isinstance(mlp, basyx_model.MultiLanguageProperty)
         assert mlp.id_short == "ProductName"
+        # BaSyx MultiLanguageProperty.value is a dict, not a list
         assert len(mlp.value) == 3
 
-        # Check language strings
-        lang_dict = {ls.language: ls.text for ls in mlp.value}
-        assert lang_dict["en"] == "Industrial Robot"
-        assert lang_dict["de"] == "Industrieroboter"
-        assert lang_dict["fr"] == "Robot industriel"
+        # Check language strings (value is dict[str, str] in BaSyx)
+        assert mlp.value["en"] == "Industrial Robot"
+        assert mlp.value["de"] == "Industrieroboter"
+        assert mlp.value["fr"] == "Robot industriel"
 
     @pytest.mark.asyncio
     async def test_reference_element(self) -> None:
@@ -368,7 +374,9 @@ class TestTitanExportBaSyxImport:
         # Verify ReferenceElement
         submodels = [obj for obj in object_store if isinstance(obj, basyx_model.Submodel)]
         basyx_sm = submodels[0]
-        ref_elem = basyx_sm.submodel_element[0]
+        # BaSyx uses NamespaceSet for submodel_element
+        smes = list(basyx_sm.submodel_element)
+        ref_elem = smes[0]
 
         assert isinstance(ref_elem, basyx_model.ReferenceElement)
         assert ref_elem.id_short == "ExternalRef"
@@ -519,7 +527,7 @@ class TestSemanticEquivalence:
         # BaSyx uses its own datatypes from basyx.aas.model.datatypes for some types
         assert props_by_idshort["xs_string"].value_type == str
         assert props_by_idshort["xs_int"].value_type == basyx_datatypes.Int
-        assert props_by_idshort["xs_double"].value_type == float  # BaSyx uses built-in float
-        assert props_by_idshort["xs_float"].value_type == float  # BaSyx uses built-in float
+        assert props_by_idshort["xs_double"].value_type == float  # BaSyx uses built-in float for DOUBLE
+        assert props_by_idshort["xs_float"].value_type == basyx_datatypes.Float  # BaSyx uses custom Float for FLOAT
         assert props_by_idshort["xs_boolean"].value_type == bool
         assert props_by_idshort["xs_date"].value_type == basyx_datatypes.Date
