@@ -73,7 +73,9 @@ class TestAasxExporter:
         buffer.seek(0)
         with zipfile.ZipFile(buffer, "r") as zf:
             names = zf.namelist()
-            assert "aasx/aas-environment.json" in names
+            # IDTA Part 5 allows both "data.json" and "aas-environment.json"
+            # We use "data.json" for BaSyx compatibility
+            assert "aasx/data.json" in names
             assert "[Content_Types].xml" in names
             assert "_rels/.rels" in names
 
@@ -91,7 +93,9 @@ class TestAasxExporter:
         buffer.seek(0)
         with zipfile.ZipFile(buffer, "r") as zf:
             names = zf.namelist()
-            assert "aasx/aas-environment.xml" in names
+            # IDTA Part 5 allows both "data.xml" and "aas-environment.xml"
+            # We use "data.xml" for BaSyx compatibility
+            assert "aasx/data.xml" in names
 
     @pytest.mark.asyncio
     async def test_export_with_shells_json(self):
@@ -115,7 +119,7 @@ class TestAasxExporter:
         # Verify content
         buffer.seek(0)
         with zipfile.ZipFile(buffer, "r") as zf:
-            content = zf.read("aasx/aas-environment.json")
+            content = zf.read("aasx/data.json")
             assert b"urn:aas:export:1" in content
             assert b"ExportTest" in content
 
@@ -139,7 +143,7 @@ class TestAasxExporter:
         # Verify content includes CD
         buffer.seek(0)
         with zipfile.ZipFile(buffer, "r") as zf:
-            content = zf.read("aasx/aas-environment.json")
+            content = zf.read("aasx/data.json")
             assert b"urn:cd:export:1" in content
             assert b"ExportCD" in content
 

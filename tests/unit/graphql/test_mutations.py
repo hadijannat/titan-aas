@@ -13,15 +13,23 @@ from titan.graphql.dataloaders import DataLoaderContext
 def mock_session() -> MagicMock:
     """Create a mock async session for tests."""
     session = MagicMock()
-    # Mock execute to return empty results
+
+    # Mock execute to return results that simulate finding entities for delete
     mock_result = MagicMock()
+    # For queries, return empty list by default
     mock_result.scalars.return_value.all.return_value = []
+    # For scalar queries (used in delete), return a mock entity
+    mock_entity = MagicMock()
+    mock_result.scalar_one_or_none.return_value = mock_entity
+    mock_result.scalars.return_value.first.return_value = mock_entity
+
     session.execute = AsyncMock(return_value=mock_result)
     # Mock all async session methods
     session.commit = AsyncMock()
     session.rollback = AsyncMock()
     session.flush = AsyncMock()
     session.refresh = AsyncMock()
+    session.delete = AsyncMock()  # Repository awaits this
     return session
 
 
