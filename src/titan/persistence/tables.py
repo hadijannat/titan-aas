@@ -17,6 +17,7 @@ from uuid import uuid4
 from sqlalchemy import (
     BigInteger,
     DateTime,
+    ForeignKey,
     Index,
     LargeBinary,
     String,
@@ -398,6 +399,16 @@ class AasxPackageTable(Base):
     # JSONB package info (shell IDs, submodel IDs, etc.)
     package_info: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
 
+    # Version tracking
+    version: Mapped[int] = mapped_column(BigInteger, nullable=False, default=1)
+    version_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by: Mapped[str | None] = mapped_column(Text, nullable=True)
+    previous_version_id: Mapped[str | None] = mapped_column(
+        UUID(as_uuid=False),
+        ForeignKey("aasx_packages.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -416,6 +427,8 @@ class AasxPackageTable(Base):
         Index("idx_aasx_packages_content_hash", content_hash),
         # Index for filename search
         Index("idx_aasx_packages_filename", filename),
+        # Index for version history queries
+        Index("idx_aasx_packages_previous_version", previous_version_id),
     )
 
 

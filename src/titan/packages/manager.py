@@ -9,16 +9,22 @@ Handles package lifecycle including:
 
 from __future__ import annotations
 
+import hashlib
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from io import BytesIO
 from typing import Any, BinaryIO
+from uuid import uuid4
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from titan.compat.aasx import AasxExporter, AasxImporter, AasxPackage
 from titan.core.model import AssetAdministrationShell, ConceptDescription, Submodel
 from titan.packages.validator import OpcValidator, ValidationLevel, ValidationResult
+from titan.persistence.tables import AasxPackageTable
 
 logger = logging.getLogger(__name__)
 
@@ -368,3 +374,268 @@ class PackageManager:
             output.seek(0)
 
         return output
+
+    async def create_version(
+        self,
+        session: AsyncSession,
+        package_id: str,
+        new_content: bytes,
+        filename: str,
+        storage_uri: str,
+        created_by: str | None = None,
+        comment: str | None = None,
+    ) -> str:
+        """Create a new version of an existing package.
+
+        This snapshots the current package state and creates a new version
+        with updated content. The new version links back to the previous version.
+
+        Args:
+            session: Database session
+            package_id: ID of the package to version
+            new_content: New package content bytes
+            filename: Filename for the new version
+            storage_uri: Storage URI for the new content
+            created_by: User creating this version
+            comment: Description of changes in this version
+
+        Returns:
+            ID of the new version package
+
+        Raises:
+            ValueError: If package not found
+        """
+        # Get current package
+        stmt = select(AasxPackageTable).where(AasxPackageTable.id == package_id)
+        result = await session.execute(stmt)
+        current = result.scalar_one_or_none()
+
+        if not current:
+            raise ValueError(f"Package not found: {package_id}")
+
+        # Calculate content hash
+        content_hash = hashlib.sha256(new_content).hexdigest()
+
+        # Create new version
+        new_id = str(uuid4())
+        new_package = AasxPackageTable(
+            id=new_id,
+            filename=filename,
+            storage_uri=storage_uri,
+            size_bytes=len(new_content),
+            content_hash=content_hash,
+            version=current.version + 1,
+            version_comment=comment,
+            created_by=created_by,
+            previous_version_id=package_id,
+            # Copy counts from current (will be updated during import if needed)
+            shell_count=current.shell_count,
+            submodel_count=current.submodel_count,
+            concept_description_count=current.concept_description_count,
+            package_info=current.package_info,
+        )
+
+        session.add(new_package)
+        await session.commit()
+
+        logger.info(
+            f"Created version {new_package.version} of package {package_id} "
+            f"(new ID: {new_id}, comment: {comment})"
+        )
+
+        return new_id
+
+    async def list_versions(
+        self,
+        session: AsyncSession,
+        package_id: str,
+    ) -> list[PackageVersion]:
+        """Get version history for a package.
+
+        Returns all versions in the version chain, from oldest to newest.
+
+        Args:
+            session: Database session
+            package_id: ID of any package in the version chain
+
+        Returns:
+            List of PackageVersion objects, oldest first
+        """
+        # Find the root of the version chain (package with no previous_version_id)
+        current_id = package_id
+        root_id = package_id
+
+        while True:
+            stmt = select(AasxPackageTable).where(AasxPackageTable.id == current_id)
+            result = await session.execute(stmt)
+            package = result.scalar_one_or_none()
+
+            if not package:
+                break
+
+            if package.previous_version_id:
+                current_id = package.previous_version_id
+                root_id = current_id
+            else:
+                break
+
+        # Now traverse forward from root to build version list
+        versions: list[PackageVersion] = []
+        current_id = root_id
+
+        while current_id:
+            stmt = select(AasxPackageTable).where(AasxPackageTable.id == current_id)
+            result = await session.execute(stmt)
+            package = result.scalar_one_or_none()
+
+            if not package:
+                break
+
+            versions.append(
+                PackageVersion(
+                    version=package.version,
+                    created_at=package.created_at,
+                    created_by=package.created_by,
+                    comment=package.version_comment,
+                    content_hash=package.content_hash,
+                    parent_version=package.version - 1 if package.previous_version_id else None,
+                )
+            )
+
+            # Find next version (package that references current as previous)
+            stmt = select(AasxPackageTable).where(
+                AasxPackageTable.previous_version_id == current_id
+            )
+            result = await session.execute(stmt)
+            next_package = result.scalar_one_or_none()
+
+            current_id = next_package.id if next_package else None
+
+        return versions
+
+    async def rollback_to_version(
+        self,
+        session: AsyncSession,
+        package_id: str,
+        target_version: int,
+    ) -> str:
+        """Rollback to a previous version.
+
+        Creates a new version that is a copy of the target version's content.
+        This preserves history rather than deleting newer versions.
+
+        Args:
+            session: Database session
+            package_id: ID of any package in the version chain
+            target_version: Version number to rollback to
+
+        Returns:
+            ID of the new rollback version
+
+        Raises:
+            ValueError: If package or target version not found
+        """
+        # Find all versions in the chain
+        versions_meta = await self.list_versions(session, package_id)
+
+        if not versions_meta:
+            raise ValueError(f"No versions found for package {package_id}")
+
+        # Find the target version
+        target_found = False
+        for v in versions_meta:
+            if v.version == target_version:
+                target_found = True
+                break
+
+        if not target_found:
+            raise ValueError(
+                f"Version {target_version} not found. "
+                f"Available versions: {[v.version for v in versions_meta]}"
+            )
+
+        # Get the actual database record for the target version
+        # We need to find it by traversing the chain
+        current_id = package_id
+        root_id = package_id
+
+        # Find root first
+        while True:
+            stmt = select(AasxPackageTable).where(AasxPackageTable.id == current_id)
+            result = await session.execute(stmt)
+            package = result.scalar_one_or_none()
+
+            if not package:
+                break
+
+            if package.previous_version_id:
+                current_id = package.previous_version_id
+                root_id = current_id
+            else:
+                break
+
+        # Traverse forward to find target version
+        current_id = root_id
+        target_package = None
+
+        while current_id:
+            stmt = select(AasxPackageTable).where(AasxPackageTable.id == current_id)
+            result = await session.execute(stmt)
+            package = result.scalar_one_or_none()
+
+            if not package:
+                break
+
+            if package.version == target_version:
+                target_package = package
+                break
+
+            # Find next version
+            stmt = select(AasxPackageTable).where(
+                AasxPackageTable.previous_version_id == current_id
+            )
+            result = await session.execute(stmt)
+            next_package = result.scalar_one_or_none()
+
+            current_id = next_package.id if next_package else None
+
+        if not target_package:
+            raise ValueError(f"Could not find package record for version {target_version}")
+
+        # Get the latest version to determine new version number
+        stmt = select(AasxPackageTable).where(AasxPackageTable.id == package_id)
+        result = await session.execute(stmt)
+        latest = result.scalar_one_or_none()
+
+        if not latest:
+            raise ValueError(f"Package not found: {package_id}")
+
+        # Create rollback version
+        # Note: This creates a new DB record but should reference the same storage_uri
+        # In a production system, you might want to copy the blob content
+        new_id = str(uuid4())
+        rollback_package = AasxPackageTable(
+            id=new_id,
+            filename=target_package.filename,
+            storage_uri=target_package.storage_uri,  # Reuse same storage
+            size_bytes=target_package.size_bytes,
+            content_hash=target_package.content_hash,
+            version=latest.version + 1,
+            version_comment=f"Rollback to version {target_version}",
+            created_by=None,  # Could add a parameter for this
+            previous_version_id=package_id,
+            shell_count=target_package.shell_count,
+            submodel_count=target_package.submodel_count,
+            concept_description_count=target_package.concept_description_count,
+            package_info=target_package.package_info,
+        )
+
+        session.add(rollback_package)
+        await session.commit()
+
+        logger.info(
+            f"Rolled back to version {target_version} for package chain starting at {package_id}. "
+            f"New version {rollback_package.version} created with ID {new_id}"
+        )
+
+        return new_id
