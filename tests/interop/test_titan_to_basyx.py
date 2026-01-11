@@ -20,6 +20,7 @@ from typing import Any
 import pytest
 from basyx.aas import model as basyx_model
 from basyx.aas.adapter import aasx as basyx_aasx
+from basyx.aas.model import datatypes as basyx_datatypes
 
 from titan.compat.aasx import AasxExporter
 from titan.core.model import (
@@ -98,22 +99,22 @@ class TestTitanExportBaSyxImport:
             submodelElements=[
                 Property(
                     idShort="StringProperty",
-                    valueType=DataTypeDefXsd.STRING,
+                    valueType=DataTypeDefXsd.XS_STRING,
                     value="test_value",
                 ),
                 Property(
                     idShort="IntProperty",
-                    valueType=DataTypeDefXsd.INT,
+                    valueType=DataTypeDefXsd.XS_INT,
                     value="42",
                 ),
                 Property(
                     idShort="DoubleProperty",
-                    valueType=DataTypeDefXsd.DOUBLE,
+                    valueType=DataTypeDefXsd.XS_DOUBLE,
                     value="3.14159",
                 ),
                 Property(
                     idShort="BooleanProperty",
-                    valueType=DataTypeDefXsd.BOOLEAN,
+                    valueType=DataTypeDefXsd.XS_BOOLEAN,
                     value="true",
                 ),
             ],
@@ -167,7 +168,7 @@ class TestTitanExportBaSyxImport:
         assert len(submodels) == 1
         basyx_sm = submodels[0]
         assert basyx_sm.id == submodel.id
-        assert basyx_sm.id_short == submodel.idShort
+        assert basyx_sm.id_short == submodel.id_short
 
         # Verify properties
         assert len(basyx_sm.submodel_element) == 4
@@ -178,19 +179,19 @@ class TestTitanExportBaSyxImport:
         string_prop = props_by_idshort["StringProperty"]
         assert isinstance(string_prop, basyx_model.Property)
         assert string_prop.value == "test_value"
-        assert string_prop.value_type == basyx_model.DataTypeDefXsd.STRING
+        assert string_prop.value_type == str
 
         int_prop = props_by_idshort["IntProperty"]
-        assert int_prop.value == "42"
-        assert int_prop.value_type == basyx_model.DataTypeDefXsd.INT
+        assert int_prop.value == 42  # BaSyx parses as actual int
+        assert int_prop.value_type == basyx_datatypes.Int
 
         double_prop = props_by_idshort["DoubleProperty"]
-        assert double_prop.value == "3.14159"
-        assert double_prop.value_type == basyx_model.DataTypeDefXsd.DOUBLE
+        assert double_prop.value == 3.14159  # BaSyx parses as actual float
+        assert double_prop.value_type == float  # BaSyx uses built-in float for DOUBLE
 
         bool_prop = props_by_idshort["BooleanProperty"]
-        assert bool_prop.value == "true"
-        assert bool_prop.value_type == basyx_model.DataTypeDefXsd.BOOLEAN
+        assert bool_prop.value is True  # BaSyx parses as actual bool
+        assert bool_prop.value_type == bool
 
     @pytest.mark.asyncio
     async def test_submodel_element_collection(self) -> None:
@@ -204,12 +205,12 @@ class TestTitanExportBaSyxImport:
                     value=[
                         Property(
                             idShort="SensorId",
-                            valueType=DataTypeDefXsd.STRING,
+                            valueType=DataTypeDefXsd.XS_STRING,
                             value="SENSOR_001",
                         ),
                         Property(
                             idShort="Reading",
-                            valueType=DataTypeDefXsd.DOUBLE,
+                            valueType=DataTypeDefXsd.XS_DOUBLE,
                             value="45.6",
                         ),
                     ],
@@ -225,7 +226,7 @@ class TestTitanExportBaSyxImport:
                 globalAssetId="urn:example:asset:collection",
             ),
             submodels=[
-                ModelReference(
+                Reference(
                     type=ReferenceTypes.MODEL_REFERENCE,
                     keys=[Key(type=KeyTypes.SUBMODEL, value=submodel.id)],
                 )
@@ -281,7 +282,7 @@ class TestTitanExportBaSyxImport:
                 globalAssetId="urn:example:asset:mlp",
             ),
             submodels=[
-                ModelReference(
+                Reference(
                     type=ReferenceTypes.MODEL_REFERENCE,
                     keys=[Key(type=KeyTypes.SUBMODEL, value=submodel.id)],
                 )
@@ -345,7 +346,7 @@ class TestTitanExportBaSyxImport:
                 globalAssetId="urn:example:asset:ref",
             ),
             submodels=[
-                ModelReference(
+                Reference(
                     type=ReferenceTypes.MODEL_REFERENCE,
                     keys=[Key(type=KeyTypes.SUBMODEL, value=submodel.id)],
                 )
@@ -384,12 +385,12 @@ class TestTitanExportBaSyxImport:
                 # First create two properties to reference
                 Property(
                     idShort="SourceProperty",
-                    valueType=DataTypeDefXsd.STRING,
+                    valueType=DataTypeDefXsd.XS_STRING,
                     value="source",
                 ),
                 Property(
                     idShort="TargetProperty",
-                    valueType=DataTypeDefXsd.STRING,
+                    valueType=DataTypeDefXsd.XS_STRING,
                     value="target",
                 ),
                 RelationshipElement(
@@ -420,7 +421,7 @@ class TestTitanExportBaSyxImport:
                 globalAssetId="urn:example:asset:rel",
             ),
             submodels=[
-                ModelReference(
+                Reference(
                     type=ReferenceTypes.MODEL_REFERENCE,
                     keys=[Key(type=KeyTypes.SUBMODEL, value=submodel.id)],
                 )
@@ -469,16 +470,16 @@ class TestSemanticEquivalence:
             id="urn:example:submodel:types",
             idShort="TypesSubmodel",
             submodelElements=[
-                Property(idShort="xs_string", valueType=DataTypeDefXsd.STRING, value="text"),
-                Property(idShort="xs_int", valueType=DataTypeDefXsd.INT, value="123"),
-                Property(idShort="xs_integer", valueType=DataTypeDefXsd.INTEGER, value="456"),
-                Property(idShort="xs_long", valueType=DataTypeDefXsd.LONG, value="789"),
-                Property(idShort="xs_short", valueType=DataTypeDefXsd.SHORT, value="12"),
-                Property(idShort="xs_byte", valueType=DataTypeDefXsd.BYTE, value="5"),
-                Property(idShort="xs_double", valueType=DataTypeDefXsd.DOUBLE, value="3.14"),
-                Property(idShort="xs_float", valueType=DataTypeDefXsd.FLOAT, value="2.71"),
-                Property(idShort="xs_boolean", valueType=DataTypeDefXsd.BOOLEAN, value="true"),
-                Property(idShort="xs_date", valueType=DataTypeDefXsd.DATE, value="2024-01-15"),
+                Property(idShort="xs_string", valueType=DataTypeDefXsd.XS_STRING, value="text"),
+                Property(idShort="xs_int", valueType=DataTypeDefXsd.XS_INT, value="123"),
+                Property(idShort="xs_integer", valueType=DataTypeDefXsd.XS_INTEGER, value="456"),
+                Property(idShort="xs_long", valueType=DataTypeDefXsd.XS_LONG, value="789"),
+                Property(idShort="xs_short", valueType=DataTypeDefXsd.XS_SHORT, value="12"),
+                Property(idShort="xs_byte", valueType=DataTypeDefXsd.XS_BYTE, value="5"),
+                Property(idShort="xs_double", valueType=DataTypeDefXsd.XS_DOUBLE, value="3.14"),
+                Property(idShort="xs_float", valueType=DataTypeDefXsd.XS_FLOAT, value="2.71"),
+                Property(idShort="xs_boolean", valueType=DataTypeDefXsd.XS_BOOLEAN, value="true"),
+                Property(idShort="xs_date", valueType=DataTypeDefXsd.XS_DATE, value="2024-01-15"),
             ],
         )
 
@@ -490,7 +491,7 @@ class TestSemanticEquivalence:
                 globalAssetId="urn:example:asset:types",
             ),
             submodels=[
-                ModelReference(
+                Reference(
                     type=ReferenceTypes.MODEL_REFERENCE,
                     keys=[Key(type=KeyTypes.SUBMODEL, value=submodel.id)],
                 )
@@ -515,9 +516,10 @@ class TestSemanticEquivalence:
 
         props_by_idshort = {prop.id_short: prop for prop in basyx_sm.submodel_element}
 
-        assert props_by_idshort["xs_string"].value_type == basyx_model.DataTypeDefXsd.STRING
-        assert props_by_idshort["xs_int"].value_type == basyx_model.DataTypeDefXsd.INT
-        assert props_by_idshort["xs_double"].value_type == basyx_model.DataTypeDefXsd.DOUBLE
-        assert props_by_idshort["xs_float"].value_type == basyx_model.DataTypeDefXsd.FLOAT
-        assert props_by_idshort["xs_boolean"].value_type == basyx_model.DataTypeDefXsd.BOOLEAN
-        assert props_by_idshort["xs_date"].value_type == basyx_model.DataTypeDefXsd.DATE
+        # BaSyx uses its own datatypes from basyx.aas.model.datatypes for some types
+        assert props_by_idshort["xs_string"].value_type == str
+        assert props_by_idshort["xs_int"].value_type == basyx_datatypes.Int
+        assert props_by_idshort["xs_double"].value_type == float  # BaSyx uses built-in float
+        assert props_by_idshort["xs_float"].value_type == float  # BaSyx uses built-in float
+        assert props_by_idshort["xs_boolean"].value_type == bool
+        assert props_by_idshort["xs_date"].value_type == basyx_datatypes.Date

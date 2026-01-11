@@ -138,10 +138,25 @@ class XmlSerializer:
             if value and isinstance(value[0], dict):
                 # List of objects - each gets its own element
                 container = ET.SubElement(parent, f"{self.ns_prefix}{tag}")
-                # Determine singular tag name
-                item_tag = self._singularize(tag)
-                for item in value:
-                    self._value_to_element(item, item_tag, container)
+
+                # Special handling for SubmodelElements: use modelType for tag name
+                if tag == "submodelElements" and "modelType" in value[0]:
+                    for item in value:
+                        # Use modelType to determine element-specific tag
+                        model_type = item.get("modelType", "submodelElement")
+                        # Convert to camelCase with lowercase first letter
+                        # e.g., "Property" -> "property", "SubmodelElementCollection" -> "submodelElementCollection"
+                        item_tag = model_type[0].lower() + model_type[1:]
+                        self._value_to_element(item, item_tag, container)
+                # Special handling for Reference objects: always use "reference" tag
+                elif "type" in value[0] and "keys" in value[0]:
+                    for item in value:
+                        self._value_to_element(item, "reference", container)
+                else:
+                    # Standard singular tag name
+                    item_tag = self._singularize(tag)
+                    for item in value:
+                        self._value_to_element(item, item_tag, container)
             else:
                 # List of primitives - each as separate element
                 for item in value:
