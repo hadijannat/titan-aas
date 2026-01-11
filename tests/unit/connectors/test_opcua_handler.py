@@ -26,9 +26,7 @@ class TestOpcUaEventHandler:
         return manager
 
     @pytest.fixture
-    def event_handler(
-        self, mock_connection_manager: MagicMock
-    ) -> OpcUaEventHandler:
+    def event_handler(self, mock_connection_manager: MagicMock) -> OpcUaEventHandler:
         """Create event handler instance."""
         return OpcUaEventHandler(mock_connection_manager)
 
@@ -40,9 +38,7 @@ class TestOpcUaEventHandler:
     ) -> None:
         """Handle element event with mapping."""
         # Mock mapper to return a node ID
-        event_handler.mapper.get_node_id = MagicMock(
-            return_value="ns=2;s=Temperature"
-        )
+        event_handler.mapper.get_node_id = MagicMock(return_value="ns=2;s=Temperature")
 
         event = SubmodelElementEvent(
             event_type=EventType.UPDATED,
@@ -81,9 +77,7 @@ class TestOpcUaEventHandler:
         event_handler: OpcUaEventHandler,
     ) -> None:
         """Handle element event with no value does nothing."""
-        event_handler.mapper.get_node_id = MagicMock(
-            return_value="ns=2;s=Temperature"
-        )
+        event_handler.mapper.get_node_id = MagicMock(return_value="ns=2;s=Temperature")
 
         event = SubmodelElementEvent(
             event_type=EventType.UPDATED,
@@ -113,9 +107,7 @@ class TestOpcUaValueSyncHandler:
         return manager
 
     @pytest.fixture
-    def sync_handler(
-        self, mock_connection_manager: MagicMock
-    ) -> OpcUaValueSyncHandler:
+    def sync_handler(self, mock_connection_manager: MagicMock) -> OpcUaValueSyncHandler:
         """Create sync handler instance."""
         return OpcUaValueSyncHandler(mock_connection_manager)
 

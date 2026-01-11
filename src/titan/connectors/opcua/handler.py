@@ -51,9 +51,7 @@ class OpcUaEventHandler:
         Args:
             event: The Submodel event to handle
         """
-        logger.debug(
-            f"Received Submodel event: {event.event_type} for {event.identifier}"
-        )
+        logger.debug(f"Received Submodel event: {event.event_type} for {event.identifier}")
         # Future: Map Submodel properties to OPC-UA nodes and write
 
     async def handle_element_event(self, event: SubmodelElementEvent) -> None:
@@ -85,9 +83,7 @@ class OpcUaEventHandler:
                 logger.debug(f"No value in event for {event.id_short_path}")
                 return
 
-            logger.info(
-                f"Would write to OPC-UA node {node_id} for element {event.id_short_path}"
-            )
+            logger.info(f"Would write to OPC-UA node {node_id} for element {event.id_short_path}")
 
         except Exception as e:
             record_opcua_write_error(self.connection_manager.config.endpoint_url)
@@ -123,9 +119,7 @@ class OpcUaValueSyncHandler:
         client = await self.connection_manager.ensure_connected()
 
         # Subscribe to nodes for reading (OPC-UA -> AAS)
-        read_mappings = [
-            m for m in mappings if m.get("direction") in ("read", "bidirectional")
-        ]
+        read_mappings = [m for m in mappings if m.get("direction") in ("read", "bidirectional")]
 
         if read_mappings:
             node_ids = [m["node_id"] for m in read_mappings]
@@ -137,9 +131,7 @@ class OpcUaValueSyncHandler:
 
             subscription_id = await client.subscribe(node_ids, on_value_change)
             if subscription_id:
-                logger.info(
-                    f"Started OPC-UA sync for {len(node_ids)} nodes: {subscription_id}"
-                )
+                logger.info(f"Started OPC-UA sync for {len(node_ids)} nodes: {subscription_id}")
                 for node_id in node_ids:
                     self._subscriptions[node_id] = subscription_id
 

@@ -126,11 +126,7 @@ class OpcUaMappingConfig:
         Returns:
             List of mapping configurations with direction="read" or "bidirectional"
         """
-        return [
-            m
-            for m in self.mappings
-            if m.get("direction") in ("read", "bidirectional")
-        ]
+        return [m for m in self.mappings if m.get("direction") in ("read", "bidirectional")]
 
     def get_write_mappings(self) -> list[dict[str, Any]]:
         """Get mappings configured for writing (AAS → OPC-UA).
@@ -138,11 +134,7 @@ class OpcUaMappingConfig:
         Returns:
             List of mapping configurations with direction="write" or "bidirectional"
         """
-        return [
-            m
-            for m in self.mappings
-            if m.get("direction") in ("write", "bidirectional")
-        ]
+        return [m for m in self.mappings if m.get("direction") in ("write", "bidirectional")]
 
 
 def load_mapping_config(config_path: str | Path | None = None) -> AasOpcUaMapper:

@@ -333,7 +333,6 @@ class OpcUaClient:
             return []
 
         try:
-
             # Get parent node
             node = self._client.get_node(node_id)
 
@@ -349,12 +348,14 @@ class OpcUaClient:
                     node_class = await child.read_node_class()
                     display_name = await child.read_display_name()
 
-                    result.append({
-                        "nodeid": str(child.nodeid),
-                        "browse_name": browse_name.to_string(),
-                        "node_class": str(node_class),
-                        "display_name": display_name.to_string(),
-                    })
+                    result.append(
+                        {
+                            "nodeid": str(child.nodeid),
+                            "browse_name": browse_name.to_string(),
+                            "node_class": str(node_class),
+                            "display_name": display_name.to_string(),
+                        }
+                    )
 
                 except Exception as child_error:
                     logger.warning(f"Error reading child node: {child_error}")

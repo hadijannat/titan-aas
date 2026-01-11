@@ -186,10 +186,7 @@ class TestOpcUaClientIntegration:
         assert len(children) > 0
 
         # Check that our TestObject is in the list
-        test_obj_found = any(
-            "TestObject" in child.get("browse_name", "")
-            for child in children
-        )
+        test_obj_found = any("TestObject" in child.get("browse_name", "") for child in children)
         assert test_obj_found
 
         await client.disconnect()

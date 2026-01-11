@@ -195,6 +195,7 @@ class TestMqttSubscriberIntegration:
         """Publish element value to MQTT, verify subscriber receives it."""
         # Create mock session factory
         mock_session = MagicMock()
+
         def mock_session_factory() -> MagicMock:
             return mock_session
 

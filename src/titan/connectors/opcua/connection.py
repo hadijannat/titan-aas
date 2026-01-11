@@ -230,8 +230,7 @@ class OpcUaConnectionManager:
                 )
                 self._current_delay = delay
                 logger.warning(
-                    f"Reconnect attempt {self._reconnect_attempts} failed, "
-                    f"retrying in {delay:.1f}s"
+                    f"Reconnect attempt {self._reconnect_attempts} failed, retrying in {delay:.1f}s"
                 )
 
                 await asyncio.sleep(delay)
@@ -281,9 +280,7 @@ def create_opcua_config_from_settings() -> OpcUaConfig | None:
         "Sign": OpcUaSecurityMode.SIGN,
         "SignAndEncrypt": OpcUaSecurityMode.SIGN_AND_ENCRYPT,
     }
-    security_mode = security_mode_map.get(
-        settings.opcua_security_mode, OpcUaSecurityMode.NONE
-    )
+    security_mode = security_mode_map.get(settings.opcua_security_mode, OpcUaSecurityMode.NONE)
 
     return OpcUaConfig(
         endpoint_url=settings.opcua_endpoint,

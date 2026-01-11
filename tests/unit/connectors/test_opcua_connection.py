@@ -35,9 +35,7 @@ class TestOpcUaConnectionManager:
         assert connection_manager.metrics.connection_attempts == 0
 
     @pytest.mark.asyncio
-    async def test_connect_success(
-        self, connection_manager: OpcUaConnectionManager
-    ) -> None:
+    async def test_connect_success(self, connection_manager: OpcUaConnectionManager) -> None:
         """Connect successfully to OPC-UA server."""
         with patch("titan.connectors.opcua.connection.OpcUaClient") as mock_client_class:
             mock_client = MagicMock()
@@ -53,9 +51,7 @@ class TestOpcUaConnectionManager:
             assert connection_manager.metrics.successful_connections == 1
 
     @pytest.mark.asyncio
-    async def test_connect_failure(
-        self, connection_manager: OpcUaConnectionManager
-    ) -> None:
+    async def test_connect_failure(self, connection_manager: OpcUaConnectionManager) -> None:
         """Connection failure sets state to disconnected."""
         with patch("titan.connectors.opcua.connection.OpcUaClient") as mock_client_class:
             mock_client = MagicMock()
