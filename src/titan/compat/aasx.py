@@ -50,6 +50,7 @@ class AasxPackage:
     concept_descriptions: list[ConceptDescription] = field(default_factory=list)
     supplementary_files: dict[str, bytes] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
+    thumbnail: bytes | None = None  # Package thumbnail image (PNG/JPEG)
 
 
 class AasxImporter:
@@ -112,6 +113,13 @@ class AasxImporter:
                     elif lower_name.endswith(".xml"):
                         content = zf.read(name)
                         await self._import_xml(content, name, package)
+
+                    # Extract thumbnail (PNG or JPEG in aasx directory)
+                    elif "thumbnail" in lower_name and (
+                        lower_name.endswith(".png") or lower_name.endswith(".jpg") or lower_name.endswith(".jpeg")
+                    ):
+                        package.thumbnail = zf.read(name)
+                        logger.debug(f"Extracted thumbnail: {name}")
 
                     # Collect supplementary files
                     elif "supplementary" in lower_name or "files" in lower_name:
@@ -245,6 +253,7 @@ class AasxExporter:
         concept_descriptions: list[ConceptDescription] | None = None,
         supplementary_files: dict[str, bytes] | None = None,
         use_json: bool = True,
+        thumbnail: bytes | None = None,
     ) -> None:
         """Export shells and submodels to an AASX package.
 
@@ -255,6 +264,7 @@ class AasxExporter:
             concept_descriptions: Optional list of concept descriptions to export
             supplementary_files: Optional dict of path -> bytes for attachments
             use_json: If True, use JSON format; if False, use XML
+            thumbnail: Optional thumbnail image bytes (PNG/JPEG)
         """
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -265,6 +275,7 @@ class AasxExporter:
             concept_descriptions=concept_descriptions,
             supplementary_files=supplementary_files,
             use_json=use_json,
+            thumbnail=thumbnail,
         )
 
         with open(output_path, "wb") as f:
@@ -279,6 +290,7 @@ class AasxExporter:
         concept_descriptions: list[ConceptDescription] | None = None,
         supplementary_files: dict[str, bytes] | None = None,
         use_json: bool = True,
+        thumbnail: bytes | None = None,
     ) -> BytesIO:
         """Export shells and submodels to a binary stream.
 
@@ -288,6 +300,7 @@ class AasxExporter:
             concept_descriptions: Optional list of concept descriptions to export
             supplementary_files: Optional dict of path -> bytes for attachments
             use_json: If True, use JSON format; if False, use XML
+            thumbnail: Optional thumbnail image bytes (PNG/JPEG)
 
         Returns:
             BytesIO containing the AASX package
@@ -325,6 +338,24 @@ class AasxExporter:
                 full_path = f"aasx/supplementary-files/{file_path}"
                 zf.writestr(full_path, content)
 
+            # Write thumbnail if provided
+            thumbnail_path = None
+            if thumbnail:
+                # Detect image format from magic bytes
+                if thumbnail.startswith(b"\x89PNG"):
+                    thumbnail_path = "aasx/thumbnail.png"
+                    content_type = "image/png"
+                elif thumbnail.startswith(b"\xff\xd8\xff"):
+                    thumbnail_path = "aasx/thumbnail.jpg"
+                    content_type = "image/jpeg"
+                else:
+                    # Default to PNG if unknown
+                    thumbnail_path = "aasx/thumbnail.png"
+                    content_type = "image/png"
+
+                zf.writestr(thumbnail_path, thumbnail)
+                parts.append((thumbnail_path, content_type))
+
             # Write aasx-origin file (marker for AASX packages)
             zf.writestr("aasx/aasx-origin", "")
 
@@ -339,7 +370,7 @@ class AasxExporter:
 
             # Write aasx-origin relationships (aasx/_rels/aasx-origin.rels)
             # This points to the actual AAS spec file (data.xml or data.json)
-            origin_rels = self._create_origin_rels(env_path)
+            origin_rels = self._create_origin_rels(env_path, thumbnail_path)
             zf.writestr("aasx/_rels/aasx-origin.rels", origin_rels)
 
         buffer.seek(0)
@@ -412,14 +443,15 @@ class AasxExporter:
 
         return ET.tostring(root, encoding="unicode", xml_declaration=True)
 
-    def _create_origin_rels(self, env_path: str) -> str:
+    def _create_origin_rels(self, env_path: str, thumbnail_path: str | None = None) -> str:
         """Create aasx/_rels/aasx-origin.rels file.
 
         This file contains relationships from aasx-origin to the actual
-        AAS spec files (data.xml or data.json).
+        AAS spec files (data.xml or data.json) and optionally a thumbnail.
 
         Args:
             env_path: Path to the environment file (e.g., "aasx/data.xml")
+            thumbnail_path: Optional path to thumbnail image
         """
         ns = "http://schemas.openxmlformats.org/package/2006/relationships"
         root = ET.Element("Relationships", xmlns=ns)
@@ -432,6 +464,16 @@ class AasxExporter:
             Target=f"/{env_path}",
             Id="rId1",
         )
+
+        # Add thumbnail relationship if provided
+        if thumbnail_path:
+            ET.SubElement(
+                root,
+                "Relationship",
+                Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail",
+                Target=f"/{thumbnail_path}",
+                Id="rId2",
+            )
 
         return ET.tostring(root, encoding="unicode", xml_declaration=True)
 
@@ -455,6 +497,7 @@ async def export_aasx(
     output_path: str | Path,
     concept_descriptions: list[ConceptDescription] | None = None,
     use_json: bool = True,
+    thumbnail: bytes | None = None,
 ) -> None:
     """Convenience function to export to AASX.
 
@@ -464,8 +507,9 @@ async def export_aasx(
         output_path: Path for the output file
         concept_descriptions: Optional list of concept descriptions to export
         use_json: If True, use JSON format; if False, use XML
+        thumbnail: Optional thumbnail image bytes (PNG/JPEG)
     """
     exporter = AasxExporter()
     await exporter.export_package(
-        shells, submodels, output_path, concept_descriptions, use_json=use_json
+        shells, submodels, output_path, concept_descriptions, use_json=use_json, thumbnail=thumbnail
     )
