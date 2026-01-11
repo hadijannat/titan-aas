@@ -218,6 +218,7 @@ class TestMqttSubscriberIntegration:
             mqtt_client.CallbackAPIVersion.VERSION2, client_id="test-publisher"
         )
         publisher.connect(mqtt_broker_config.broker, mqtt_broker_config.port)
+        publisher.loop_start()
 
         submodel_id = "urn:example:test:submodel:subscriber:1"
         identifier_b64 = encode_id_to_b64url(submodel_id)
@@ -229,8 +230,10 @@ class TestMqttSubscriberIntegration:
             }
         )
 
-        publisher.publish(topic, payload)
+        publish_result = publisher.publish(topic, payload)
+        publish_result.wait_for_publish()
         publisher.disconnect()
+        publisher.loop_stop()
 
         # Wait for subscriber to process
         await asyncio.sleep(3)
