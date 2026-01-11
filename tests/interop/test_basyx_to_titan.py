@@ -120,22 +120,22 @@ class TestBaSyxExportTitanImport:
             submodel_element=[
                 basyx_model.Property(
                     id_short="StringProp",
-                    value_type=basyx_model.DataTypeDefXsd.STRING,
+                    value_type=str,
                     value="test",
                 ),
                 basyx_model.Property(
                     id_short="IntProp",
-                    value_type=basyx_model.DataTypeDefXsd.INT,
+                    value_type=int,
                     value="123",
                 ),
                 basyx_model.Property(
                     id_short="DoubleProp",
-                    value_type=basyx_model.DataTypeDefXsd.DOUBLE,
+                    value_type=float,
                     value="45.67",
                 ),
                 basyx_model.Property(
                     id_short="BoolProp",
-                    value_type=basyx_model.DataTypeDefXsd.BOOLEAN,
+                    value_type=bool,
                     value="false",
                 ),
             ],
@@ -207,12 +207,12 @@ class TestBaSyxExportTitanImport:
             value=[
                 basyx_model.Property(
                     id_short="Item1",
-                    value_type=basyx_model.DataTypeDefXsd.STRING,
+                    value_type=str,
                     value="first",
                 ),
                 basyx_model.Property(
                     id_short="Item2",
-                    value_type=basyx_model.DataTypeDefXsd.STRING,
+                    value_type=str,
                     value="second",
                 ),
             ],
@@ -347,28 +347,29 @@ class TestRoundTrip:
         # Create Titan shell
         original_shell = AssetAdministrationShell(
             id="urn:roundtrip:aas:1",
-            idShort="RoundTripShell",
-            assetInformation=AssetInformation(
-                assetKind=AssetKind.INSTANCE,
-                globalAssetId="urn:roundtrip:asset:1",
+            id_short="RoundTripShell",
+            asset_information=AssetInformation(
+                asset_kind=AssetKind.INSTANCE,
+                global_asset_id="urn:roundtrip:asset:1",
             ),
         )
 
         # Export from Titan
         exporter = AasxExporter()
-        aasx_bytes = await exporter.export_to_bytes([original_shell], [], [])
+        stream = await exporter.export_to_stream([original_shell], [], [])
+        aasx_bytes = stream.getvalue()
 
         # Import to BaSyx
         buffer = io.BytesIO(aasx_bytes)
+        basyx_object_store = basyx_model.DictObjectStore()
+        file_store = basyx_aasx.DictSupplementaryFileContainer()
         with basyx_aasx.AASXReader(buffer) as reader:
-            basyx_object_store = basyx_model.DictObjectStore()
-            reader.read_into(basyx_object_store)
+            reader.read_into(basyx_object_store, file_store)
 
         # Export from BaSyx
         basyx_buffer = io.BytesIO()
         # Find the shell ID from the object store
         shells = [obj for obj in basyx_object_store if isinstance(obj, basyx_model.AssetAdministrationShell)]
-        file_store = basyx_aasx.DictSupplementaryFileContainer()
         with basyx_aasx.AASXWriter(basyx_buffer) as writer:
             writer.write_aas(
                 aas_ids=shells[0].id,
@@ -410,11 +411,11 @@ class TestRoundTrip:
         # Create Titan objects
         submodel = Submodel(
             id="urn:roundtrip:submodel:1",
-            idShort="RoundTripSubmodel",
-            submodelElements=[
+            id_short="RoundTripSubmodel",
+            submodel_elements=[
                 Property(
-                    idShort="TestProperty",
-                    valueType=DataTypeDefXsd.STRING,
+                    id_short="TestProperty",
+                    value_type=DataTypeDefXsd.XS_STRING,
                     value="round_trip_value",
                 )
             ],
@@ -422,10 +423,10 @@ class TestRoundTrip:
 
         shell = AssetAdministrationShell(
             id="urn:roundtrip:aas:2",
-            idShort="RoundTripShell2",
-            assetInformation=AssetInformation(
-                assetKind=AssetKind.INSTANCE,
-                globalAssetId="urn:roundtrip:asset:2",
+            id_short="RoundTripShell2",
+            asset_information=AssetInformation(
+                asset_kind=AssetKind.INSTANCE,
+                global_asset_id="urn:roundtrip:asset:2",
             ),
             submodels=[
                 Reference(
@@ -437,7 +438,8 @@ class TestRoundTrip:
 
         # Titan → AASX
         exporter = AasxExporter()
-        aasx_bytes = await exporter.export_to_bytes([shell], [submodel], [])
+        stream = await exporter.export_to_stream([shell], [submodel], [])
+        aasx_bytes = stream.getvalue()
 
         # AASX → BaSyx
         buffer = io.BytesIO(aasx_bytes)
@@ -488,22 +490,22 @@ class TestRoundTrip:
         # Create complex structure
         submodel = Submodel(
             id="urn:roundtrip:submodel:complex",
-            idShort="ComplexSubmodel",
-            submodelElements=[
+            id_short="ComplexSubmodel",
+            submodel_elements=[
                 SubmodelElementCollection(
-                    idShort="OuterCollection",
+                    id_short="OuterCollection",
                     value=[
                         Property(
-                            idShort="Prop1",
-                            valueType=DataTypeDefXsd.STRING,
+                            id_short="Prop1",
+                            value_type=DataTypeDefXsd.XS_STRING,
                             value="value1",
                         ),
                         SubmodelElementCollection(
-                            idShort="InnerCollection",
+                            id_short="InnerCollection",
                             value=[
                                 Property(
-                                    idShort="NestedProp",
-                                    valueType=DataTypeDefXsd.INT,
+                                    id_short="NestedProp",
+                                    value_type=DataTypeDefXsd.XS_INT,
                                     value="42",
                                 )
                             ],
@@ -515,10 +517,10 @@ class TestRoundTrip:
 
         shell = AssetAdministrationShell(
             id="urn:roundtrip:aas:complex",
-            idShort="ComplexShell",
-            assetInformation=AssetInformation(
-                assetKind=AssetKind.INSTANCE,
-                globalAssetId="urn:roundtrip:asset:complex",
+            id_short="ComplexShell",
+            asset_information=AssetInformation(
+                asset_kind=AssetKind.INSTANCE,
+                global_asset_id="urn:roundtrip:asset:complex",
             ),
             submodels=[
                 Reference(
@@ -530,7 +532,8 @@ class TestRoundTrip:
 
         # Full round-trip
         exporter = AasxExporter()
-        aasx_bytes = await exporter.export_to_bytes([shell], [submodel], [])
+        stream = await exporter.export_to_stream([shell], [submodel], [])
+        aasx_bytes = stream.getvalue()
 
         # Through BaSyx
         buffer = io.BytesIO(aasx_bytes)

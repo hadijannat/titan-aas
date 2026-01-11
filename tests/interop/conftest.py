@@ -81,27 +81,27 @@ def basyx_aas_complex() -> tuple[
         submodel_element=[
             model.Property(
                 id_short="StringProperty",
-                value_type=model.DataTypeDefXsd.STRING,
+                value_type=str,
                 value="test_value",
             ),
             model.Property(
                 id_short="IntProperty",
-                value_type=model.DataTypeDefXsd.INT,
+                value_type=int,
                 value="42",
             ),
             model.Property(
                 id_short="DoubleProperty",
-                value_type=model.DataTypeDefXsd.DOUBLE,
+                value_type=float,
                 value="3.14159",
             ),
             model.Property(
                 id_short="BooleanProperty",
-                value_type=model.DataTypeDefXsd.BOOLEAN,
+                value_type=bool,
                 value="true",
             ),
             model.Property(
                 id_short="Temperature",
-                value_type=model.DataTypeDefXsd.DOUBLE,
+                value_type=float,
                 value="23.5",
                 semantic_id=model.ExternalReference(
                     (model.Key(
