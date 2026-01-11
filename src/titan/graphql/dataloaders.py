@@ -22,7 +22,7 @@ Example:
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from strawberry.dataloader import DataLoader
 
@@ -103,13 +103,15 @@ class DataLoaderContext:
     Requires a database session for batch loading.
     """
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, session: AsyncSession, user: Any | None = None) -> None:
         """Initialize context with session and fresh dataloaders.
 
         Args:
             session: Database session for queries
+            user: Optional authenticated user for permission checks
         """
         self.session = session
+        self.user = user
         self._loaders = self._create_loaders()
 
     def _create_loaders(self) -> dict[str, DataLoader]:

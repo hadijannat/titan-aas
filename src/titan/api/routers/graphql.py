@@ -25,22 +25,26 @@ from strawberry.fastapi import GraphQLRouter
 from titan.graphql import schema
 from titan.graphql.dataloaders import DataLoaderContext
 from titan.persistence.db import get_session
+from titan.security.deps import get_optional_user
+from titan.security.oidc import User
 
 
 async def get_context(
     request: Request,
     session: AsyncSession = Depends(get_session),
+    user: User | None = Depends(get_optional_user),
 ) -> DataLoaderContext:
     """Create GraphQL context with dataloaders for each request.
 
     Args:
         request: FastAPI request object
         session: Database session from dependency injection
+        user: Optional authenticated user for permission checks
 
     Returns:
-        DataLoaderContext with dataloaders bound to the session
+        DataLoaderContext with dataloaders bound to the session and user
     """
-    return DataLoaderContext(session)
+    return DataLoaderContext(session, user)
 
 
 # Create the GraphQL router with context injection

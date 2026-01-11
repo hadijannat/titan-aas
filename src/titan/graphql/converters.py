@@ -17,6 +17,7 @@ from titan.graphql.schema import (
     AssetInformation,
     AssetKind,
     Blob,
+    ConceptDescription,
     File,
     Key,
     KeyType,
@@ -286,4 +287,99 @@ def _convert_single_element(elem: Any) -> SubmodelElement | None:
         description=description,
         semantic_id=semantic_id,
         qualifiers=qualifiers,
+    )
+
+
+# -----------------------------------------------------------------------------
+# Reverse Converters: GraphQL Input → Pydantic Domain Models
+# -----------------------------------------------------------------------------
+
+
+def shell_from_input(input_data: Any) -> AssetAdministrationShell:
+    """Convert GraphQL ShellInput to Pydantic AssetAdministrationShell.
+
+    Args:
+        input_data: GraphQL ShellInput
+
+    Returns:
+        Pydantic AssetAdministrationShell model
+    """
+    from titan.core.model import AssetInformation as PydanticAssetInfo
+    from titan.core.model import AssetKind as PydanticAssetKind
+
+    # Convert AssetKind
+    asset_kind_map = {
+        AssetKind.TYPE: PydanticAssetKind.TYPE,
+        AssetKind.INSTANCE: PydanticAssetKind.INSTANCE,
+        AssetKind.NOT_APPLICABLE: PydanticAssetKind.NOT_APPLICABLE,
+    }
+    pydantic_asset_kind = asset_kind_map.get(
+        input_data.asset_kind, PydanticAssetKind.INSTANCE
+    )
+
+    # Create asset information (use camelCase field names)
+    asset_info = PydanticAssetInfo(
+        assetKind=pydantic_asset_kind,
+        globalAssetId=input_data.global_asset_id,
+    )
+
+    # Create shell (use camelCase field names)
+    return AssetAdministrationShell(
+        id=input_data.id,
+        idShort=input_data.id_short,
+        assetInformation=asset_info,
+    )
+
+
+def submodel_from_input(input_data: Any) -> PydanticSubmodel:
+    """Convert GraphQL SubmodelInput to Pydantic Submodel.
+
+    Args:
+        input_data: GraphQL SubmodelInput
+
+    Returns:
+        Pydantic Submodel model
+    """
+    return PydanticSubmodel(
+        id=input_data.id,
+        idShort=input_data.id_short,
+        submodelElements=[],
+    )
+
+
+def concept_description_to_graphql(
+    model: Any | None,
+) -> ConceptDescription | None:
+    """Convert Pydantic ConceptDescription to GraphQL ConceptDescription.
+
+    Args:
+        model: Pydantic ConceptDescription model or None
+
+    Returns:
+        GraphQL ConceptDescription type or None
+    """
+    if model is None:
+        return None
+
+    return ConceptDescription(
+        id=model.id,
+        id_short=getattr(model, "id_short", None) or getattr(model, "idShort", None),
+        description=_convert_descriptions(getattr(model, "description", None)),
+    )
+
+
+def concept_description_from_input(input_data: Any) -> Any:
+    """Convert GraphQL ConceptDescriptionInput to Pydantic ConceptDescription.
+
+    Args:
+        input_data: GraphQL ConceptDescriptionInput
+
+    Returns:
+        Pydantic ConceptDescription model
+    """
+    from titan.core.model import ConceptDescription as PydanticConceptDescription
+
+    return PydanticConceptDescription(
+        id=input_data.id,
+        idShort=input_data.id_short,
     )
