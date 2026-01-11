@@ -29,6 +29,7 @@ from __future__ import annotations
 import logging
 import zipfile
 from dataclasses import dataclass, field
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from typing import Any, BinaryIO
@@ -42,6 +43,21 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
+class PackageMetadata:
+    """OPC core properties metadata for AASX package.
+
+    Follows the OPC Core Properties specification for package metadata.
+    """
+
+    title: str | None = None
+    creator: str | None = None
+    created: datetime | None = None
+    modified: datetime | None = None
+    description: str | None = None
+    version: str | None = None
+
+
+@dataclass
 class AasxPackage:
     """Represents an AASX package with AAS, submodels, and concept descriptions."""
 
@@ -49,8 +65,9 @@ class AasxPackage:
     submodels: list[Submodel] = field(default_factory=list)
     concept_descriptions: list[ConceptDescription] = field(default_factory=list)
     supplementary_files: dict[str, bytes] = field(default_factory=dict)
-    metadata: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)  # Generic metadata
     thumbnail: bytes | None = None  # Package thumbnail image (PNG/JPEG)
+    core_properties: PackageMetadata | None = None  # OPC core properties metadata
 
 
 class AasxImporter:
@@ -109,10 +126,16 @@ class AasxImporter:
                         content = zf.read(name)
                         await self._import_json(content, name, package)
 
-                    # Import XML files
-                    elif lower_name.endswith(".xml"):
+                    # Import XML files (but not core-properties.xml)
+                    elif lower_name.endswith(".xml") and "core-properties" not in lower_name:
                         content = zf.read(name)
                         await self._import_xml(content, name, package)
+
+                    # Extract core properties
+                    elif "core-properties" in lower_name and lower_name.endswith(".xml"):
+                        content = zf.read(name)
+                        package.core_properties = self._parse_core_properties(content)
+                        logger.debug(f"Extracted core properties: {name}")
 
                     # Extract thumbnail (PNG or JPEG in aasx directory)
                     elif "thumbnail" in lower_name and (
@@ -237,6 +260,58 @@ class AasxImporter:
         except Exception as e:
             logger.warning(f"Failed to parse concept description: {e}")
 
+    def _parse_core_properties(self, content: bytes) -> PackageMetadata:
+        """Parse OPC core properties XML.
+
+        Args:
+            content: XML content bytes
+
+        Returns:
+            PackageMetadata object
+        """
+        # OPC Core Properties namespaces
+        cp_ns = "http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
+        dc_ns = "http://purl.org/dc/elements/1.1/"
+        dcterms_ns = "http://purl.org/dc/terms/"
+
+        # nosec B314 - XML from trusted AASX packages
+        root = ET.fromstring(content)  # nosec B314
+
+        metadata = PackageMetadata()
+
+        # Extract properties
+        title_elem = root.find(f".//{{{dc_ns}}}title")
+        if title_elem is not None and title_elem.text:
+            metadata.title = title_elem.text
+
+        creator_elem = root.find(f".//{{{dc_ns}}}creator")
+        if creator_elem is not None and creator_elem.text:
+            metadata.creator = creator_elem.text
+
+        desc_elem = root.find(f".//{{{dc_ns}}}description")
+        if desc_elem is not None and desc_elem.text:
+            metadata.description = desc_elem.text
+
+        created_elem = root.find(f".//{{{dcterms_ns}}}created")
+        if created_elem is not None and created_elem.text:
+            try:
+                metadata.created = datetime.fromisoformat(created_elem.text)
+            except ValueError:
+                logger.warning(f"Failed to parse created date: {created_elem.text}")
+
+        modified_elem = root.find(f".//{{{dcterms_ns}}}modified")
+        if modified_elem is not None and modified_elem.text:
+            try:
+                metadata.modified = datetime.fromisoformat(modified_elem.text)
+            except ValueError:
+                logger.warning(f"Failed to parse modified date: {modified_elem.text}")
+
+        version_elem = root.find(f".//{{{cp_ns}}}version")
+        if version_elem is not None and version_elem.text:
+            metadata.version = version_elem.text
+
+        return metadata
+
 
 class AasxExporter:
     """Exports Titan-AAS models to AASX packages."""
@@ -254,6 +329,7 @@ class AasxExporter:
         supplementary_files: dict[str, bytes] | None = None,
         use_json: bool = True,
         thumbnail: bytes | None = None,
+        core_properties: PackageMetadata | None = None,
     ) -> None:
         """Export shells and submodels to an AASX package.
 
@@ -265,6 +341,7 @@ class AasxExporter:
             supplementary_files: Optional dict of path -> bytes for attachments
             use_json: If True, use JSON format; if False, use XML
             thumbnail: Optional thumbnail image bytes (PNG/JPEG)
+            core_properties: Optional OPC core properties metadata
         """
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -276,6 +353,7 @@ class AasxExporter:
             supplementary_files=supplementary_files,
             use_json=use_json,
             thumbnail=thumbnail,
+            core_properties=core_properties,
         )
 
         with open(output_path, "wb") as f:
@@ -291,6 +369,7 @@ class AasxExporter:
         supplementary_files: dict[str, bytes] | None = None,
         use_json: bool = True,
         thumbnail: bytes | None = None,
+        core_properties: PackageMetadata | None = None,
     ) -> BytesIO:
         """Export shells and submodels to a binary stream.
 
@@ -301,6 +380,7 @@ class AasxExporter:
             supplementary_files: Optional dict of path -> bytes for attachments
             use_json: If True, use JSON format; if False, use XML
             thumbnail: Optional thumbnail image bytes (PNG/JPEG)
+            core_properties: Optional OPC core properties metadata
 
         Returns:
             BytesIO containing the AASX package
@@ -355,6 +435,13 @@ class AasxExporter:
 
                 zf.writestr(thumbnail_path, thumbnail)
                 parts.append((thumbnail_path, content_type))
+
+            # Write core properties if provided
+            if core_properties:
+                core_props_path = "aasx/core-properties.xml"
+                core_props_content = self._create_core_properties(core_properties)
+                zf.writestr(core_props_path, core_props_content)
+                parts.append((core_props_path, "application/xml"))
 
             # Write aasx-origin file (marker for AASX packages)
             zf.writestr("aasx/aasx-origin", "")
@@ -477,6 +564,62 @@ class AasxExporter:
 
         return ET.tostring(root, encoding="unicode", xml_declaration=True)
 
+    def _create_core_properties(self, metadata: PackageMetadata) -> str:
+        """Create OPC core properties XML file.
+
+        Args:
+            metadata: Package metadata
+
+        Returns:
+            XML string for core-properties.xml
+        """
+        # OPC Core Properties namespace
+        cp_ns = "http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
+        dc_ns = "http://purl.org/dc/elements/1.1/"
+        dcterms_ns = "http://purl.org/dc/terms/"
+        xsi_ns = "http://www.w3.org/2001/XMLSchema-instance"
+
+        # Register namespaces
+        ET.register_namespace("cp", cp_ns)
+        ET.register_namespace("dc", dc_ns)
+        ET.register_namespace("dcterms", dcterms_ns)
+        ET.register_namespace("xsi", xsi_ns)
+
+        # Create root element
+        root = ET.Element(
+            f"{{{cp_ns}}}coreProperties",
+            attrib={
+                f"{{{xsi_ns}}}schemaLocation": f"{cp_ns} {cp_ns}",
+            },
+        )
+
+        # Add properties
+        if metadata.title:
+            ET.SubElement(root, f"{{{dc_ns}}}title").text = metadata.title
+
+        if metadata.creator:
+            ET.SubElement(root, f"{{{dc_ns}}}creator").text = metadata.creator
+
+        if metadata.description:
+            ET.SubElement(root, f"{{{dc_ns}}}description").text = metadata.description
+
+        if metadata.created:
+            created_elem = ET.SubElement(
+                root, f"{{{dcterms_ns}}}created", attrib={f"{{{xsi_ns}}}type": "dcterms:W3CDTF"}
+            )
+            created_elem.text = metadata.created.isoformat()
+
+        if metadata.modified:
+            modified_elem = ET.SubElement(
+                root, f"{{{dcterms_ns}}}modified", attrib={f"{{{xsi_ns}}}type": "dcterms:W3CDTF"}
+            )
+            modified_elem.text = metadata.modified.isoformat()
+
+        if metadata.version:
+            ET.SubElement(root, f"{{{cp_ns}}}version").text = metadata.version
+
+        return ET.tostring(root, encoding="unicode", xml_declaration=True)
+
 
 async def import_aasx(path: str | Path) -> AasxPackage:
     """Convenience function to import an AASX package.
@@ -498,6 +641,7 @@ async def export_aasx(
     concept_descriptions: list[ConceptDescription] | None = None,
     use_json: bool = True,
     thumbnail: bytes | None = None,
+    core_properties: PackageMetadata | None = None,
 ) -> None:
     """Convenience function to export to AASX.
 
@@ -508,8 +652,15 @@ async def export_aasx(
         concept_descriptions: Optional list of concept descriptions to export
         use_json: If True, use JSON format; if False, use XML
         thumbnail: Optional thumbnail image bytes (PNG/JPEG)
+        core_properties: Optional OPC core properties metadata
     """
     exporter = AasxExporter()
     await exporter.export_package(
-        shells, submodels, output_path, concept_descriptions, use_json=use_json, thumbnail=thumbnail
+        shells,
+        submodels,
+        output_path,
+        concept_descriptions,
+        use_json=use_json,
+        thumbnail=thumbnail,
+        core_properties=core_properties,
     )
