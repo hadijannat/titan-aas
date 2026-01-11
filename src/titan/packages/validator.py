@@ -84,9 +84,28 @@ class OpcValidator:
     # AASX relationship types
     AASX_ORIGIN_REL = "http://admin-shell.io/aasx/relationships/aasx-origin"
     AAS_SPEC_REL = "http://admin-shell.io/aasx/relationships/aas-spec"
+    THUMBNAIL_REL = (
+        "http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail"
+    )
+    CORE_PROPERTIES_REL = (
+        "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"
+    )
 
     # Required OPC files
     REQUIRED_FILES = {"[Content_Types].xml"}
+
+    # Reserved OPC paths that should not be used for content
+    RESERVED_PATHS = {"_rels/", "[Content_Types].xml"}
+
+    # Common content type mappings
+    CONTENT_TYPE_MAPPINGS = {
+        "json": "application/json",
+        "xml": "application/xml",
+        "png": "image/png",
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "pdf": "application/pdf",
+    }
 
     def __init__(self, level: ValidationLevel = ValidationLevel.STANDARD) -> None:
         """Initialize validator with strictness level."""
@@ -130,6 +149,11 @@ class OpcValidator:
 
                 # Validate AASX-specific content
                 self._validate_aasx_content(zf, file_list, result)
+
+                # Enhanced validations (Phase 3)
+                self._validate_part_uris(file_list, result)
+                self._validate_reserved_paths(file_list, result)
+                self._check_recommended_features(zf, file_list, result)
 
         except zipfile.BadZipFile as e:
             result.add_error("ZIP_INVALID", f"Invalid ZIP archive: {e}")
@@ -218,9 +242,12 @@ class OpcValidator:
         self, zf: zipfile.ZipFile, file_list: list[str], result: ValidationResult
     ) -> None:
         """Validate OPC relationships."""
-        rels_file = "_rels/.rels"
+        # Find all relationship files
+        rels_files = [f for f in file_list if f.endswith(".rels")]
 
-        if rels_file not in file_list:
+        # Check root relationships file
+        root_rels = "_rels/.rels"
+        if root_rels not in file_list:
             if self.level == ValidationLevel.STRICT:
                 result.add_error(
                     "MISSING_RELS",
@@ -233,38 +260,82 @@ class OpcValidator:
                 )
             return
 
-        try:
-            rels_data = zf.read(rels_file)
-            root = ET.fromstring(rels_data)  # nosec B314 - validated AASX package
+        # Validate each relationship file
+        for rels_file in rels_files:
+            try:
+                rels_data = zf.read(rels_file)
+                root = ET.fromstring(rels_data)  # nosec B314 - validated AASX package
 
-            # Check for AASX-origin relationship
-            has_origin = False
-            for rel in root.findall(f"{{{self.RELATIONSHIPS_NS}}}Relationship"):
-                rel_type = rel.get("Type", "")
-                if rel_type == self.AASX_ORIGIN_REL:
-                    has_origin = True
-                    # Verify target exists
-                    target = rel.get("Target", "").lstrip("/")
-                    if target and target not in file_list:
-                        result.add_warning(
-                            "MISSING_RELS_TARGET",
-                            f"Relationship target not found: {target}",
-                            rels_file,
-                        )
+                # Check namespace
+                if root.tag != f"{{{self.RELATIONSHIPS_NS}}}Relationships":
+                    result.add_warning(
+                        "RELS_NAMESPACE",
+                        f"Unexpected root element in relationships: {root.tag}",
+                        rels_file,
+                    )
+
+                # Validate each relationship
+                for rel in root.findall(f"{{{self.RELATIONSHIPS_NS}}}Relationship"):
+                    rel_type = rel.get("Type", "")
+                    target = rel.get("Target", "")
+
+                    # Check for AASX-origin in root rels (only in _rels/.rels)
+                    if rels_file == root_rels and rel_type == self.AASX_ORIGIN_REL:
+                        # Verify aasx-origin target exists
+                        target_norm = target.lstrip("/")
+                        if target_norm and target_norm not in file_list:
+                            result.add_error(
+                                "MISSING_RELS_TARGET",
+                                f"AASX-origin target not found: {target}",
+                                rels_file,
+                            )
+
+                    # Verify all relationship targets exist
+                    if target:
+                        # Resolve target path relative to source
+                        if rels_file == root_rels:
+                            # Root relationships are relative to package root
+                            target_path = target.lstrip("/")
+                        else:
+                            # Part relationships are relative to the part's directory
+                            source_dir = "/".join(rels_file.split("/")[:-2])  # Remove /_rels/x.rels
+                            if source_dir:
+                                target_path = f"{source_dir}/{target}".lstrip("/")
+                            else:
+                                target_path = target.lstrip("/")
+
+                        # Normalize and check existence
+                        if target_path not in file_list:
+                            result.add_warning(
+                                "MISSING_RELS_TARGET",
+                                f"Relationship target not found: {target_path}",
+                                rels_file,
+                            )
+
+            except ET.ParseError as e:
+                result.add_error(
+                    "RELS_PARSE_ERROR",
+                    f"Failed to parse relationships: {e}",
+                    rels_file,
+                )
+
+        # Check for AASX-origin in root rels
+        try:
+            root_rels_data = zf.read(root_rels)
+            root_rels_tree = ET.fromstring(root_rels_data)  # nosec B314
+            has_origin = any(
+                rel.get("Type") == self.AASX_ORIGIN_REL
+                for rel in root_rels_tree.findall(f"{{{self.RELATIONSHIPS_NS}}}Relationship")
+            )
 
             if not has_origin and self.level == ValidationLevel.STRICT:
                 result.add_warning(
                     "MISSING_AASX_ORIGIN",
-                    "No aasx-origin relationship found",
-                    rels_file,
+                    "No aasx-origin relationship found in root",
+                    root_rels,
                 )
-
-        except ET.ParseError as e:
-            result.add_error(
-                "RELS_PARSE_ERROR",
-                f"Failed to parse relationships: {e}",
-                rels_file,
-            )
+        except Exception:
+            pass  # Already reported in loop above
 
     def _validate_aasx_content(
         self, zf: zipfile.ZipFile, file_list: list[str], result: ValidationResult
@@ -314,3 +385,103 @@ class OpcValidator:
             "CONTENT_SUMMARY",
             f"Package contains {json_count} JSON files, {xml_count} XML files",
         )
+
+    def _validate_part_uris(self, file_list: list[str], result: ValidationResult) -> None:
+        """Validate Part URIs according to OPC spec.
+
+        Part URIs must:
+        - Not contain spaces
+        - Use forward slashes (/)
+        - Be properly encoded
+        - Not start with /
+        """
+        for filename in file_list:
+            # Check for spaces in URI
+            if " " in filename:
+                result.add_error(
+                    "PART_URI_SPACE",
+                    f"Part URI contains space: {filename}",
+                    filename,
+                )
+
+            # Check for backslashes (should be forward slashes)
+            if "\\" in filename:
+                result.add_error(
+                    "PART_URI_BACKSLASH",
+                    f"Part URI contains backslash: {filename}",
+                    filename,
+                )
+
+            # Check for leading slash (relative paths only in OPC)
+            if filename.startswith("/"):
+                if self.level == ValidationLevel.STRICT:
+                    result.add_warning(
+                        "PART_URI_LEADING_SLASH",
+                        f"Part URI has leading slash: {filename}",
+                        filename,
+                    )
+
+            # Check for percent encoding issues (unencoded special chars)
+            special_chars = ["<", ">", '"', "|", "?", "*"]
+            for char in special_chars:
+                if char in filename:
+                    result.add_error(
+                        "PART_URI_INVALID_CHAR",
+                        f"Part URI contains invalid character '{char}': {filename}",
+                        filename,
+                    )
+
+    def _validate_reserved_paths(self, file_list: list[str], result: ValidationResult) -> None:
+        """Check for misuse of reserved OPC paths."""
+        for filename in file_list:
+            # Check if content is placed in _rels directory (reserved for relationships)
+            if filename.startswith("_rels/") and not filename.endswith(".rels"):
+                result.add_warning(
+                    "RESERVED_PATH_MISUSE",
+                    f"Non-relationship file in _rels directory: {filename}",
+                    filename,
+                )
+
+    def _check_recommended_features(
+        self, zf: zipfile.ZipFile, file_list: list[str], result: ValidationResult
+    ) -> None:
+        """Check for optional but recommended OPC features."""
+        # Check for thumbnail
+        has_thumbnail = False
+        for filename in file_list:
+            lower = filename.lower()
+            if "thumbnail" in lower and (lower.endswith(".png") or lower.endswith(".jpg")):
+                has_thumbnail = True
+                break
+
+        if not has_thumbnail and self.level == ValidationLevel.STRICT:
+            result.add_info(
+                "NO_THUMBNAIL",
+                "Package does not include a thumbnail image (recommended)",
+            )
+
+        # Check for core properties
+        has_core_properties = False
+        for filename in file_list:
+            if "core-properties" in filename.lower() and filename.endswith(".xml"):
+                has_core_properties = True
+                break
+
+        if not has_core_properties and self.level == ValidationLevel.STRICT:
+            result.add_info(
+                "NO_CORE_PROPERTIES",
+                "Package does not include OPC core properties metadata (recommended)",
+            )
+
+        # Check for digital signature
+        has_signature = False
+        for filename in file_list:
+            if filename.startswith("_xmlsignatures/") or filename.endswith(".sig"):
+                has_signature = True
+                break
+
+        if not has_signature and self.level == ValidationLevel.STRICT:
+            result.add_info(
+                "NO_DIGITAL_SIGNATURE",
+                "Package is not digitally signed (recommended for production)",
+            )
