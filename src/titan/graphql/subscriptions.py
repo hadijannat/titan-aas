@@ -25,14 +25,16 @@ Example:
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
+from typing import Any
 
 import strawberry
 from strawberry.types import Info
 
 # Use Strawberry's LazyType to avoid circular import
-Shell = strawberry.LazyType["Shell", "titan.graphql.schema"]
-Submodel = strawberry.LazyType["Submodel", "titan.graphql.schema"]
-ConceptDescription = strawberry.LazyType["ConceptDescription", "titan.graphql.schema"]
+# Type annotation as Any to satisfy mypy while preserving runtime behavior
+Shell: Any = strawberry.LazyType("Shell", "titan.graphql.schema")
+Submodel: Any = strawberry.LazyType("Submodel", "titan.graphql.schema")
+ConceptDescription: Any = strawberry.LazyType("ConceptDescription", "titan.graphql.schema")
 
 
 @strawberry.type
