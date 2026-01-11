@@ -183,6 +183,7 @@ class MqttSubscriber:
         self.metrics = SubscriberMetrics()
         self._running = False
         self._task: asyncio.Task[None] | None = None
+        self._subscribed_event = asyncio.Event()
 
     @property
     def is_running(self) -> bool:
@@ -209,12 +210,14 @@ class MqttSubscriber:
             return
 
         self._running = True
+        self._subscribed_event.clear()
         self._task = asyncio.create_task(self._subscribe_loop(topics))
         logger.info(f"Started MQTT subscriber for topics: {topics}")
 
     async def stop(self) -> None:
         """Stop the subscriber."""
         self._running = False
+        self._subscribed_event.clear()
         if self._task and not self._task.done():
             self._task.cancel()
             try:
@@ -223,16 +226,26 @@ class MqttSubscriber:
                 pass
         logger.info("Stopped MQTT subscriber")
 
+    async def wait_until_ready(self, timeout: float | None = None) -> bool:
+        """Wait until the subscriber has completed topic subscriptions."""
+        try:
+            await asyncio.wait_for(self._subscribed_event.wait(), timeout=timeout)
+            return True
+        except TimeoutError:
+            return False
+
     async def _subscribe_loop(self, topics: list[str]) -> None:
         """Main subscription loop."""
         while self._running:
             try:
+                self._subscribed_event.clear()
                 client = await self.connection_manager.ensure_connected()
 
                 # Subscribe to all topics
                 for topic in topics:
                     await client.subscribe(topic)
                     logger.debug(f"Subscribed to: {topic}")
+                self._subscribed_event.set()
 
                 # Process messages - use manual iteration for clean shutdown
                 message_iter = client.messages.__aiter__()

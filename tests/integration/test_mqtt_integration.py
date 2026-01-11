@@ -211,7 +211,8 @@ class TestMqttSubscriberIntegration:
 
         # Start subscriber
         await subscriber.start(["titan/element/#"])
-        await asyncio.sleep(2)  # Give subscriber time to connect
+        ready = await subscriber.wait_until_ready(timeout=10)
+        assert ready
 
         # Publish value update via MQTT
         publisher = mqtt_client.Client(
