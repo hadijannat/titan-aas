@@ -161,6 +161,8 @@ def create_submodel_payload(identifier: str | None = None) -> dict[str, Any]:
 class AuthenticatedUser(HttpUser):
     """Base user that optionally applies auth headers for load testing."""
 
+    abstract = True
+
     def on_start(self) -> None:
         headers = load_auth_headers()
         if headers:
