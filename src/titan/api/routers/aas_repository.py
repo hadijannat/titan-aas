@@ -16,11 +16,16 @@ import orjson
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from titan.api.deps import (
+    check_not_modified,
+    check_precondition,
+    decode_identifier,
+    json_response_with_etag,
+    no_content_response,
+)
 from titan.api.errors import (
     ConflictError,
-    InvalidBase64UrlError,
     NotFoundError,
-    PreconditionFailedError,
 )
 from titan.api.pagination import (
     DEFAULT_LIMIT,
@@ -36,7 +41,7 @@ from titan.api.routing import (
 )
 from titan.cache import RedisCache, get_redis
 from titan.core.canonicalize import canonical_bytes
-from titan.core.ids import InvalidBase64Url, decode_id_from_b64url, encode_id_to_b64url
+from titan.core.ids import encode_id_to_b64url
 from titan.core.model import AssetAdministrationShell
 from titan.core.projection import ProjectionModifiers, apply_projection, extract_reference_for_aas
 from titan.events import EventType, get_event_bus, publish_aas_deleted, publish_aas_event
@@ -186,11 +191,8 @@ async def post_shell(
     )
 
     # Return the created AAS
-    return Response(
-        content=doc_bytes,
-        status_code=201,
-        media_type="application/json",
-        headers={"ETag": f'"{etag}"', "Location": f"/shells/{identifier_b64}"},
+    return json_response_with_etag(
+        doc_bytes, etag, status_code=201, location=f"/shells/{identifier_b64}"
     )
 
 
@@ -222,27 +224,17 @@ async def get_shell_by_id(
     Fast path: No modifiers - stream bytes directly from cache/DB
     Slow path: Modifiers present - hydrate and apply projections
     """
-    # Decode identifier
-    try:
-        identifier = decode_id_from_b64url(aas_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(aas_identifier)
+    identifier = decode_identifier(aas_identifier)
 
     # Fast path: try cache first
     if is_fast_path(request):
         cached = await cache.get_aas(aas_identifier)
         if cached:
             doc_bytes, etag = cached
-
-            # Check If-None-Match
-            if if_none_match and if_none_match.strip('"') == etag:
-                return Response(status_code=304)
-
-            return Response(
-                content=doc_bytes,
-                media_type="application/json",
-                headers={"ETag": f'"{etag}"'},
-            )
+            not_modified = check_not_modified(if_none_match, etag)
+            if not_modified:
+                return not_modified
+            return json_response_with_etag(doc_bytes, etag)
 
     # Cache miss or slow path - get from database
     result = await repo.get_bytes_by_id(identifier)
@@ -255,26 +247,19 @@ async def get_shell_by_id(
     await cache.set_aas(aas_identifier, doc_bytes, etag)
 
     # Check If-None-Match
-    if if_none_match and if_none_match.strip('"') == etag:
-        return Response(status_code=304)
+    not_modified = check_not_modified(if_none_match, etag)
+    if not_modified:
+        return not_modified
 
     if is_fast_path(request):
         # Fast path - return bytes directly
-        return Response(
-            content=doc_bytes,
-            media_type="application/json",
-            headers={"ETag": f'"{etag}"'},
-        )
+        return json_response_with_etag(doc_bytes, etag)
     else:
         # Slow path - apply projections
         doc = orjson.loads(doc_bytes)
         modifiers = ProjectionModifiers(level=level, extent=extent, content=content)
         projected = apply_projection(doc, modifiers)
-        return Response(
-            content=canonical_bytes(projected),
-            media_type="application/json",
-            headers={"ETag": f'"{etag}"'},
-        )
+        return json_response_with_etag(canonical_bytes(projected), etag)
 
 
 @router.put(
@@ -301,19 +286,14 @@ async def put_shell_by_id(
     The identifier must be Base64URL encoded.
     Supports conditional update with If-Match header.
     """
-    # Decode identifier
-    try:
-        identifier = decode_id_from_b64url(aas_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(aas_identifier)
+    identifier = decode_identifier(aas_identifier)
 
     # Check If-Match precondition
     if if_match:
         current = await repo.get_bytes_by_id(identifier)
         if current:
             _, current_etag = current
-            if if_match.strip('"') != current_etag:
-                raise PreconditionFailedError()
+            check_precondition(if_match, current_etag)
 
     # Update in database
     result = await repo.update(identifier, aas)
@@ -336,10 +316,7 @@ async def put_shell_by_id(
         etag=etag,
     )
 
-    return Response(
-        status_code=204,
-        headers={"ETag": f'"{etag}"'},
-    )
+    return no_content_response(etag)
 
 
 @router.delete(
@@ -364,11 +341,7 @@ async def delete_shell_by_id(
 
     The identifier must be Base64URL encoded.
     """
-    # Decode identifier
-    try:
-        identifier = decode_id_from_b64url(aas_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(aas_identifier)
+    identifier = decode_identifier(aas_identifier)
 
     # Delete from database
     deleted = await repo.delete(identifier)
@@ -410,10 +383,7 @@ async def get_shell_reference(
 
     Returns a ModelReference pointing to this AAS per IDTA-01002.
     """
-    try:
-        identifier = decode_id_from_b64url(aas_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(aas_identifier)
+    identifier = decode_identifier(aas_identifier)
 
     cached = await cache.get_aas(aas_identifier)
     if cached:

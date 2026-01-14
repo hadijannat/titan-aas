@@ -28,12 +28,17 @@ from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from titan.api.deps import (
+    check_not_modified,
+    check_precondition,
+    decode_identifier,
+    json_response_with_etag,
+    no_content_response,
+)
 from titan.api.errors import (
     BadRequestError,
     ConflictError,
-    InvalidBase64UrlError,
     NotFoundError,
-    PreconditionFailedError,
 )
 from titan.api.pagination import (
     DEFAULT_LIMIT,
@@ -59,7 +64,7 @@ from titan.core.element_operations import (
     replace_element,
     update_element_value,
 )
-from titan.core.ids import InvalidBase64Url, decode_id_from_b64url, encode_id_to_b64url
+from titan.core.ids import encode_id_to_b64url
 from titan.core.model import Submodel
 from titan.core.model.submodel_elements import Operation
 from titan.core.operation_executor import (
@@ -269,23 +274,17 @@ async def get_submodel_by_id(
 
     The identifier must be Base64URL encoded.
     """
-    try:
-        identifier = decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
+    identifier = decode_identifier(submodel_identifier)
 
     # Fast path: try cache first
     if is_fast_path(request):
         cached = await cache.get_submodel(submodel_identifier)
         if cached:
             doc_bytes, etag = cached
-            if if_none_match and if_none_match.strip('"') == etag:
-                return Response(status_code=304)
-            return Response(
-                content=doc_bytes,
-                media_type="application/json",
-                headers={"ETag": f'"{etag}"'},
-            )
+            not_modified = check_not_modified(if_none_match, etag)
+            if not_modified:
+                return not_modified
+            return json_response_with_etag(doc_bytes, etag)
 
     # Cache miss or slow path
     result = await repo.get_bytes_by_id(identifier)
@@ -295,24 +294,17 @@ async def get_submodel_by_id(
     doc_bytes, etag = result
     await cache.set_submodel(submodel_identifier, doc_bytes, etag)
 
-    if if_none_match and if_none_match.strip('"') == etag:
-        return Response(status_code=304)
+    not_modified = check_not_modified(if_none_match, etag)
+    if not_modified:
+        return not_modified
 
     if is_fast_path(request):
-        return Response(
-            content=doc_bytes,
-            media_type="application/json",
-            headers={"ETag": f'"{etag}"'},
-        )
+        return json_response_with_etag(doc_bytes, etag)
     else:
         doc = orjson.loads(doc_bytes)
         modifiers = ProjectionModifiers(level=level, extent=extent, content=content)
         projected = apply_projection(doc, modifiers)
-        return Response(
-            content=canonical_bytes(projected),
-            media_type="application/json",
-            headers={"ETag": f'"{etag}"'},
-        )
+        return json_response_with_etag(canonical_bytes(projected), etag)
 
 
 @router.put(
@@ -335,17 +327,13 @@ async def put_submodel_by_id(
     session: AsyncSession = Depends(get_session),
 ) -> Response:
     """Update an existing Submodel."""
-    try:
-        identifier = decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
+    identifier = decode_identifier(submodel_identifier)
 
     if if_match:
         current = await repo.get_bytes_by_id(identifier)
         if current:
             _, current_etag = current
-            if if_match.strip('"') != current_etag:
-                raise PreconditionFailedError()
+            check_precondition(if_match, current_etag)
 
     try:
         result = await repo.update(identifier, submodel)
@@ -376,10 +364,7 @@ async def put_submodel_by_id(
         semantic_id=semantic_id,
     )
 
-    return Response(
-        status_code=204,
-        headers={"ETag": f'"{etag}"'},
-    )
+    return no_content_response(etag)
 
 
 @router.delete(
@@ -401,10 +386,7 @@ async def delete_submodel_by_id(
     session: AsyncSession = Depends(get_session),
 ) -> Response:
     """Delete a Submodel."""
-    try:
-        identifier = decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
+    identifier = decode_identifier(submodel_identifier)
 
     deleted = await repo.delete(identifier)
     if not deleted:
@@ -446,10 +428,7 @@ async def get_submodel_elements(
     cache: RedisCache = Depends(get_cache),
 ) -> Response:
     """Get all SubmodelElements of a Submodel."""
-    try:
-        identifier = decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
+    identifier = decode_identifier(submodel_identifier)
 
     # Get submodel
     cached = await cache.get_submodel(submodel_identifier)
@@ -504,10 +483,7 @@ async def get_submodel_element_by_path(
     The idShortPath uses dots as separators: "Collection.Property"
     For list elements, use index notation: "List[0]"
     """
-    try:
-        identifier = decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
+    identifier = decode_identifier(submodel_identifier)
 
     # Get submodel
     cached = await cache.get_submodel(submodel_identifier)
@@ -554,10 +530,7 @@ async def get_submodel_value(
 
     Returns only the values of all SubmodelElements, stripped of metadata.
     """
-    try:
-        identifier = decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
+    identifier = decode_identifier(submodel_identifier)
 
     cached = await cache.get_submodel(submodel_identifier)
     if cached:
@@ -604,10 +577,7 @@ async def get_element_value(
 
     Returns only the value, stripped of metadata.
     """
-    try:
-        identifier = decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
+    identifier = decode_identifier(submodel_identifier)
 
     # Check element value cache first
     cached_value = await cache.get_element_value(submodel_identifier, id_short_path)
@@ -662,10 +632,7 @@ async def get_submodel_metadata(
 
     Returns only metadata fields (no values) per IDTA-01002.
     """
-    try:
-        identifier = decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
+    identifier = decode_identifier(submodel_identifier)
 
     cached = await cache.get_submodel(submodel_identifier)
     if cached:
@@ -705,10 +672,7 @@ async def get_element_metadata(
 
     Returns only metadata fields (no values) per IDTA-01002.
     """
-    try:
-        identifier = decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
+    identifier = decode_identifier(submodel_identifier)
 
     cached = await cache.get_submodel(submodel_identifier)
     if cached:
@@ -753,10 +717,7 @@ async def get_element_reference(
 
     Returns a ModelReference pointing to this element per IDTA-01002.
     """
-    try:
-        identifier = decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
+    identifier = decode_identifier(submodel_identifier)
 
     cached = await cache.get_submodel(submodel_identifier)
     if cached:
@@ -802,10 +763,7 @@ async def get_element_path(
 
     Returns the idShortPath representation per IDTA-01002.
     """
-    try:
-        identifier = decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
+    identifier = decode_identifier(submodel_identifier)
 
     cached = await cache.get_submodel(submodel_identifier)
     if cached:
@@ -857,10 +815,7 @@ async def post_submodel_element(
 
     The element idShort must be unique within the Submodel.
     """
-    try:
-        identifier = decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
+    identifier = decode_identifier(submodel_identifier)
 
     # Get existing submodel
     result = await repo.get_bytes_by_id(identifier)
@@ -943,10 +898,7 @@ async def post_nested_submodel_element(
 
     The parent path must point to a SubmodelElementCollection or SubmodelElementList.
     """
-    try:
-        identifier = decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
+    identifier = decode_identifier(submodel_identifier)
 
     # Get existing submodel
     result = await repo.get_bytes_by_id(identifier)
@@ -1038,10 +990,7 @@ async def put_submodel_element(
 
     The element at the given path is completely replaced.
     """
-    try:
-        identifier = decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
+    identifier = decode_identifier(submodel_identifier)
 
     # Get existing submodel
     result = await repo.get_bytes_by_id(identifier)
@@ -1051,8 +1000,7 @@ async def put_submodel_element(
     doc_bytes, current_etag = result
 
     # Check If-Match precondition
-    if if_match and if_match.strip('"') != current_etag:
-        raise PreconditionFailedError()
+    check_precondition(if_match, current_etag)
 
     doc = orjson.loads(doc_bytes)
 
@@ -1095,10 +1043,7 @@ async def put_submodel_element(
         semantic_id=semantic_id,
     )
 
-    return Response(
-        status_code=204,
-        headers={"ETag": f'"{etag}"'},
-    )
+    return no_content_response(etag)
 
 
 @router.patch(
@@ -1126,10 +1071,7 @@ async def patch_element_value(
 
     This is a convenience endpoint for updating just the value field.
     """
-    try:
-        identifier = decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
+    identifier = decode_identifier(submodel_identifier)
 
     # Get existing submodel
     result = await repo.get_bytes_by_id(identifier)
@@ -1139,8 +1081,7 @@ async def patch_element_value(
     doc_bytes, current_etag = result
 
     # Check If-Match precondition
-    if if_match and if_match.strip('"') != current_etag:
-        raise PreconditionFailedError()
+    check_precondition(if_match, current_etag)
 
     doc = orjson.loads(doc_bytes)
 
@@ -1220,10 +1161,7 @@ async def patch_submodel_element(
 
     Only the provided fields are updated, other fields remain unchanged.
     """
-    try:
-        identifier = decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
+    identifier = decode_identifier(submodel_identifier)
 
     # Get existing submodel
     result = await repo.get_bytes_by_id(identifier)
@@ -1233,8 +1171,7 @@ async def patch_submodel_element(
     doc_bytes, current_etag = result
 
     # Check If-Match precondition
-    if if_match and if_match.strip('"') != current_etag:
-        raise PreconditionFailedError()
+    check_precondition(if_match, current_etag)
 
     doc = orjson.loads(doc_bytes)
 
@@ -1311,10 +1248,7 @@ async def delete_submodel_element(
 
     Removes the element at the given path from the Submodel.
     """
-    try:
-        identifier = decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
+    identifier = decode_identifier(submodel_identifier)
 
     # Get existing submodel
     result = await repo.get_bytes_by_id(identifier)
@@ -1408,10 +1342,7 @@ async def invoke_operation_sync(
     Note: This endpoint is event-based. Downstream connectors (OPC-UA, Modbus, HTTP)
     subscribe to operation invocation events and execute the operation.
     """
-    try:
-        identifier = decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
+    identifier = decode_identifier(submodel_identifier)
 
     # Get submodel
     result = await repo.get_bytes_by_id(identifier)
@@ -1508,10 +1439,7 @@ async def invoke_operation_async(
     Validates input arguments against declared inputVariables, emits an
     OperationInvocationEvent for downstream connectors to execute.
     """
-    try:
-        identifier = decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
+    identifier = decode_identifier(submodel_identifier)
 
     # Get submodel
     result = await repo.get_bytes_by_id(identifier)
@@ -1599,10 +1527,7 @@ async def get_operation_result(
     Returns the current execution state and, if completed, the output arguments.
     Poll this endpoint until executionState is 'completed', 'failed', or 'timeout'.
     """
-    try:
-        decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
+    decode_identifier(submodel_identifier)
 
     # Get invocation record
     invocation = await invocation_repo.get_by_id(handle_id)
@@ -1685,10 +1610,7 @@ async def instantiate_template_endpoint(
         404 Not Found: If the template doesn't exist
         409 Conflict: If a Submodel with new_id already exists
     """
-    try:
-        identifier = decode_id_from_b64url(submodel_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(submodel_identifier)
+    identifier = decode_identifier(submodel_identifier)
 
     # Get template submodel
     result = await repo.get_bytes_by_id(identifier)

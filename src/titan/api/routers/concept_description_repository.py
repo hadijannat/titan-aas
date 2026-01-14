@@ -16,17 +16,21 @@ import orjson
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from titan.api.deps import (
+    check_not_modified,
+    check_precondition,
+    decode_identifier,
+    json_response_with_etag,
+)
 from titan.api.errors import (
     ConflictError,
-    InvalidBase64UrlError,
     NotFoundError,
-    PreconditionFailedError,
 )
 from titan.api.pagination import DEFAULT_LIMIT, CursorParam, LimitParam
 from titan.api.responses import json_bytes_response
 from titan.cache import RedisCache, get_redis
 from titan.core.canonicalize import canonical_bytes
-from titan.core.ids import InvalidBase64Url, decode_id_from_b64url, encode_id_to_b64url
+from titan.core.ids import encode_id_to_b64url
 from titan.core.model import ConceptDescription
 from titan.events import EventType, get_event_bus, publish_concept_description_event
 from titan.persistence.db import get_session
@@ -97,16 +101,10 @@ async def get_all_concept_descriptions(
     decoded_data_spec = None
 
     if is_case_of:
-        try:
-            decoded_is_case_of = decode_id_from_b64url(is_case_of)
-        except InvalidBase64Url:
-            raise InvalidBase64UrlError(is_case_of)
+        decoded_is_case_of = decode_identifier(is_case_of)
 
     if data_spec_ref:
-        try:
-            decoded_data_spec = decode_id_from_b64url(data_spec_ref)
-        except InvalidBase64Url:
-            raise InvalidBase64UrlError(data_spec_ref)
+        decoded_data_spec = decode_identifier(data_spec_ref)
 
     if not any([id_short, decoded_is_case_of, decoded_data_spec]):
         paged_result = await repo.list_paged_zero_copy(
@@ -203,21 +201,15 @@ async def get_concept_description_by_id(
     cache: RedisCache = Depends(get_cache),
 ) -> Response:
     """Get a specific ConceptDescription by identifier."""
-    try:
-        identifier = decode_id_from_b64url(cd_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(cd_identifier)
+    identifier = decode_identifier(cd_identifier)
 
     cached = await cache.get_concept_description(cd_identifier)
     if cached:
         doc_bytes, etag = cached
-        if if_none_match and if_none_match.strip('"') == etag:
-            return Response(status_code=304)
-        return Response(
-            content=doc_bytes,
-            media_type="application/json",
-            headers={"ETag": f'"{etag}"'},
-        )
+        not_modified = check_not_modified(if_none_match, etag)
+        if not_modified:
+            return not_modified
+        return json_response_with_etag(doc_bytes, etag)
 
     result = await repo.get_bytes_by_id(identifier)
     if result is None:
@@ -226,14 +218,11 @@ async def get_concept_description_by_id(
     doc_bytes, etag = result
     await cache.set_concept_description(cd_identifier, doc_bytes, etag)
 
-    if if_none_match and if_none_match.strip('"') == etag:
-        return Response(status_code=304)
+    not_modified = check_not_modified(if_none_match, etag)
+    if not_modified:
+        return not_modified
 
-    return Response(
-        content=doc_bytes,
-        media_type="application/json",
-        headers={"ETag": f'"{etag}"'},
-    )
+    return json_response_with_etag(doc_bytes, etag)
 
 
 @router.put(
@@ -256,17 +245,13 @@ async def put_concept_description_by_id(
     session: AsyncSession = Depends(get_session),
 ) -> Response:
     """Update an existing ConceptDescription."""
-    try:
-        identifier = decode_id_from_b64url(cd_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(cd_identifier)
+    identifier = decode_identifier(cd_identifier)
 
     if if_match:
         current = await repo.get_bytes_by_id(identifier)
         if current:
             _, current_etag = current
-            if if_match.strip('"') != current_etag:
-                raise PreconditionFailedError()
+            check_precondition(if_match, current_etag)
 
     result = await repo.update(identifier, concept_description)
     if result is None:
@@ -286,11 +271,7 @@ async def put_concept_description_by_id(
         etag=etag,
     )
 
-    return Response(
-        content=doc_bytes,
-        media_type="application/json",
-        headers={"ETag": f'"{etag}"'},
-    )
+    return json_response_with_etag(doc_bytes, etag)
 
 
 @router.delete(
@@ -312,10 +293,7 @@ async def delete_concept_description_by_id(
     session: AsyncSession = Depends(get_session),
 ) -> Response:
     """Delete a ConceptDescription."""
-    try:
-        identifier = decode_id_from_b64url(cd_identifier)
-    except InvalidBase64Url:
-        raise InvalidBase64UrlError(cd_identifier)
+    identifier = decode_identifier(cd_identifier)
 
     deleted = await repo.delete(identifier)
     if not deleted:

@@ -58,19 +58,19 @@ class RedisCache:
         self.ttl = ttl
 
     # -------------------------------------------------------------------------
-    # AAS caching
+    # Generic cache pair operations (reduce boilerplate)
     # -------------------------------------------------------------------------
 
-    async def get_aas(self, identifier_b64: str) -> tuple[bytes, str] | None:
-        """Get cached AAS bytes and ETag.
+    async def _get_pair(self, key_bytes: str, key_etag: str) -> tuple[bytes, str] | None:
+        """Get cached bytes and ETag pair using pipeline.
+
+        Args:
+            key_bytes: Redis key for document bytes
+            key_etag: Redis key for ETag
 
         Returns:
             Tuple of (doc_bytes, etag) or None if not cached.
         """
-        key_bytes = CacheKeys.aas_bytes(identifier_b64)
-        key_etag = CacheKeys.aas_etag(identifier_b64)
-
-        # Use pipeline for atomic read
         async with self.client.pipeline() as pipe:
             pipe.get(key_bytes)
             pipe.get(key_etag)
@@ -82,15 +82,45 @@ class RedisCache:
 
         return (doc_bytes, etag.decode() if isinstance(etag, bytes) else etag)
 
-    async def set_aas(self, identifier_b64: str, doc_bytes: bytes, etag: str) -> None:
-        """Cache AAS bytes and ETag."""
-        key_bytes = CacheKeys.aas_bytes(identifier_b64)
-        key_etag = CacheKeys.aas_etag(identifier_b64)
+    async def _set_pair(
+        self, key_bytes: str, key_etag: str, doc_bytes: bytes, etag: str
+    ) -> None:
+        """Set cached bytes and ETag pair using pipeline.
 
+        Args:
+            key_bytes: Redis key for document bytes
+            key_etag: Redis key for ETag
+            doc_bytes: Document bytes to cache
+            etag: ETag string to cache
+        """
         async with self.client.pipeline() as pipe:
             pipe.setex(key_bytes, self.ttl, doc_bytes)
             pipe.setex(key_etag, self.ttl, etag)
             await pipe.execute()
+
+    # -------------------------------------------------------------------------
+    # AAS caching
+    # -------------------------------------------------------------------------
+
+    async def get_aas(self, identifier_b64: str) -> tuple[bytes, str] | None:
+        """Get cached AAS bytes and ETag.
+
+        Returns:
+            Tuple of (doc_bytes, etag) or None if not cached.
+        """
+        return await self._get_pair(
+            CacheKeys.aas_bytes(identifier_b64),
+            CacheKeys.aas_etag(identifier_b64),
+        )
+
+    async def set_aas(self, identifier_b64: str, doc_bytes: bytes, etag: str) -> None:
+        """Cache AAS bytes and ETag."""
+        await self._set_pair(
+            CacheKeys.aas_bytes(identifier_b64),
+            CacheKeys.aas_etag(identifier_b64),
+            doc_bytes,
+            etag,
+        )
 
     async def delete_aas(self, identifier_b64: str) -> None:
         """Delete cached AAS."""
@@ -104,29 +134,19 @@ class RedisCache:
 
     async def get_submodel(self, identifier_b64: str) -> tuple[bytes, str] | None:
         """Get cached Submodel bytes and ETag."""
-        key_bytes = CacheKeys.submodel_bytes(identifier_b64)
-        key_etag = CacheKeys.submodel_etag(identifier_b64)
-
-        async with self.client.pipeline() as pipe:
-            pipe.get(key_bytes)
-            pipe.get(key_etag)
-            results = await pipe.execute()
-
-        doc_bytes, etag = results
-        if doc_bytes is None or etag is None:
-            return None
-
-        return (doc_bytes, etag.decode() if isinstance(etag, bytes) else etag)
+        return await self._get_pair(
+            CacheKeys.submodel_bytes(identifier_b64),
+            CacheKeys.submodel_etag(identifier_b64),
+        )
 
     async def set_submodel(self, identifier_b64: str, doc_bytes: bytes, etag: str) -> None:
         """Cache Submodel bytes and ETag."""
-        key_bytes = CacheKeys.submodel_bytes(identifier_b64)
-        key_etag = CacheKeys.submodel_etag(identifier_b64)
-
-        async with self.client.pipeline() as pipe:
-            pipe.setex(key_bytes, self.ttl, doc_bytes)
-            pipe.setex(key_etag, self.ttl, etag)
-            await pipe.execute()
+        await self._set_pair(
+            CacheKeys.submodel_bytes(identifier_b64),
+            CacheKeys.submodel_etag(identifier_b64),
+            doc_bytes,
+            etag,
+        )
 
     async def delete_submodel(self, identifier_b64: str) -> None:
         """Delete cached Submodel."""
@@ -140,31 +160,21 @@ class RedisCache:
 
     async def get_concept_description(self, identifier_b64: str) -> tuple[bytes, str] | None:
         """Get cached ConceptDescription bytes and ETag."""
-        key_bytes = CacheKeys.concept_description_bytes(identifier_b64)
-        key_etag = CacheKeys.concept_description_etag(identifier_b64)
-
-        async with self.client.pipeline() as pipe:
-            pipe.get(key_bytes)
-            pipe.get(key_etag)
-            results = await pipe.execute()
-
-        doc_bytes, etag = results
-        if doc_bytes is None or etag is None:
-            return None
-
-        return (doc_bytes, etag.decode() if isinstance(etag, bytes) else etag)
+        return await self._get_pair(
+            CacheKeys.concept_description_bytes(identifier_b64),
+            CacheKeys.concept_description_etag(identifier_b64),
+        )
 
     async def set_concept_description(
         self, identifier_b64: str, doc_bytes: bytes, etag: str
     ) -> None:
         """Cache ConceptDescription bytes and ETag."""
-        key_bytes = CacheKeys.concept_description_bytes(identifier_b64)
-        key_etag = CacheKeys.concept_description_etag(identifier_b64)
-
-        async with self.client.pipeline() as pipe:
-            pipe.setex(key_bytes, self.ttl, doc_bytes)
-            pipe.setex(key_etag, self.ttl, etag)
-            await pipe.execute()
+        await self._set_pair(
+            CacheKeys.concept_description_bytes(identifier_b64),
+            CacheKeys.concept_description_etag(identifier_b64),
+            doc_bytes,
+            etag,
+        )
 
     async def delete_concept_description(self, identifier_b64: str) -> None:
         """Delete cached ConceptDescription."""
