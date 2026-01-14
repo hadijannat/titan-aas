@@ -12,7 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Literal
+from typing import Any, Literal
 from uuid import uuid4
 
 
@@ -154,9 +154,9 @@ class OperationInvocationEvent:
     submodel_id_b64: str
     id_short_path: str
     execution_state: OperationExecutionState
-    input_arguments: list[dict] | None = None
-    output_arguments: list[dict] | None = None
-    inoutput_arguments: list[dict] | None = None
+    input_arguments: list[dict[str, Any]] | None = None
+    output_arguments: list[dict[str, Any]] | None = None
+    inoutput_arguments: list[dict[str, Any]] | None = None
     error_message: str | None = None
     error_code: str | None = None
     correlation_id: str | None = None  # For mapping to OPC-UA/Modbus operations

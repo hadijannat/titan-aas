@@ -15,6 +15,8 @@ Example:
 
 from __future__ import annotations
 
+from typing import Any
+
 from titan.events.bus import EventBus
 from titan.events.schemas import (
     AasEvent,
@@ -220,8 +222,8 @@ async def publish_operation_invoked(
     submodel_id: str,
     submodel_id_b64: str,
     id_short_path: str,
-    input_arguments: list[dict] | None = None,
-    inoutput_arguments: list[dict] | None = None,
+    input_arguments: list[dict[str, Any]] | None = None,
+    inoutput_arguments: list[dict[str, Any]] | None = None,
     correlation_id: str | None = None,
     timeout_ms: int | None = None,
     requested_by: str | None = None,
@@ -269,8 +271,8 @@ async def publish_operation_completed(
     submodel_id: str,
     submodel_id_b64: str,
     id_short_path: str,
-    output_arguments: list[dict] | None = None,
-    inoutput_arguments: list[dict] | None = None,
+    output_arguments: list[dict[str, Any]] | None = None,
+    inoutput_arguments: list[dict[str, Any]] | None = None,
     correlation_id: str | None = None,
 ) -> OperationInvocationEvent:
     """Publish an operation completed event.

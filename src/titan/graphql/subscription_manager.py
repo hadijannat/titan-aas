@@ -97,7 +97,7 @@ class Subscription:
 
     id: str
     filter: SubscriptionFilter
-    queue: asyncio.Queue[AnyEvent]
+    queue: asyncio.Queue[AnyEvent | None]
 
 
 class SubscriptionManager:
@@ -162,7 +162,7 @@ class SubscriptionManager:
             for sub in self._subscriptions.values():
                 # Put None to signal end of stream
                 try:
-                    sub.queue.put_nowait(None)  # type: ignore
+                    sub.queue.put_nowait(None)
                 except asyncio.QueueFull:
                     pass
 
@@ -209,7 +209,7 @@ class SubscriptionManager:
             The new subscription
         """
         sub_id = str(uuid4())
-        queue: asyncio.Queue[AnyEvent] = asyncio.Queue(maxsize=self._max_queue_size)
+        queue: asyncio.Queue[AnyEvent | None] = asyncio.Queue(maxsize=self._max_queue_size)
         subscription = Subscription(id=sub_id, filter=filter, queue=queue)
 
         async with self._lock:

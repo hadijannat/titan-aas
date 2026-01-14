@@ -198,10 +198,10 @@ class TemplateInstantiator:
         if not path:
             return []
 
-        result = []
+        result: list[tuple[str, int | None]] = []
         parts = path.replace("[", ".[").split(".")
 
-        current_name = None
+        current_name: str | None = None
         for part in parts:
             if not part:
                 continue
