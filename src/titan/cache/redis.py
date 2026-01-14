@@ -82,9 +82,7 @@ class RedisCache:
 
         return (doc_bytes, etag.decode() if isinstance(etag, bytes) else etag)
 
-    async def _set_pair(
-        self, key_bytes: str, key_etag: str, doc_bytes: bytes, etag: str
-    ) -> None:
+    async def _set_pair(self, key_bytes: str, key_etag: str, doc_bytes: bytes, etag: str) -> None:
         """Set cached bytes and ETag pair using pipeline.
 
         Args:

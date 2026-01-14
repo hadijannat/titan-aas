@@ -46,9 +46,7 @@ def decoded_aas_id(
 
 
 def decoded_submodel_id(
-    submodel_identifier: Annotated[
-        str, Path(description="Base64URL encoded Submodel identifier")
-    ],
+    submodel_identifier: Annotated[str, Path(description="Base64URL encoded Submodel identifier")],
 ) -> str:
     """FastAPI dependency to decode Submodel identifier from path."""
     return decode_identifier(submodel_identifier)
