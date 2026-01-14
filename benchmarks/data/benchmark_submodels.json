@@ -1,0 +1,1974 @@
+[
+  {
+    "modelType": "Submodel",
+    "id": "urn:example:submodel:benchmark:sm-0000-2004d44a",
+    "idShort": "BenchmarkSubmodel_0000",
+    "description": [
+      {
+        "language": "en",
+        "text": "Benchmark Submodel #0 (complex complexity)"
+      }
+    ],
+    "submodelElements": [
+      {
+        "modelType": "Property",
+        "idShort": "Temperature_0",
+        "valueType": "xs:double",
+        "value": "384.32",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Temperature #0"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Pressure_1",
+        "valueType": "xs:boolean",
+        "value": "false",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Pressure #1"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Humidity_2",
+        "valueType": "xs:string",
+        "value": "value_ec01cc",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Humidity #2"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Speed_3",
+        "valueType": "xs:boolean",
+        "value": "true",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Speed #3"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Position_4",
+        "valueType": "xs:double",
+        "value": "587.16",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Position #4"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Status_5",
+        "valueType": "xs:boolean",
+        "value": "true",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Status #5"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Counter_6",
+        "valueType": "xs:double",
+        "value": "523.77",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Counter #6"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Voltage_7",
+        "valueType": "xs:double",
+        "value": "502.89",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Voltage #7"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Current_8",
+        "valueType": "xs:boolean",
+        "value": "false",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Current #8"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Power_9",
+        "valueType": "xs:string",
+        "value": "value_5e05c6",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Power #9"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Frequency_10",
+        "valueType": "xs:int",
+        "value": "7323",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Frequency #10"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Level_11",
+        "valueType": "xs:string",
+        "value": "value_b0e12f",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Level #11"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Flow_12",
+        "valueType": "xs:boolean",
+        "value": "true",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Flow #12"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Weight_13",
+        "valueType": "xs:double",
+        "value": "120.11",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Weight #13"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Timestamp_14",
+        "valueType": "xs:int",
+        "value": "3771",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Timestamp #14"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Temperature_15",
+        "valueType": "xs:double",
+        "value": "118.6",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Temperature #15"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Pressure_16",
+        "valueType": "xs:double",
+        "value": "562.58",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Pressure #16"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Humidity_17",
+        "valueType": "xs:string",
+        "value": "value_3a8d70",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Humidity #17"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Speed_18",
+        "valueType": "xs:int",
+        "value": "3001",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Speed #18"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Position_19",
+        "valueType": "xs:double",
+        "value": "490.43",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Position #19"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Status_20",
+        "valueType": "xs:double",
+        "value": "426.82",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Status #20"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Counter_21",
+        "valueType": "xs:string",
+        "value": "value_3da6f6",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Counter #21"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Voltage_22",
+        "valueType": "xs:string",
+        "value": "value_3d5500",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Voltage #22"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Current_23",
+        "valueType": "xs:double",
+        "value": "718.2",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Current #23"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Power_24",
+        "valueType": "xs:string",
+        "value": "value_776f00",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Power #24"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Frequency_25",
+        "valueType": "xs:string",
+        "value": "value_8ba35e",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Frequency #25"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Level_26",
+        "valueType": "xs:boolean",
+        "value": "false",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Level #26"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Flow_27",
+        "valueType": "xs:string",
+        "value": "value_4d55bb",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Flow #27"
+          }
+        ]
+      },
+      {
+        "modelType": "SubmodelElementCollection",
+        "idShort": "Configuration",
+        "value": [
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_0",
+            "valueType": "xs:int",
+            "value": "5751",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #0"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_1",
+            "valueType": "xs:boolean",
+            "value": "false",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #1"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_2",
+            "valueType": "xs:string",
+            "value": "value_b467ce",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #2"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_3",
+            "valueType": "xs:string",
+            "value": "value_e8f00d",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #3"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_4",
+            "valueType": "xs:double",
+            "value": "656.9",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "modelType": "SubmodelElementCollection",
+        "idShort": "Metadata",
+        "value": [
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_0",
+            "valueType": "xs:int",
+            "value": "1935",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #0"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_1",
+            "valueType": "xs:string",
+            "value": "value_7b5c27",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #1"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_2",
+            "valueType": "xs:int",
+            "value": "1894",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #2"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "modelType": "SubmodelElementCollection",
+        "idShort": "Measurements",
+        "value": [
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_0",
+            "valueType": "xs:int",
+            "value": "148",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #0"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_1",
+            "valueType": "xs:boolean",
+            "value": "false",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #1"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_2",
+            "valueType": "xs:double",
+            "value": "706.8",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #2"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_3",
+            "valueType": "xs:int",
+            "value": "3970",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #3"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_4",
+            "valueType": "xs:int",
+            "value": "77",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #4"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "modelType": "Submodel",
+    "id": "urn:example:submodel:benchmark:sm-0001-ae9bc38b",
+    "idShort": "BenchmarkSubmodel_0001",
+    "description": [
+      {
+        "language": "en",
+        "text": "Benchmark Submodel #1 (simple complexity)"
+      }
+    ],
+    "submodelElements": [
+      {
+        "modelType": "Property",
+        "idShort": "Temperature_0",
+        "valueType": "xs:boolean",
+        "value": "false",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Temperature #0"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Pressure_1",
+        "valueType": "xs:string",
+        "value": "value_b70d00",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Pressure #1"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Humidity_2",
+        "valueType": "xs:boolean",
+        "value": "true",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Humidity #2"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Speed_3",
+        "valueType": "xs:boolean",
+        "value": "false",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Speed #3"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Position_4",
+        "valueType": "xs:boolean",
+        "value": "true",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Position #4"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "modelType": "Submodel",
+    "id": "urn:example:submodel:benchmark:sm-0002-38707429",
+    "idShort": "BenchmarkSubmodel_0002",
+    "description": [
+      {
+        "language": "en",
+        "text": "Benchmark Submodel #2 (simple complexity)"
+      }
+    ],
+    "submodelElements": [
+      {
+        "modelType": "Property",
+        "idShort": "Temperature_0",
+        "valueType": "xs:boolean",
+        "value": "false",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Temperature #0"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Pressure_1",
+        "valueType": "xs:string",
+        "value": "value_9cb0a5",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Pressure #1"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Humidity_2",
+        "valueType": "xs:boolean",
+        "value": "false",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Humidity #2"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Speed_3",
+        "valueType": "xs:double",
+        "value": "232.81",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Speed #3"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Position_4",
+        "valueType": "xs:int",
+        "value": "1503",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Position #4"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "modelType": "Submodel",
+    "id": "urn:example:submodel:benchmark:sm-0003-783b3829",
+    "idShort": "BenchmarkSubmodel_0003",
+    "description": [
+      {
+        "language": "en",
+        "text": "Benchmark Submodel #3 (medium complexity)"
+      }
+    ],
+    "submodelElements": [
+      {
+        "modelType": "Property",
+        "idShort": "Temperature_0",
+        "valueType": "xs:boolean",
+        "value": "true",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Temperature #0"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Pressure_1",
+        "valueType": "xs:int",
+        "value": "7328",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Pressure #1"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Humidity_2",
+        "valueType": "xs:string",
+        "value": "value_e057df",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Humidity #2"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Speed_3",
+        "valueType": "xs:double",
+        "value": "591.53",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Speed #3"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Position_4",
+        "valueType": "xs:string",
+        "value": "value_9184aa",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Position #4"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Status_5",
+        "valueType": "xs:boolean",
+        "value": "false",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Status #5"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Counter_6",
+        "valueType": "xs:string",
+        "value": "value_0bda24",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Counter #6"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Voltage_7",
+        "valueType": "xs:string",
+        "value": "value_c66f0b",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Voltage #7"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Current_8",
+        "valueType": "xs:boolean",
+        "value": "false",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Current #8"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Power_9",
+        "valueType": "xs:double",
+        "value": "42.69",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Power #9"
+          }
+        ]
+      },
+      {
+        "modelType": "SubmodelElementCollection",
+        "idShort": "Configuration",
+        "value": [
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_0",
+            "valueType": "xs:double",
+            "value": "210.11",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #0"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_1",
+            "valueType": "xs:int",
+            "value": "3345",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #1"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_2",
+            "valueType": "xs:string",
+            "value": "value_4b3c48",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #2"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "modelType": "Submodel",
+    "id": "urn:example:submodel:benchmark:sm-0004-3471caa8",
+    "idShort": "BenchmarkSubmodel_0004",
+    "description": [
+      {
+        "language": "en",
+        "text": "Benchmark Submodel #4 (complex complexity)"
+      }
+    ],
+    "submodelElements": [
+      {
+        "modelType": "Property",
+        "idShort": "Temperature_0",
+        "valueType": "xs:boolean",
+        "value": "true",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Temperature #0"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Pressure_1",
+        "valueType": "xs:string",
+        "value": "value_995bc9",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Pressure #1"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Humidity_2",
+        "valueType": "xs:string",
+        "value": "value_111406",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Humidity #2"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Speed_3",
+        "valueType": "xs:string",
+        "value": "value_c92aba",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Speed #3"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Position_4",
+        "valueType": "xs:boolean",
+        "value": "false",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Position #4"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Status_5",
+        "valueType": "xs:double",
+        "value": "538.59",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Status #5"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Counter_6",
+        "valueType": "xs:double",
+        "value": "632.26",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Counter #6"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Voltage_7",
+        "valueType": "xs:string",
+        "value": "value_614e0f",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Voltage #7"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Current_8",
+        "valueType": "xs:string",
+        "value": "value_2bb821",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Current #8"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Power_9",
+        "valueType": "xs:int",
+        "value": "1635",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Power #9"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Frequency_10",
+        "valueType": "xs:double",
+        "value": "177.79",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Frequency #10"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Level_11",
+        "valueType": "xs:double",
+        "value": "721.59",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Level #11"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Flow_12",
+        "valueType": "xs:double",
+        "value": "949.7",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Flow #12"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Weight_13",
+        "valueType": "xs:int",
+        "value": "670",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Weight #13"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Timestamp_14",
+        "valueType": "xs:boolean",
+        "value": "false",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Timestamp #14"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Temperature_15",
+        "valueType": "xs:int",
+        "value": "4879",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Temperature #15"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Pressure_16",
+        "valueType": "xs:double",
+        "value": "471.84",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Pressure #16"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Humidity_17",
+        "valueType": "xs:string",
+        "value": "value_c4ee89",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Humidity #17"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Speed_18",
+        "valueType": "xs:double",
+        "value": "927.23",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Speed #18"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Position_19",
+        "valueType": "xs:boolean",
+        "value": "false",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Position #19"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Status_20",
+        "valueType": "xs:string",
+        "value": "value_ec0df2",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Status #20"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Counter_21",
+        "valueType": "xs:string",
+        "value": "value_ae1abb",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Counter #21"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Voltage_22",
+        "valueType": "xs:boolean",
+        "value": "false",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Voltage #22"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Current_23",
+        "valueType": "xs:int",
+        "value": "689",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Current #23"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Power_24",
+        "valueType": "xs:string",
+        "value": "value_250cd0",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Power #24"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Frequency_25",
+        "valueType": "xs:boolean",
+        "value": "true",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Frequency #25"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Level_26",
+        "valueType": "xs:string",
+        "value": "value_2d0dcf",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Level #26"
+          }
+        ]
+      },
+      {
+        "modelType": "SubmodelElementCollection",
+        "idShort": "Configuration",
+        "value": [
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_0",
+            "valueType": "xs:double",
+            "value": "707.59",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #0"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_1",
+            "valueType": "xs:boolean",
+            "value": "true",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #1"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_2",
+            "valueType": "xs:string",
+            "value": "value_d9a9ac",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #2"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_3",
+            "valueType": "xs:string",
+            "value": "value_eea77d",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #3"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "modelType": "SubmodelElementCollection",
+        "idShort": "Metadata",
+        "value": [
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_0",
+            "valueType": "xs:string",
+            "value": "value_26eb90",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #0"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_1",
+            "valueType": "xs:string",
+            "value": "value_fe7ad5",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #1"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_2",
+            "valueType": "xs:string",
+            "value": "value_151c6f",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #2"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "modelType": "SubmodelElementCollection",
+        "idShort": "Measurements",
+        "value": [
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_0",
+            "valueType": "xs:string",
+            "value": "value_635a20",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #0"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_1",
+            "valueType": "xs:int",
+            "value": "6197",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #1"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_2",
+            "valueType": "xs:boolean",
+            "value": "true",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #2"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_3",
+            "valueType": "xs:string",
+            "value": "value_d5f1e4",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #3"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "modelType": "Submodel",
+    "id": "urn:example:submodel:benchmark:sm-0005-d75da3c1",
+    "idShort": "BenchmarkSubmodel_0005",
+    "description": [
+      {
+        "language": "en",
+        "text": "Benchmark Submodel #5 (medium complexity)"
+      }
+    ],
+    "submodelElements": [
+      {
+        "modelType": "Property",
+        "idShort": "Temperature_0",
+        "valueType": "xs:boolean",
+        "value": "false",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Temperature #0"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Pressure_1",
+        "valueType": "xs:string",
+        "value": "value_7c9174",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Pressure #1"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Humidity_2",
+        "valueType": "xs:int",
+        "value": "5484",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Humidity #2"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Speed_3",
+        "valueType": "xs:string",
+        "value": "value_2c3bf8",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Speed #3"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Position_4",
+        "valueType": "xs:double",
+        "value": "945.65",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Position #4"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Status_5",
+        "valueType": "xs:boolean",
+        "value": "true",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Status #5"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Counter_6",
+        "valueType": "xs:int",
+        "value": "7997",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Counter #6"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Voltage_7",
+        "valueType": "xs:string",
+        "value": "value_3d7ed0",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Voltage #7"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Current_8",
+        "valueType": "xs:string",
+        "value": "value_458384",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Current #8"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Power_9",
+        "valueType": "xs:boolean",
+        "value": "false",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Power #9"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Frequency_10",
+        "valueType": "xs:double",
+        "value": "477.62",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Frequency #10"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Level_11",
+        "valueType": "xs:string",
+        "value": "value_397dcd",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Level #11"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Flow_12",
+        "valueType": "xs:double",
+        "value": "71.98",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Flow #12"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Weight_13",
+        "valueType": "xs:string",
+        "value": "value_dfbada",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Weight #13"
+          }
+        ]
+      },
+      {
+        "modelType": "SubmodelElementCollection",
+        "idShort": "Configuration",
+        "value": [
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_0",
+            "valueType": "xs:string",
+            "value": "value_a29729",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #0"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_1",
+            "valueType": "xs:boolean",
+            "value": "true",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #1"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_2",
+            "valueType": "xs:string",
+            "value": "value_e369c3",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #2"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "modelType": "SubmodelElementCollection",
+        "idShort": "Metadata",
+        "value": [
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_0",
+            "valueType": "xs:double",
+            "value": "457.73",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #0"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_1",
+            "valueType": "xs:double",
+            "value": "103.87",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #1"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_2",
+            "valueType": "xs:boolean",
+            "value": "true",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #2"
+              }
+            ]
+          },
+          {
+            "modelType": "Property",
+            "idShort": "NestedProp_3",
+            "valueType": "xs:string",
+            "value": "value_de7cab",
+            "description": [
+              {
+                "language": "en",
+                "text": "Property NestedProp #3"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "modelType": "Submodel",
+    "id": "urn:example:submodel:benchmark:sm-0006-3edbec17",
+    "idShort": "BenchmarkSubmodel_0006",
+    "description": [
+      {
+        "language": "en",
+        "text": "Benchmark Submodel #6 (medium complexity)"
+      }
+    ],
+    "submodelElements": [
+      {
+        "modelType": "Property",
+        "idShort": "Temperature_0",
+        "valueType": "xs:int",
+        "value": "4164",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Temperature #0"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Pressure_1",
+        "valueType": "xs:double",
+        "value": "620.73",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Pressure #1"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Humidity_2",
+        "valueType": "xs:double",
+        "value": "679.97",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Humidity #2"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Speed_3",
+        "valueType": "xs:boolean",
+        "value": "false",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Speed #3"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Position_4",
+        "valueType": "xs:string",
+        "value": "value_c87a46",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Position #4"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Status_5",
+        "valueType": "xs:boolean",
+        "value": "true",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Status #5"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Counter_6",
+        "valueType": "xs:int",
+        "value": "8090",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Counter #6"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Voltage_7",
+        "valueType": "xs:int",
+        "value": "8425",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Voltage #7"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "modelType": "Submodel",
+    "id": "urn:example:submodel:benchmark:sm-0007-101b88e9",
+    "idShort": "BenchmarkSubmodel_0007",
+    "description": [
+      {
+        "language": "en",
+        "text": "Benchmark Submodel #7 (simple complexity)"
+      }
+    ],
+    "submodelElements": [
+      {
+        "modelType": "Property",
+        "idShort": "Temperature_0",
+        "valueType": "xs:int",
+        "value": "2257",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Temperature #0"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Pressure_1",
+        "valueType": "xs:string",
+        "value": "value_ede648",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Pressure #1"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Humidity_2",
+        "valueType": "xs:double",
+        "value": "733.05",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Humidity #2"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Speed_3",
+        "valueType": "xs:string",
+        "value": "value_6d6454",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Speed #3"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "modelType": "Submodel",
+    "id": "urn:example:submodel:benchmark:sm-0008-bd66cb52",
+    "idShort": "BenchmarkSubmodel_0008",
+    "description": [
+      {
+        "language": "en",
+        "text": "Benchmark Submodel #8 (simple complexity)"
+      }
+    ],
+    "submodelElements": [
+      {
+        "modelType": "Property",
+        "idShort": "Temperature_0",
+        "valueType": "xs:boolean",
+        "value": "false",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Temperature #0"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Pressure_1",
+        "valueType": "xs:string",
+        "value": "value_e3cc41",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Pressure #1"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Humidity_2",
+        "valueType": "xs:string",
+        "value": "value_0672a6",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Humidity #2"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Speed_3",
+        "valueType": "xs:boolean",
+        "value": "true",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Speed #3"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Position_4",
+        "valueType": "xs:double",
+        "value": "944.12",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Position #4"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "modelType": "Submodel",
+    "id": "urn:example:submodel:benchmark:sm-0009-512551de",
+    "idShort": "BenchmarkSubmodel_0009",
+    "description": [
+      {
+        "language": "en",
+        "text": "Benchmark Submodel #9 (medium complexity)"
+      }
+    ],
+    "submodelElements": [
+      {
+        "modelType": "Property",
+        "idShort": "Temperature_0",
+        "valueType": "xs:double",
+        "value": "785.45",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Temperature #0"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Pressure_1",
+        "valueType": "xs:boolean",
+        "value": "true",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Pressure #1"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Humidity_2",
+        "valueType": "xs:string",
+        "value": "value_a8c6c3",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Humidity #2"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Speed_3",
+        "valueType": "xs:int",
+        "value": "1825",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Speed #3"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Position_4",
+        "valueType": "xs:int",
+        "value": "1495",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Position #4"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Status_5",
+        "valueType": "xs:boolean",
+        "value": "true",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Status #5"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Counter_6",
+        "valueType": "xs:string",
+        "value": "value_4d7084",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Counter #6"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Voltage_7",
+        "valueType": "xs:int",
+        "value": "6102",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Voltage #7"
+          }
+        ]
+      },
+      {
+        "modelType": "Property",
+        "idShort": "Current_8",
+        "valueType": "xs:boolean",
+        "value": "true",
+        "description": [
+          {
+            "language": "en",
+            "text": "Property Current #8"
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,127 @@
+# Docker Compose for Titan-AAS vs BaSyx Python SDK Benchmark
+# Side-by-side deployment for fair performance comparison
+#
+# Usage:
+#   docker compose -f benchmarks/docker-compose.benchmark.yml up -d
+#   python benchmarks/functional_tests.py
+#   python benchmarks/compare_basyx.py
+
+services:
+  # =============================================================================
+  # Titan-AAS Stack
+  # =============================================================================
+  titan-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: titan
+      POSTGRES_PASSWORD: titan
+      POSTGRES_DB: titan
+    volumes:
+      - titan-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U titan -d titan"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - benchmark-net
+
+  titan-redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - titan-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - benchmark-net
+
+  titan-aas:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      TITAN_ENV: benchmark
+      TITAN_HOST: "0.0.0.0"
+      TITAN_PORT: "8080"
+      DATABASE_URL: postgresql+asyncpg://titan:titan@titan-postgres:5432/titan
+      REDIS_URL: redis://titan-redis:6379/0
+      # Disable auth for fair comparison (BaSyx doesn't have auth by default)
+      ALLOW_ANONYMOUS_ADMIN: "true"
+      # Disable rate limiting for benchmark
+      ENABLE_RATE_LIMITING: "false"
+      # Enable metrics for monitoring
+      ENABLE_METRICS: "true"
+      ENABLE_TRACING: "false"
+      LOG_LEVEL: WARNING
+    depends_on:
+      titan-postgres:
+        condition: service_healthy
+      titan-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - benchmark-net
+
+  # =============================================================================
+  # BaSyx Python SDK Stack
+  # =============================================================================
+  basyx-aas-server:
+    image: python:3.11-slim
+    working_dir: /app
+    command: >
+      bash -c "
+        pip install --quiet basyx-python-sdk[http] &&
+        python -c '
+        from basyx.aas import model
+        from basyx.aas.adapter import json as aas_json
+        from basyx.aas.backend import local_file
+        import os
+
+        # Create storage directory
+        os.makedirs(\"/data/basyx\", exist_ok=True)
+
+        # Create the backend
+        object_store = local_file.LocalFileObjectStore(\"/data/basyx\")
+
+        # Start HTTP server
+        from basyx.aas.adapter.http import WSGIApp
+        from wsgiref.simple_server import make_server
+
+        app = WSGIApp(object_store)
+        print(\"Starting BaSyx Python SDK server on port 8081...\")
+        server = make_server(\"0.0.0.0\", 8081, app)
+        server.serve_forever()
+        '
+      "
+    ports:
+      - "8081:8081"
+    volumes:
+      - basyx-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8081/shells')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks:
+      - benchmark-net
+
+volumes:
+  titan-pgdata:
+  titan-redis-data:
+  basyx-data:
+
+networks:
+  benchmark-net:
+    driver: bridge

@@ -1,0 +1,162 @@
+[
+  {
+    "modelType": "AssetAdministrationShell",
+    "id": "urn:example:aas:benchmark:shell-0000-e6619f04",
+    "idShort": "BenchmarkShell_0000",
+    "description": [
+      {
+        "language": "en",
+        "text": "Benchmark AAS #0 for performance testing"
+      }
+    ],
+    "assetInformation": {
+      "assetKind": "Instance",
+      "globalAssetId": "urn:example:asset:benchmark:asset-0000-e6619f04",
+      "assetType": "urn:example:types:BenchmarkAsset"
+    }
+  },
+  {
+    "modelType": "AssetAdministrationShell",
+    "id": "urn:example:aas:benchmark:shell-0001-247de220",
+    "idShort": "BenchmarkShell_0001",
+    "description": [
+      {
+        "language": "en",
+        "text": "Benchmark AAS #1 for performance testing"
+      }
+    ],
+    "assetInformation": {
+      "assetKind": "Instance",
+      "globalAssetId": "urn:example:asset:benchmark:asset-0001-247de220",
+      "assetType": "urn:example:types:BenchmarkAsset"
+    }
+  },
+  {
+    "modelType": "AssetAdministrationShell",
+    "id": "urn:example:aas:benchmark:shell-0002-90a088ec",
+    "idShort": "BenchmarkShell_0002",
+    "description": [
+      {
+        "language": "en",
+        "text": "Benchmark AAS #2 for performance testing"
+      }
+    ],
+    "assetInformation": {
+      "assetKind": "Instance",
+      "globalAssetId": "urn:example:asset:benchmark:asset-0002-90a088ec",
+      "assetType": "urn:example:types:BenchmarkAsset"
+    }
+  },
+  {
+    "modelType": "AssetAdministrationShell",
+    "id": "urn:example:aas:benchmark:shell-0003-71e72ba0",
+    "idShort": "BenchmarkShell_0003",
+    "description": [
+      {
+        "language": "en",
+        "text": "Benchmark AAS #3 for performance testing"
+      }
+    ],
+    "assetInformation": {
+      "assetKind": "Instance",
+      "globalAssetId": "urn:example:asset:benchmark:asset-0003-71e72ba0",
+      "assetType": "urn:example:types:BenchmarkAsset"
+    }
+  },
+  {
+    "modelType": "AssetAdministrationShell",
+    "id": "urn:example:aas:benchmark:shell-0004-be24f9f5",
+    "idShort": "BenchmarkShell_0004",
+    "description": [
+      {
+        "language": "en",
+        "text": "Benchmark AAS #4 for performance testing"
+      }
+    ],
+    "assetInformation": {
+      "assetKind": "Instance",
+      "globalAssetId": "urn:example:asset:benchmark:asset-0004-be24f9f5",
+      "assetType": "urn:example:types:BenchmarkAsset"
+    }
+  },
+  {
+    "modelType": "AssetAdministrationShell",
+    "id": "urn:example:aas:benchmark:shell-0005-3fa049dc",
+    "idShort": "BenchmarkShell_0005",
+    "description": [
+      {
+        "language": "en",
+        "text": "Benchmark AAS #5 for performance testing"
+      }
+    ],
+    "assetInformation": {
+      "assetKind": "Instance",
+      "globalAssetId": "urn:example:asset:benchmark:asset-0005-3fa049dc",
+      "assetType": "urn:example:types:BenchmarkAsset"
+    }
+  },
+  {
+    "modelType": "AssetAdministrationShell",
+    "id": "urn:example:aas:benchmark:shell-0006-d4c87de6",
+    "idShort": "BenchmarkShell_0006",
+    "description": [
+      {
+        "language": "en",
+        "text": "Benchmark AAS #6 for performance testing"
+      }
+    ],
+    "assetInformation": {
+      "assetKind": "Instance",
+      "globalAssetId": "urn:example:asset:benchmark:asset-0006-d4c87de6",
+      "assetType": "urn:example:types:BenchmarkAsset"
+    }
+  },
+  {
+    "modelType": "AssetAdministrationShell",
+    "id": "urn:example:aas:benchmark:shell-0007-3f08909e",
+    "idShort": "BenchmarkShell_0007",
+    "description": [
+      {
+        "language": "en",
+        "text": "Benchmark AAS #7 for performance testing"
+      }
+    ],
+    "assetInformation": {
+      "assetKind": "Instance",
+      "globalAssetId": "urn:example:asset:benchmark:asset-0007-3f08909e",
+      "assetType": "urn:example:types:BenchmarkAsset"
+    }
+  },
+  {
+    "modelType": "AssetAdministrationShell",
+    "id": "urn:example:aas:benchmark:shell-0008-b73f2ad7",
+    "idShort": "BenchmarkShell_0008",
+    "description": [
+      {
+        "language": "en",
+        "text": "Benchmark AAS #8 for performance testing"
+      }
+    ],
+    "assetInformation": {
+      "assetKind": "Instance",
+      "globalAssetId": "urn:example:asset:benchmark:asset-0008-b73f2ad7",
+      "assetType": "urn:example:types:BenchmarkAsset"
+    }
+  },
+  {
+    "modelType": "AssetAdministrationShell",
+    "id": "urn:example:aas:benchmark:shell-0009-dacf0acb",
+    "idShort": "BenchmarkShell_0009",
+    "description": [
+      {
+        "language": "en",
+        "text": "Benchmark AAS #9 for performance testing"
+      }
+    ],
+    "assetInformation": {
+      "assetKind": "Instance",
+      "globalAssetId": "urn:example:asset:benchmark:asset-0009-dacf0acb",
+      "assetType": "urn:example:types:BenchmarkAsset"
+    }
+  }
+]
