@@ -53,6 +53,21 @@ class CacheKeys:
         return f"{cls.PREFIX}:cd:{identifier_b64}:etag"
 
     @classmethod
+    def invalidation_pattern(
+        cls, entity_type: EntityType, identifier_b64: str | None = None
+    ) -> str:
+        """Pattern for invalidating all cache keys for an entity.
+
+        Args:
+            entity_type: Cache entity type (aas, sm, cd, aas_desc, sm_desc).
+            identifier_b64: Optional Base64URL identifier. When provided, matches keys
+                for that specific entity. When omitted, matches all keys for the type.
+        """
+        if identifier_b64:
+            return f"{cls.PREFIX}:{entity_type}:{identifier_b64}:*"
+        return f"{cls.PREFIX}:{entity_type}:*"
+
+    @classmethod
     def submodel_element_value(cls, submodel_b64: str, id_short_path: str) -> str:
         """Key for SubmodelElement $value cache.
 

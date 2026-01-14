@@ -33,6 +33,15 @@ build/
 *.log
 AGENTS.md
 Findings.md
+tmp/
+
+# Dashboard artifacts
+dashboard/node_modules/
+dashboard/dist/
+dashboard/playwright-report/
+dashboard/test-results/
+dashboard/.last-run.json
+dashboard/.vite/
 
 # Vendored specs (tracked as submodule)
 # specs/aas-specs-api/

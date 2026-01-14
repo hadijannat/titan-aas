@@ -49,6 +49,7 @@ from titan.api.routers import (
 )
 from titan.api.routers import metrics as metrics_router
 from titan.api.routers import websocket as ws_router
+from titan.api.routers.dashboard import router as dashboard_router
 from titan.api.routers.websocket import WebSocketEventHandler, get_ws_manager
 from titan.api.v1 import create_v1_app
 from titan.api.versioning import ApiVersion
@@ -306,6 +307,9 @@ def create_app() -> FastAPI:
 
     # Admin Dashboard API
     app.include_router(admin.router)
+
+    # Control Center Dashboard API
+    app.include_router(dashboard_router)
 
     # Federation API
     app.include_router(federation.router)
