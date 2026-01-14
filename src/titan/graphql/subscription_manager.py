@@ -233,9 +233,7 @@ class SubscriptionManager:
                 del self._subscriptions[sub_id]
                 logger.debug("Unregistered subscription %s", sub_id)
 
-    async def _iter_events(
-        self, subscription: Subscription
-    ) -> AsyncIterator[AnyEvent]:
+    async def _iter_events(self, subscription: Subscription) -> AsyncIterator[AnyEvent]:
         """Iterate over events for a subscription.
 
         Args:

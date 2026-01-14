@@ -39,9 +39,7 @@ class TestOperationArgument:
 
     def test_create_argument_with_alias(self) -> None:
         """Create argument using camelCase alias."""
-        arg = OperationArgument.model_validate(
-            {"idShort": "speed", "value": 100}
-        )
+        arg = OperationArgument.model_validate({"idShort": "speed", "value": 100})
         assert arg.id_short == "speed"
         assert arg.value == 100
         assert arg.value_type is None
@@ -134,9 +132,7 @@ class TestOperationExecutor:
         executor = OperationExecutor(event_bus)
 
         # Operation with declared input variable
-        operation = make_operation(
-            input_variables=[make_operation_variable("speed")]
-        )
+        operation = make_operation(input_variables=[make_operation_variable("speed")])
         request = InvokeOperationRequest.model_validate(
             {"inputArguments": [{"idShort": "speed", "value": 100}]}
         )
@@ -158,9 +154,7 @@ class TestOperationExecutor:
         executor = OperationExecutor(event_bus)
 
         # Operation with declared input variable
-        operation = make_operation(
-            input_variables=[make_operation_variable("speed")]
-        )
+        operation = make_operation(input_variables=[make_operation_variable("speed")])
         # Request with unknown argument
         request = InvokeOperationRequest.model_validate(
             {"inputArguments": [{"idShort": "unknown_param", "value": 100}]}
@@ -205,9 +199,7 @@ class TestOperationExecutor:
         executor = OperationExecutor(event_bus)
 
         # Operation with declared inoutput variable
-        operation = make_operation(
-            inoutput_variables=[make_operation_variable("counter")]
-        )
+        operation = make_operation(inoutput_variables=[make_operation_variable("counter")])
         request = InvokeOperationRequest.model_validate(
             {"inoutputArguments": [{"idShort": "counter", "value": 5}]}
         )

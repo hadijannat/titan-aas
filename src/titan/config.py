@@ -131,24 +131,14 @@ class Settings(BaseSettings):
     oidc_jwks_cache_seconds: int = Field(default=3600, validation_alias="OIDC_JWKS_CACHE_SECONDS")
 
     # Authentication defaults
-    allow_anonymous_admin: bool = Field(
-        default=False, validation_alias="ALLOW_ANONYMOUS_ADMIN"
-    )
-    public_health_endpoints: bool = Field(
-        default=False, validation_alias="PUBLIC_HEALTH_ENDPOINTS"
-    )
-    public_metrics_endpoint: bool = Field(
-        default=False, validation_alias="PUBLIC_METRICS_ENDPOINT"
-    )
+    allow_anonymous_admin: bool = Field(default=False, validation_alias="ALLOW_ANONYMOUS_ADMIN")
+    public_health_endpoints: bool = Field(default=False, validation_alias="PUBLIC_HEALTH_ENDPOINTS")
+    public_metrics_endpoint: bool = Field(default=False, validation_alias="PUBLIC_METRICS_ENDPOINT")
     public_description_endpoints: bool = Field(
         default=False, validation_alias="PUBLIC_DESCRIPTION_ENDPOINTS"
     )
-    public_jobs_endpoints: bool = Field(
-        default=False, validation_alias="PUBLIC_JOBS_ENDPOINTS"
-    )
-    public_debug_endpoints: bool = Field(
-        default=False, validation_alias="PUBLIC_DEBUG_ENDPOINTS"
-    )
+    public_jobs_endpoints: bool = Field(default=False, validation_alias="PUBLIC_JOBS_ENDPOINTS")
+    public_debug_endpoints: bool = Field(default=False, validation_alias="PUBLIC_DEBUG_ENDPOINTS")
 
     # Observability
     enable_tracing: bool = Field(default=True, validation_alias="ENABLE_TRACING")

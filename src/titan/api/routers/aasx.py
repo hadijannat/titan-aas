@@ -1185,10 +1185,7 @@ async def get_package_concept_descriptions(
         {
             "id": cd.id,
             "idShort": cd.id_short,
-            "isCaseOf": [
-                ref.keys[0].value if ref.keys else None
-                for ref in (cd.is_case_of or [])
-            ],
+            "isCaseOf": [ref.keys[0].value if ref.keys else None for ref in (cd.is_case_of or [])],
         }
         for cd in parsed.concept_descriptions
     ]

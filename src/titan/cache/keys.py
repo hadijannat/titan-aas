@@ -86,4 +86,3 @@ class CacheKeys:
             "identifier_b64": parts[2],
             "variant": parts[3] if len(parts) > 3 else "",
         }
-

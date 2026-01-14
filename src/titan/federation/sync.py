@@ -151,9 +151,7 @@ class FederationSync:
     _etag_store: dict[str, str] = field(default_factory=dict)  # entity_id -> etag
     _local_data_provider: Callable[[str, str], dict | None] | None = None
 
-    def set_local_data_provider(
-        self, provider: Callable[[str, str], dict | None]
-    ) -> None:
+    def set_local_data_provider(self, provider: Callable[[str, str], dict | None]) -> None:
         """Set callback to get local data for conflict detection.
 
         Args:
@@ -434,9 +432,7 @@ class FederationSync:
             logger.error(f"Push to {peer.id} failed: {e}")
             return False
 
-    async def _pull_from_peer(
-        self, client: httpx.AsyncClient, peer: Peer
-    ) -> tuple[int, int]:
+    async def _pull_from_peer(self, client: httpx.AsyncClient, peer: Peer) -> tuple[int, int]:
         """Pull updates from a peer.
 
         Args:
@@ -509,9 +505,7 @@ class FederationSync:
 
                 for item in items:
                     # Check for conflicts
-                    has_conflict = await self._check_and_handle_conflict(
-                        peer, entity_type, item
-                    )
+                    has_conflict = await self._check_and_handle_conflict(peer, entity_type, item)
                     if has_conflict:
                         conflicts += 1
                     else:
@@ -586,8 +580,7 @@ class FederationSync:
 
         self.conflict_manager.add_conflict(conflict)
         logger.info(
-            f"Conflict detected for {entity_type}/{entity_id} "
-            f"between local and peer {peer.id}"
+            f"Conflict detected for {entity_type}/{entity_id} between local and peer {peer.id}"
         )
 
         return True

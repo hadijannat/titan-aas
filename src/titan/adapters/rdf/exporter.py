@@ -527,9 +527,7 @@ class AasRdfExporter:
     def _add_entity_attrs(self, node: BNode | URIRef, element: Any) -> None:
         """Add Entity-specific attributes."""
         if hasattr(element, "entity_type") and element.entity_type:
-            self.graph.add(
-                (node, AasPropertyUri.ENTITY_TYPE, Literal(element.entity_type.value))
-            )
+            self.graph.add((node, AasPropertyUri.ENTITY_TYPE, Literal(element.entity_type.value)))
 
         if hasattr(element, "global_asset_id") and element.global_asset_id:
             self.graph.add(

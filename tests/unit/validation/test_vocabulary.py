@@ -434,11 +434,13 @@ class TestVocabularyValidator:
         registry.register_defaults()
         validator = VocabularyValidator(registry)
 
-        results = validator.validate_many([
-            "0173-1#01-AEW677#001",
-            "0112/2///61360_4_27000#ABF999#001",
-            "https://example.com/custom#id",
-        ])
+        results = validator.validate_many(
+            [
+                "0173-1#01-AEW677#001",
+                "0112/2///61360_4_27000#ABF999#001",
+                "https://example.com/custom#id",
+            ]
+        )
 
         assert len(results) == 3
         assert results[0].vocabulary == "ECLASS"

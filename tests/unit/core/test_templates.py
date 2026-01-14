@@ -123,9 +123,7 @@ class TestTemplateInstantiator:
     def test_instantiate_with_id_short_override(self, template_doc: dict):
         """Test instantiation with idShort override."""
         instantiator = TemplateInstantiator()
-        request = InstantiationRequest(
-            new_id="urn:instance:motor:001", id_short="Motor001"
-        )
+        request = InstantiationRequest(new_id="urn:instance:motor:001", id_short="Motor001")
 
         result = instantiator.instantiate(template_doc, request)
 
@@ -136,9 +134,7 @@ class TestTemplateInstantiator:
     def test_instantiate_preserves_semantic_id(self, template_doc: dict):
         """Test that semanticId is preserved by default."""
         instantiator = TemplateInstantiator()
-        request = InstantiationRequest(
-            new_id="urn:instance:motor:001", copy_semantic_id=True
-        )
+        request = InstantiationRequest(new_id="urn:instance:motor:001", copy_semantic_id=True)
 
         result = instantiator.instantiate(template_doc, request)
 
@@ -150,9 +146,7 @@ class TestTemplateInstantiator:
     def test_instantiate_removes_semantic_id(self, template_doc: dict):
         """Test that semanticId can be removed during instantiation."""
         instantiator = TemplateInstantiator()
-        request = InstantiationRequest(
-            new_id="urn:instance:motor:001", copy_semantic_id=False
-        )
+        request = InstantiationRequest(new_id="urn:instance:motor:001", copy_semantic_id=False)
 
         result = instantiator.instantiate(template_doc, request)
 

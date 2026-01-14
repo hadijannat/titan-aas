@@ -173,9 +173,7 @@ class IecCddValidator(BaseVocabularyValidator):
             error="Not a recognized IEC CDD identifier",
         )
 
-    def _validate_61360_match(
-        self, semantic_id: str, match: re.Match[str]
-    ) -> ValidationResult:
+    def _validate_61360_match(self, semantic_id: str, match: re.Match[str]) -> ValidationResult:
         """Validate IEC 61360-4 specific format.
 
         Args:
@@ -205,9 +203,7 @@ class IecCddValidator(BaseVocabularyValidator):
             details=details,
         )
 
-    def _validate_irdi_match(
-        self, semantic_id: str, match: re.Match[str]
-    ) -> ValidationResult:
+    def _validate_irdi_match(self, semantic_id: str, match: re.Match[str]) -> ValidationResult:
         """Validate general IEC CDD IRDI format.
 
         Args:

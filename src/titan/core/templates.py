@@ -105,9 +105,7 @@ class TemplateInstantiator:
 
         return InstantiationResult(success=True, submodel_doc=instance_doc)
 
-    def _apply_value_overrides(
-        self, doc: dict[str, Any], overrides: dict[str, Any]
-    ) -> None:
+    def _apply_value_overrides(self, doc: dict[str, Any], overrides: dict[str, Any]) -> None:
         """Apply value overrides to submodel elements.
 
         Args:
@@ -121,9 +119,7 @@ class TemplateInstantiator:
         for path, value in overrides.items():
             self._set_value_at_path(elements, path, value)
 
-    def _set_value_at_path(
-        self, elements: list[dict[str, Any]], path: str, value: Any
-    ) -> bool:
+    def _set_value_at_path(self, elements: list[dict[str, Any]], path: str, value: Any) -> bool:
         """Set value at a specific idShortPath.
 
         Supports dot notation for nested elements (e.g., "Collection.Property")

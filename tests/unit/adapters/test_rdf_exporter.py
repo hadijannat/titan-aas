@@ -370,9 +370,7 @@ class TestExportSubmodelElementCollection:
         assert len(property_nodes) == 2
 
         # Count SMC nodes
-        smc_nodes = list(
-            exporter.graph.subjects(RDF.type, AasTypeUri.SUBMODEL_ELEMENT_COLLECTION)
-        )
+        smc_nodes = list(exporter.graph.subjects(RDF.type, AasTypeUri.SUBMODEL_ELEMENT_COLLECTION))
         assert len(smc_nodes) == 1
 
 

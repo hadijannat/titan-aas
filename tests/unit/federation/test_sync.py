@@ -352,12 +352,8 @@ class TestChangeQueue:
     def test_add_and_get_pending(self) -> None:
         """Add changes and retrieve pending."""
         queue = ChangeQueue()
-        change1 = SyncChange(
-            id="c1", entity_type="aas", entity_id="id1", operation="create"
-        )
-        change2 = SyncChange(
-            id="c2", entity_type="submodel", entity_id="id2", operation="update"
-        )
+        change1 = SyncChange(id="c1", entity_type="aas", entity_id="id1", operation="create")
+        change2 = SyncChange(id="c2", entity_type="submodel", entity_id="id2", operation="update")
 
         queue.add(change1)
         queue.add(change2)
@@ -371,9 +367,7 @@ class TestChangeQueue:
 
         # Add old change
         old_time = datetime.now(UTC) - timedelta(hours=1)
-        old_change = SyncChange(
-            id="old", entity_type="aas", entity_id="id1", operation="create"
-        )
+        old_change = SyncChange(id="old", entity_type="aas", entity_id="id1", operation="create")
         old_change = SyncChange(
             id="old",
             entity_type="aas",
@@ -384,9 +378,7 @@ class TestChangeQueue:
         queue.add(old_change)
 
         # Add new change
-        new_change = SyncChange(
-            id="new", entity_type="aas", entity_id="id2", operation="create"
-        )
+        new_change = SyncChange(id="new", entity_type="aas", entity_id="id2", operation="create")
         queue.add(new_change)
 
         # Get changes since 30 minutes ago
@@ -399,12 +391,8 @@ class TestChangeQueue:
     def test_mark_synced(self) -> None:
         """Mark changes as synced removes them."""
         queue = ChangeQueue()
-        change1 = SyncChange(
-            id="c1", entity_type="aas", entity_id="id1", operation="create"
-        )
-        change2 = SyncChange(
-            id="c2", entity_type="aas", entity_id="id2", operation="update"
-        )
+        change1 = SyncChange(id="c1", entity_type="aas", entity_id="id1", operation="create")
+        change2 = SyncChange(id="c2", entity_type="aas", entity_id="id2", operation="update")
 
         queue.add(change1)
         queue.add(change2)
@@ -421,9 +409,7 @@ class TestChangeQueue:
         queue = ChangeQueue()
         for i in range(5):
             queue.add(
-                SyncChange(
-                    id=f"c{i}", entity_type="aas", entity_id=f"id{i}", operation="create"
-                )
+                SyncChange(id=f"c{i}", entity_type="aas", entity_id=f"id{i}", operation="create")
             )
 
         assert len(queue) == 5
@@ -436,9 +422,7 @@ class TestChangeQueue:
 
         for i in range(5):
             queue.add(
-                SyncChange(
-                    id=f"c{i}", entity_type="aas", entity_id=f"id{i}", operation="create"
-                )
+                SyncChange(id=f"c{i}", entity_type="aas", entity_id=f"id{i}", operation="create")
             )
 
         assert len(queue) == 3
@@ -492,9 +476,7 @@ class TestFederationSyncTopology:
     def registry(self) -> PeerRegistry:
         """Create peer registry with peers."""
         registry = PeerRegistry()
-        registry.register(
-            Peer(id="hub", url="http://hub.example.com", status=PeerStatus.ONLINE)
-        )
+        registry.register(Peer(id="hub", url="http://hub.example.com", status=PeerStatus.ONLINE))
         registry.register(
             Peer(id="spoke1", url="http://spoke1.example.com", status=PeerStatus.ONLINE)
         )

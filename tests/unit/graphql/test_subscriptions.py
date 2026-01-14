@@ -198,9 +198,7 @@ class TestSubscriptionManager:
         # Should not raise, just log warning
         assert manager._started is False
 
-    async def test_stop_clears_subscriptions(
-        self, manager: SubscriptionManager
-    ) -> None:
+    async def test_stop_clears_subscriptions(self, manager: SubscriptionManager) -> None:
         """Stop clears all subscriptions."""
         await manager.start()
 
@@ -220,9 +218,7 @@ class TestSubscriptionManager:
     async def test_subscription_count(self, manager: SubscriptionManager) -> None:
         """Subscription count tracks active subscriptions."""
         filter1 = SubscriptionFilter(entity_type="aas", event_types=[EventType.CREATED])
-        filter2 = SubscriptionFilter(
-            entity_type="submodel", event_types=[EventType.UPDATED]
-        )
+        filter2 = SubscriptionFilter(entity_type="submodel", event_types=[EventType.UPDATED])
 
         assert manager.subscription_count == 0
 
@@ -245,9 +241,7 @@ class TestSubscriptionManager:
         await manager.start()
 
         # Create two subscriptions with different filters
-        aas_filter = SubscriptionFilter(
-            entity_type="aas", event_types=[EventType.CREATED]
-        )
+        aas_filter = SubscriptionFilter(entity_type="aas", event_types=[EventType.CREATED])
         submodel_filter = SubscriptionFilter(
             entity_type="submodel", event_types=[EventType.CREATED]
         )
@@ -272,9 +266,7 @@ class TestSubscriptionManager:
         received = aas_sub.queue.get_nowait()
         assert received.identifier == "urn:test:shell:1"
 
-    async def test_queue_overflow_drops_oldest(
-        self, manager: SubscriptionManager
-    ) -> None:
+    async def test_queue_overflow_drops_oldest(self, manager: SubscriptionManager) -> None:
         """When queue is full, oldest event is dropped."""
         # Create manager with small queue
         manager = SubscriptionManager(max_queue_size=2)
@@ -390,9 +382,7 @@ class TestSubscriptionMethods:
         assert len(events_received) == 1
         assert events_received[0].identifier == target_id
 
-    async def test_subscribe_submodel_deleted(
-        self, manager: SubscriptionManager
-    ) -> None:
+    async def test_subscribe_submodel_deleted(self, manager: SubscriptionManager) -> None:
         """submodel_deleted subscription receives deletion events."""
         await manager.start()
 

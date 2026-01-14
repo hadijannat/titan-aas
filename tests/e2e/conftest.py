@@ -14,12 +14,14 @@ import pytest
 DEPLOYMENT_DIR = Path(__file__).parent.parent.parent / "deployment"
 COMPOSE_FILE = DEPLOYMENT_DIR / "docker-compose.yml"
 
+
 # Base URL for the API
 def _get_base_url() -> str:
     return os.environ.get(
         "E2E_BASE_URL",
         f"http://localhost:{os.environ.get('TITAN_PORT', '8080')}",
     )
+
 
 # Timeout for waiting for services
 STARTUP_TIMEOUT = 120  # seconds

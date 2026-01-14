@@ -192,6 +192,7 @@ class TestMqttSubscriberIntegration:
         mqtt_broker_config: MqttConfig,
     ) -> None:
         """Publish element value to MQTT, verify subscriber receives it."""
+
         class DummySession:
             async def __aenter__(self) -> "DummySession":
                 return self
