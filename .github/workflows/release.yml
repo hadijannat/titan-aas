@@ -122,6 +122,7 @@ jobs:
           TITAN_ENV: production
           ENABLE_RATE_LIMITING: "false"
           PUBLIC_HEALTH_ENDPOINTS: "true"
+          ALLOW_ANONYMOUS_ADMIN: "true"
           LOAD_TEST_P99_MS: "300"
           LOAD_TEST_MAX_ERROR_RATE: "0.01"
         run: |

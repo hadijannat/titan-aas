@@ -43,6 +43,16 @@ THRESHOLDS = {
 }
 
 
+def load_auth_headers() -> dict[str, str]:
+    """Return Authorization headers for load tests when a token is provided."""
+    token = os.getenv("LOAD_TEST_TOKEN", "").strip()
+    if not token:
+        return {}
+    if not token.lower().startswith("bearer "):
+        token = f"Bearer {token}"
+    return {"Authorization": token}
+
+
 @events.quitting.add_listener
 def check_thresholds(environment: Any, **kwargs: Any) -> None:
     """Validate performance against 15K RPS targets on test completion.
@@ -148,7 +158,16 @@ def create_submodel_payload(identifier: str | None = None) -> dict[str, Any]:
     }
 
 
-class ReadOnlyUser(HttpUser):
+class AuthenticatedUser(HttpUser):
+    """Base user that optionally applies auth headers for load testing."""
+
+    def on_start(self) -> None:
+        headers = load_auth_headers()
+        if headers:
+            self.client.headers.update(headers)
+
+
+class ReadOnlyUser(AuthenticatedUser):
     """User that performs read-only operations.
 
     Simulates typical API consumers that mostly read data.
@@ -258,7 +277,7 @@ class ReadOnlyUser(HttpUser):
         )
 
 
-class WriteUser(HttpUser):
+class WriteUser(AuthenticatedUser):
     """User that performs write operations.
 
     Simulates applications that create and update data.
@@ -378,7 +397,7 @@ class WriteUser(HttpUser):
                 response.failure(f"Status {response.status_code}")
 
 
-class CacheTestUser(HttpUser):
+class CacheTestUser(AuthenticatedUser):
     """User that tests cache performance.
 
     Repeatedly reads the same resources to measure cache hit performance.
@@ -391,6 +410,7 @@ class CacheTestUser(HttpUser):
 
     def on_start(self) -> None:
         """Initialize with a target ID."""
+        super().on_start()
         # Create a resource to read repeatedly
         payload = create_submodel_payload()
         response = self.client.post("/submodels", json=payload)

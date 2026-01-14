@@ -424,6 +424,7 @@ jobs:
           TITAN_ENV: production
           ENABLE_RATE_LIMITING: "false"
           PUBLIC_HEALTH_ENDPOINTS: "true"
+          ALLOW_ANONYMOUS_ADMIN: "true"
         run: |
           uv run -- titan serve --host 0.0.0.0 --port 8080 &
           echo "Waiting for server to start..."

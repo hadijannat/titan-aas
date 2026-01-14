@@ -17,6 +17,22 @@ This directory contains load testing scenarios using [Locust](https://locust.io/
 
 ## Running Load Tests
 
+### Authentication
+
+Titan-AAS requires authentication by default. For load tests, use one of:
+
+1. **Anonymous admin (local/dev only):**
+   ```bash
+   export ALLOW_ANONYMOUS_ADMIN=true
+   ```
+   Start Titan-AAS with this env var so Locust can access endpoints without a token.
+
+2. **Bearer token (recommended for secured environments):**
+   ```bash
+   export LOAD_TEST_TOKEN="your-bearer-token"
+   ```
+   Locust will attach the token as `Authorization: Bearer ...` on every request.
+
 ### Web UI Mode (Interactive)
 
 ```bash
