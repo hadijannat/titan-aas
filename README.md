@@ -87,7 +87,8 @@ Features are classified as:
 | Terraform (AWS/Azure/GCP) | Implemented | `terraform/` |
 | Multi-Cloud Blob Storage | Implemented | S3, Azure Blob, GCS supported |
 | **UI** | | |
-| Admin Dashboard | Scaffolded | `admin-ui/` - React app structure |
+| Control Center Dashboard | Implemented | `dashboard/` - React app + API |
+| Admin Dashboard (legacy) | Scaffolded | `admin-ui/` - React app structure |
 | **Extensibility** | | |
 | Plugin System | Planned | No guarantees until implemented |
 
@@ -275,6 +276,26 @@ The API is organized into these main sections:
 | **Registry** | Service discovery and descriptors | `GET/POST /shell-descriptors`, `GET /submodel-descriptors` |
 | **Discovery** | Asset lookup by globalAssetId | `GET /lookup/shells`, `GET /lookup/submodels` |
 | **Health** | Liveness and readiness probes | `GET /health/live`, `GET /health/ready` |
+
+### 🧭 Control Center Dashboard
+
+The Control Center dashboard provides a live view of runtime health, database/cache stats,
+events, connectors, security, and observability.
+
+```bash
+# Run the dashboard (dev mode)
+cd dashboard
+npm install
+npm run dev
+
+# Default: http://localhost:5173 (Vite proxy -> http://localhost:8080)
+```
+
+**Authentication:** Dashboard API endpoints require the same RBAC permissions as the API.
+If OIDC is enabled, provide a token to the dashboard via:
+
+- `VITE_TITAN_TOKEN` environment variable, or
+- `localStorage.setItem('titan_token', '<token>')` in the browser console
 
 ---
 
@@ -473,6 +494,7 @@ titan-aas/
 ├── 📁 deployment/          # Docker & deploy artifacts
 │   ├── Dockerfile          # Multi-stage production build
 │   └── docker-compose.yml  # Full development stack
+├── 📁 dashboard/           # Control Center dashboard (React + Playwright)
 ├── 📁 charts/titan-aas/    # Helm chart for Kubernetes
 ├── 📁 terraform/           # IaC for AWS/Azure/GCP
 ├── 📁 tests/               # Comprehensive test suite
@@ -499,14 +521,19 @@ uv run -- pytest --cov=titan --cov-report=html
 
 # Run load tests
 uv run -- locust -f tests/load/locustfile.py --headless -u 100 -r 10 -t 60s
+
+# Dashboard E2E (Playwright)
+cd dashboard
+npm install
+npx playwright test
 ```
 
-| Test Suite | Tests | Status |
-|------------|-------|--------|
-| Unit | 606 | ✅ Passing |
-| Integration | 91 | ✅ Passing |
-| Contract | 15 | ✅ Passing |
-| E2E | 17 | ✅ Passing |
+| Test Suite | Status |
+|------------|--------|
+| Unit | ✅ (CI) |
+| Integration | ✅ (CI) |
+| Contract | ✅ (CI) |
+| E2E (Dashboard) | ✅ (CI) |
 
 ---
 
