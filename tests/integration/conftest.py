@@ -139,7 +139,6 @@ async def test_client(
     from fastapi import FastAPI
     from fastapi.responses import ORJSONResponse
 
-    from titan.config import settings
     from titan.api.errors import AasApiError, aas_api_exception_handler, generic_exception_handler
     from titan.api.middleware import CorrelationMiddleware, SecurityHeadersMiddleware
     from titan.api.routers import (
@@ -157,6 +156,7 @@ async def test_client(
     )
     from titan.cache import redis as redis_module
     from titan.cache.redis import RedisCache
+    from titan.config import settings
     from titan.persistence import db as db_module
 
     original_allow_anonymous = settings.allow_anonymous_admin

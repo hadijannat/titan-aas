@@ -64,8 +64,8 @@ class TestCacheOperations:
         for key in keys:
             await redis_client.set(key, b"test")
 
-        # Delete all keys for this submodel using pattern
-        pattern = CacheKeys.invalidation_pattern("sm", submodel_id)
+        # Delete all keys for this submodel using prefix pattern
+        pattern = f"{CacheKeys.PREFIX}:sm:{submodel_id}:*"
         cursor = 0
         while True:
             cursor, found_keys = await redis_client.scan(cursor=cursor, match=pattern, count=100)

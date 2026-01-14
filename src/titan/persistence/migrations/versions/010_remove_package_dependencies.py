@@ -11,8 +11,8 @@ used by the codebase.
 from collections.abc import Sequence
 
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 # revision identifiers
 revision: str = "010_remove_package_dependencies"

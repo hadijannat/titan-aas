@@ -19,7 +19,6 @@ from titan.adapters.rdf import (
 from titan.adapters.rdf.ontology import (
     AasPropertyUri,
     AasTypeUri,
-    RdfFormat as OntologyRdfFormat,
     get_rdf_type_for_model,
     get_xsd_datatype,
 )

@@ -9,17 +9,18 @@ These tests verify end-to-end MQTT functionality:
 import asyncio
 import json
 import time
+from collections.abc import Iterator
 from typing import Any
+
 import orjson
 import paho.mqtt.client as mqtt_client
 import pytest
-from collections.abc import Iterator
 
+from tests.integration.docker_utils import DockerService, run_container
 from titan.connectors.mqtt import MqttConfig, MqttConnectionManager, MqttPublisher
 from titan.connectors.mqtt_subscriber import MqttSubscriber
 from titan.core.ids import encode_id_to_b64url
 from titan.events import AasEvent, EventType, SubmodelEvent
-from tests.integration.docker_utils import DockerService, run_container
 
 
 @pytest.fixture(scope="module")
