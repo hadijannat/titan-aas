@@ -10,10 +10,24 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
 
-router = APIRouter(tags=["description"])
+from titan.config import settings
+from titan.security.deps import require_permission_if_public
+from titan.security.rbac import Permission
+
+router = APIRouter(
+    tags=["description"],
+    dependencies=[
+        Depends(
+            require_permission_if_public(
+                Permission.READ_AAS,
+                lambda: settings.public_description_endpoints,
+            )
+        )
+    ],
+)
 
 
 # IDTA-01002 Service Specification Profiles
@@ -133,8 +147,8 @@ async def get_description() -> dict[str, Any]:
             },
             # Authentication
             "authentication": {
-                "oidc": True,
-                "anonymous": True,  # When OIDC not configured
+                "oidc": settings.oidc_issuer is not None,
+                "anonymous": settings.allow_anonymous_admin,
             },
         },
         "version": {

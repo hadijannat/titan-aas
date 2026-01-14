@@ -128,17 +128,17 @@ class TestBaSyxExportTitanImport:
                 basyx_model.Property(
                     id_short="IntProp",
                     value_type=int,
-                    value="123",
+                    value=123,
                 ),
                 basyx_model.Property(
                     id_short="DoubleProp",
                     value_type=float,
-                    value="45.67",
+                    value=45.67,
                 ),
                 basyx_model.Property(
                     id_short="BoolProp",
                     value_type=bool,
-                    value="false",
+                    value=False,
                 ),
             ],
         )
@@ -157,7 +157,8 @@ class TestBaSyxExportTitanImport:
                             type_=basyx_model.KeyTypes.SUBMODEL,
                             value=submodel.id,
                         ),
-                    )
+                    ),
+                    type_=basyx_model.Submodel,
                 )
             ],
         )
@@ -185,10 +186,10 @@ class TestBaSyxExportTitanImport:
         assert len(package.submodels) == 1
         titan_sm = package.submodels[0]
         assert titan_sm.id == submodel.id
-        assert len(titan_sm.submodelElements) == 4
+        assert len(titan_sm.submodel_elements) == 4
 
         # Verify properties
-        props_by_idshort = {elem.id_short: elem for elem in titan_sm.submodelElements}
+        props_by_idshort = {elem.id_short: elem for elem in titan_sm.submodel_elements}
 
         string_prop = props_by_idshort["StringProp"]
         assert string_prop.value == "test"
@@ -242,7 +243,8 @@ class TestBaSyxExportTitanImport:
                             type_=basyx_model.KeyTypes.SUBMODEL,
                             value=submodel.id,
                         ),
-                    )
+                    ),
+                    type_=basyx_model.Submodel,
                 )
             ],
         )
@@ -268,9 +270,9 @@ class TestBaSyxExportTitanImport:
 
         # Verify collection
         titan_sm = package.submodels[0]
-        assert len(titan_sm.submodelElements) == 1
+        assert len(titan_sm.submodel_elements) == 1
 
-        titan_collection = titan_sm.submodelElements[0]
+        titan_collection = titan_sm.submodel_elements[0]
         assert titan_collection.id_short == "DataCollection"
         assert len(titan_collection.value) == 2
 
@@ -280,10 +282,12 @@ class TestBaSyxExportTitanImport:
         # Create BaSyx MultiLanguageProperty
         mlp = basyx_model.MultiLanguageProperty(
             id_short="Description",
-            value={
-                basyx_model.LangStringTextType("en", "English description"),
-                basyx_model.LangStringTextType("de", "Deutsche Beschreibung"),
-            },
+            value=basyx_model.MultiLanguageTextType(
+                {
+                    "en": "English description",
+                    "de": "Deutsche Beschreibung",
+                }
+            ),
         )
 
         submodel = basyx_model.Submodel(
@@ -306,7 +310,8 @@ class TestBaSyxExportTitanImport:
                             type_=basyx_model.KeyTypes.SUBMODEL,
                             value=submodel.id,
                         ),
-                    )
+                    ),
+                    type_=basyx_model.Submodel,
                 )
             ],
         )
@@ -332,7 +337,7 @@ class TestBaSyxExportTitanImport:
 
         # Verify MultiLanguageProperty
         titan_sm = package.submodels[0]
-        titan_mlp = titan_sm.submodelElements[0]
+        titan_mlp = titan_sm.submodel_elements[0]
 
         assert titan_mlp.id_short == "Description"
         assert len(titan_mlp.value) == 2
@@ -364,7 +369,7 @@ class TestRoundTrip:
 
         # Export from Titan
         exporter = AasxExporter()
-        stream = await exporter.export_to_stream([original_shell], [], [])
+        stream = await exporter.export_to_stream([original_shell], [], [], use_json=False)
         aasx_bytes = stream.getvalue()
 
         # Import to BaSyx
@@ -400,7 +405,7 @@ class TestRoundTrip:
         final_shell = final_package.shells[0]
 
         assert final_shell.id == original_shell.id
-        assert final_shell.id_short == original_shell.idShort
+        assert final_shell.id_short == original_shell.id_short
         assert (
             final_shell.asset_information.global_asset_id
             == original_shell.asset_information.global_asset_id
@@ -453,16 +458,30 @@ class TestRoundTrip:
 
         # Titan → AASX
         exporter = AasxExporter()
-        stream = await exporter.export_to_stream([shell], [submodel], [])
+        stream = await exporter.export_to_stream([shell], [submodel], [], use_json=False)
         aasx_bytes = stream.getvalue()
 
         # AASX → BaSyx
         buffer = io.BytesIO(aasx_bytes)
-        basyx_object_store = basyx_aasx.read_aas_xml_file(buffer)
+        basyx_object_store = basyx_model.DictObjectStore()
+        file_store = basyx_aasx.DictSupplementaryFileContainer()
+        with basyx_aasx.AASXReader(buffer) as reader:
+            reader.read_into(basyx_object_store, file_store)
 
         # BaSyx → AASX
         basyx_buffer = io.BytesIO()
-        basyx_aasx.write_aas_xml_file(basyx_buffer, basyx_object_store)
+        shells = [
+            obj
+            for obj in basyx_object_store
+            if isinstance(obj, basyx_model.AssetAdministrationShell)
+        ]
+        with basyx_aasx.AASXWriter(basyx_buffer) as writer:
+            writer.write_aas(
+                aas_ids=shells[0].id,
+                object_store=basyx_object_store,
+                file_store=file_store,
+                write_json=False,
+            )
         basyx_buffer.seek(0)
 
         # AASX → Titan
@@ -478,9 +497,9 @@ class TestRoundTrip:
 
         assert final_shell.id == shell.id
         assert final_submodel.id == submodel.id
-        assert len(final_submodel.submodelElements) == 1
+        assert len(final_submodel.submodel_elements) == 1
 
-        final_property = final_submodel.submodelElements[0]
+        final_property = final_submodel.submodel_elements[0]
         assert final_property.id_short == "TestProperty"
         assert final_property.value == "round_trip_value"
 
@@ -547,14 +566,29 @@ class TestRoundTrip:
 
         # Full round-trip
         exporter = AasxExporter()
-        stream = await exporter.export_to_stream([shell], [submodel], [])
+        stream = await exporter.export_to_stream([shell], [submodel], [], use_json=False)
         aasx_bytes = stream.getvalue()
 
         # Through BaSyx
         buffer = io.BytesIO(aasx_bytes)
-        basyx_store = basyx_aasx.read_aas_xml_file(buffer)
+        basyx_object_store = basyx_model.DictObjectStore()
+        file_store = basyx_aasx.DictSupplementaryFileContainer()
+        with basyx_aasx.AASXReader(buffer) as reader:
+            reader.read_into(basyx_object_store, file_store)
+
         basyx_buffer = io.BytesIO()
-        basyx_aasx.write_aas_xml_file(basyx_buffer, basyx_store)
+        shells = [
+            obj
+            for obj in basyx_object_store
+            if isinstance(obj, basyx_model.AssetAdministrationShell)
+        ]
+        with basyx_aasx.AASXWriter(basyx_buffer) as writer:
+            writer.write_aas(
+                aas_ids=shells[0].id,
+                object_store=basyx_object_store,
+                file_store=file_store,
+                write_json=False,
+            )
         basyx_buffer.seek(0)
 
         # Back to Titan
@@ -563,7 +597,7 @@ class TestRoundTrip:
 
         # Verify nested structure preserved
         final_submodel = final_package.submodels[0]
-        outer_collection = final_submodel.submodelElements[0]
+        outer_collection = final_submodel.submodel_elements[0]
 
         assert outer_collection.id_short == "OuterCollection"
         assert len(outer_collection.value) == 2

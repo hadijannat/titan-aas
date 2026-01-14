@@ -24,17 +24,69 @@ Example:
 # Note: Lazy types are required to avoid circular imports with schema.py
 from __future__ import annotations
 
+import logging
 from collections.abc import AsyncGenerator
 from typing import Any
 
+import orjson
 import strawberry
 from strawberry.types import Info
+
+from titan.core.model import AssetAdministrationShell
+from titan.core.model import ConceptDescription as PydanticConceptDescription
+from titan.core.model import Submodel as PydanticSubmodel
+from titan.graphql.converters import (
+    concept_description_to_graphql,
+    shell_to_graphql,
+    submodel_to_graphql,
+)
+from titan.graphql.subscription_manager import get_subscription_manager
 
 # Use Strawberry's LazyType to avoid circular import
 # Type annotation as Any to satisfy mypy while preserving runtime behavior
 Shell: Any = strawberry.LazyType("Shell", "titan.graphql.schema")
 Submodel: Any = strawberry.LazyType("Submodel", "titan.graphql.schema")
 ConceptDescription: Any = strawberry.LazyType("ConceptDescription", "titan.graphql.schema")
+
+logger = logging.getLogger(__name__)
+
+
+def _deserialize_shell(doc_bytes: bytes | None) -> AssetAdministrationShell | None:
+    """Deserialize shell from JSON bytes."""
+    if doc_bytes is None:
+        return None
+    try:
+        data = orjson.loads(doc_bytes)
+        return AssetAdministrationShell.model_validate(data)
+    except Exception as e:
+        logger.warning("Failed to deserialize shell: %s", e)
+        return None
+
+
+def _deserialize_submodel(doc_bytes: bytes | None) -> PydanticSubmodel | None:
+    """Deserialize submodel from JSON bytes."""
+    if doc_bytes is None:
+        return None
+    try:
+        data = orjson.loads(doc_bytes)
+        return PydanticSubmodel.model_validate(data)
+    except Exception as e:
+        logger.warning("Failed to deserialize submodel: %s", e)
+        return None
+
+
+def _deserialize_concept_description(
+    doc_bytes: bytes | None,
+) -> PydanticConceptDescription | None:
+    """Deserialize concept description from JSON bytes."""
+    if doc_bytes is None:
+        return None
+    try:
+        data = orjson.loads(doc_bytes)
+        return PydanticConceptDescription.model_validate(data)
+    except Exception as e:
+        logger.warning("Failed to deserialize concept description: %s", e)
+        return None
 
 
 @strawberry.type
@@ -60,17 +112,13 @@ class Subscription:
         Yields:
             Newly created Shell objects
         """
-        # TODO: Implement event bus subscription
-        # This is a placeholder implementation
-        # In production, this would:
-        # 1. Subscribe to Redis Stream for "shell.created" events
-        # 2. Load shell data via DataLoader when event received
-        # 3. Convert to GraphQL type and yield
-        # 4. Handle disconnection and cleanup
+        manager = get_subscription_manager()
 
-        # Placeholder - always empty for now
-        if False:  # pragma: no cover
-            yield  # type: ignore
+        async for event in manager.subscribe_shell_created():
+            shell = _deserialize_shell(event.doc_bytes)
+            graphql_shell = shell_to_graphql(shell)
+            if graphql_shell is not None:
+                yield graphql_shell
 
     @strawberry.subscription
     async def shell_updated(
@@ -90,13 +138,13 @@ class Subscription:
         Yields:
             Updated Shell objects
         """
-        # TODO: Implement event bus subscription with filtering
-        # If id is provided, only yield updates for that shell
-        # Otherwise yield all shell updates
+        manager = get_subscription_manager()
 
-        # Placeholder - always empty for now
-        if False:  # pragma: no cover
-            yield  # type: ignore
+        async for event in manager.subscribe_shell_updated(entity_id=id):
+            shell = _deserialize_shell(event.doc_bytes)
+            graphql_shell = shell_to_graphql(shell)
+            if graphql_shell is not None:
+                yield graphql_shell
 
     @strawberry.subscription
     async def shell_deleted(
@@ -113,12 +161,10 @@ class Subscription:
         Yields:
             Deleted shell IDs
         """
-        # TODO: Implement event bus subscription
-        # Yields shell IDs as strings when shells are deleted
+        manager = get_subscription_manager()
 
-        # Placeholder - always empty for now
-        if False:  # pragma: no cover
-            yield  # type: ignore
+        async for event in manager.subscribe_shell_deleted():
+            yield event.identifier
 
     @strawberry.subscription
     async def submodel_created(
@@ -135,11 +181,13 @@ class Subscription:
         Yields:
             Newly created Submodel objects
         """
-        # TODO: Implement event bus subscription for submodel.created
+        manager = get_subscription_manager()
 
-        # Placeholder - always empty for now
-        if False:  # pragma: no cover
-            yield  # type: ignore
+        async for event in manager.subscribe_submodel_created():
+            submodel = _deserialize_submodel(event.doc_bytes)
+            graphql_submodel = submodel_to_graphql(submodel)
+            if graphql_submodel is not None:
+                yield graphql_submodel
 
     @strawberry.subscription
     async def submodel_updated(
@@ -159,13 +207,13 @@ class Subscription:
         Yields:
             Updated Submodel objects
         """
-        # TODO: Implement event bus subscription with filtering
-        # If id is provided, only yield updates for that submodel
-        # Otherwise yield all submodel updates
+        manager = get_subscription_manager()
 
-        # Placeholder - always empty for now
-        if False:  # pragma: no cover
-            yield  # type: ignore
+        async for event in manager.subscribe_submodel_updated(entity_id=id):
+            submodel = _deserialize_submodel(event.doc_bytes)
+            graphql_submodel = submodel_to_graphql(submodel)
+            if graphql_submodel is not None:
+                yield graphql_submodel
 
     @strawberry.subscription
     async def submodel_deleted(
@@ -182,11 +230,10 @@ class Subscription:
         Yields:
             Deleted submodel IDs
         """
-        # TODO: Implement event bus subscription for submodel.deleted
+        manager = get_subscription_manager()
 
-        # Placeholder - always empty for now
-        if False:  # pragma: no cover
-            yield  # type: ignore
+        async for event in manager.subscribe_submodel_deleted():
+            yield event.identifier
 
     @strawberry.subscription
     async def concept_description_created(
@@ -203,11 +250,13 @@ class Subscription:
         Yields:
             Newly created ConceptDescription objects
         """
-        # TODO: Implement event bus subscription for concept_description.created
+        manager = get_subscription_manager()
 
-        # Placeholder - always empty for now
-        if False:  # pragma: no cover
-            yield  # type: ignore
+        async for event in manager.subscribe_concept_description_created():
+            cd = _deserialize_concept_description(event.doc_bytes)
+            graphql_cd = concept_description_to_graphql(cd)
+            if graphql_cd is not None:
+                yield graphql_cd
 
     @strawberry.subscription
     async def concept_description_updated(
@@ -227,11 +276,13 @@ class Subscription:
         Yields:
             Updated ConceptDescription objects
         """
-        # TODO: Implement event bus subscription with filtering
+        manager = get_subscription_manager()
 
-        # Placeholder - always empty for now
-        if False:  # pragma: no cover
-            yield  # type: ignore
+        async for event in manager.subscribe_concept_description_updated(entity_id=id):
+            cd = _deserialize_concept_description(event.doc_bytes)
+            graphql_cd = concept_description_to_graphql(cd)
+            if graphql_cd is not None:
+                yield graphql_cd
 
     @strawberry.subscription
     async def concept_description_deleted(
@@ -248,8 +299,7 @@ class Subscription:
         Yields:
             Deleted concept description IDs
         """
-        # TODO: Implement event bus subscription for concept_description.deleted
+        manager = get_subscription_manager()
 
-        # Placeholder - always empty for now
-        if False:  # pragma: no cover
-            yield  # type: ignore
+        async for event in manager.subscribe_concept_description_deleted():
+            yield event.identifier

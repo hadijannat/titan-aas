@@ -32,6 +32,7 @@ build/
 # Local artifacts
 *.log
 AGENTS.md
+Findings.md
 
 # Vendored specs (tracked as submodule)
 # specs/aas-specs-api/

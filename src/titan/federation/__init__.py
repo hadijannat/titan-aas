@@ -17,20 +17,29 @@ from titan.federation.conflicts import (
 from titan.federation.discovery import FederatedDiscovery
 from titan.federation.edge import EdgeConfig, EdgeController, EdgeStatus
 from titan.federation.peer import Peer, PeerRegistry
-from titan.federation.sync import FederationSync, SyncMode
+from titan.federation.sync import (
+    ChangeQueue,
+    FederationSync,
+    SyncChange,
+    SyncMode,
+    SyncTopology,
+)
 
 __all__ = [
-    "Peer",
-    "PeerRegistry",
-    "FederationSync",
-    "SyncMode",
-    "FederatedDiscovery",
-    "EdgeController",
-    "EdgeConfig",
-    "EdgeStatus",
+    "ChangeQueue",
     "ConflictInfo",
     "ConflictManager",
     "ConflictResolver",
+    "EdgeConfig",
+    "EdgeController",
+    "EdgeStatus",
+    "FederatedDiscovery",
+    "FederationSync",
+    "Peer",
+    "PeerRegistry",
     "ResolutionResult",
     "ResolutionStrategy",
+    "SyncChange",
+    "SyncMode",
+    "SyncTopology",
 ]

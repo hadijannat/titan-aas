@@ -20,6 +20,7 @@ class TestPackageVersioning:
 
         # Mock session and current package
         session = AsyncMock()
+        session.add = Mock()
         current_pkg = AasxPackageTable(
             id="pkg-001",
             filename="test-v1.aasx",
@@ -162,6 +163,7 @@ class TestPackageVersioning:
         manager = PackageManager()
 
         session = AsyncMock()
+        session.add = Mock()
         v1 = AasxPackageTable(
             id="pkg-001",
             filename="v1.aasx",
@@ -229,6 +231,7 @@ class TestPackageVersioning:
         manager = PackageManager()
 
         session = AsyncMock()
+        session.add = Mock()
         original = AasxPackageTable(
             id="pkg-001",
             filename="original.aasx",

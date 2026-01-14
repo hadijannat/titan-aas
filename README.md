@@ -2,16 +2,23 @@
 
 # ⚡ Titan-AAS
 
-### The High-Performance Asset Administration Shell Runtime
+### Experimental Asset Administration Shell Runtime
 
 ![Hero Banner](docs/images/hero_banner.png)
 
 [![CI](https://github.com/hadijannat/titan-aas/actions/workflows/ci.yml/badge.svg)](https://github.com/hadijannat/titan-aas/actions/workflows/ci.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![IDTA Compliant](https://img.shields.io/badge/IDTA-Release%2025--01-orange.svg)](https://industrialdigitaltwin.org)
+[![IDTA Release 25-01](https://img.shields.io/badge/IDTA-Release%2025--01-orange.svg)](https://industrialdigitaltwin.org)
 
-**Production-grade AAS runtime optimized for read-heavy industrial workloads**
+**Prototype AAS runtime for research and early integration work**
+
+**Status:** Prototype/Research. Not production-ready. IDTA coverage is partial and
+not certified; performance and security posture depend on deployment configuration.
+
+**Evidence-first claims:** Compliance or performance claims must be backed by published
+artifacts (e.g., `docs/conformance-matrix.md`, `conformance-report.json`,
+`docs/benchmarks.md`, `benchmark-results.json`). Avoid marketing claims without proof.
 
 [🚀 Quick Start](#-quick-start) • [📖 Documentation](#-documentation) • [🏗️ Architecture](#-architecture) • [🧪 Testing](#-testing)
 
@@ -23,7 +30,9 @@
 
 > **For Non-Technical Readers**: Think of Titan-AAS as a "digital passport" system for industrial machines. Just like your passport contains all your identity information, an Asset Administration Shell (AAS) contains everything about a machine—its specifications, maintenance history, sensor data, and more. Titan-AAS is the software that stores, searches, and delivers this information incredibly fast.
 
-**For Technical Readers**: Titan-AAS is a contract-first AAS runtime implementing the IDTA Release 25-01 specification bundle. It uses a novel **write-validate / read-stream** architecture that:
+**For Technical Readers**: Titan-AAS is a contract-first AAS runtime targeting the IDTA
+Release 25-01 specification bundle. Coverage is partial and tracked in the conformance
+matrix. It uses a **write-validate / read-stream** architecture that:
 
 - ✅ **Validates** all incoming data with Pydantic v2 strict mode
 - ⚡ **Streams** canonical bytes directly—no object hydration on reads
@@ -39,7 +48,7 @@
 ### Feature Status Matrix
 
 Features are classified as:
-- **Implemented**: Fully functional with test coverage
+- **Implemented**: Working path exists (tests where available)
 - **Scaffolded**: Code structure exists, not fully functional
 - **Planned**: Roadmap item, not yet started
 
@@ -59,14 +68,14 @@ Features are classified as:
 | Rate Limiting | Implemented | `src/titan/api/middleware/rate_limit.py`, `tests/integration/test_rate_limit.py` |
 | Security Headers | Implemented | `src/titan/api/middleware/security_headers.py` |
 | **Observability** | | |
-| Prometheus Metrics | Implemented | `src/titan/observability/metrics.py` |
-| OpenTelemetry Tracing | Implemented | `src/titan/observability/tracing.py` |
+| Prometheus Metrics | Implemented | Scrape-friendly operational metrics |
+| OpenTelemetry Tracing | Implemented | Distributed tracing (optional) |
 | Structured Logging | Implemented | `src/titan/observability/logging.py` |
 | **Events** | | |
-| WebSocket Events | Implemented | `src/titan/events/` |
-| MQTT Events | Scaffolded | Interface exists, not fully integrated |
+| WebSocket Events | Implemented | Browser/UI real-time updates |
+| MQTT Events | Scaffolded | IoT/edge broker integration (optional) |
 | **Packages** | | |
-| AASX Import/Export | Scaffolded | `src/titan/aasx/` - basic structure only |
+| AASX Import/Export | Implemented | `src/titan/compat/aasx.py` (interop-focused) |
 | **Federation** | | |
 | Multi-instance Sync | Scaffolded | `src/titan/federation/` - interface only |
 | Edge Offline-First | Planned | Roadmap for v0.3 |
@@ -80,17 +89,18 @@ Features are classified as:
 | **UI** | | |
 | Admin Dashboard | Scaffolded | `admin-ui/` - React app structure |
 | **Extensibility** | | |
-| Plugin System | Planned | Roadmap for v0.4 |
+| Plugin System | Planned | No guarantees until implemented |
 
 ### Feature Highlights
 
 | Feature | Description |
 |---------|-------------|
-| **Blazing Fast Reads** | Stream raw bytes from Redis cache—sub-millisecond response times |
-| **IDTA Compliant** | 96% endpoint coverage for Part 2 API v3.1.1 (see [conformance matrix](docs/conformance-matrix.md)) |
-| **Enterprise Security** | OIDC authentication, RBAC + ABAC authorization, rate limiting |
-| **Observable** | OpenTelemetry tracing + Prometheus metrics + structured JSON logs |
-| **Cloud Native** | Helm charts, Terraform modules for AWS/Azure/GCP |
+| **Fast-Path Reads** | Stream canonical bytes when no projections are needed; latency varies by cache/network |
+| **IDTA Alignment** | Coverage is tracked in the [conformance matrix](docs/conformance-matrix.md); partial today |
+| **Security Features** | OIDC auth, RBAC/ABAC, and rate limiting for fairness/tenant isolation (not DDoS) |
+| **Observable** | Prometheus for scrape metrics + OpenTelemetry for traces |
+| **Events** | WebSocket for UI, MQTT for edge/IoT (optional) |
+| **Cloud Native** | Helm charts and Terraform modules for AWS/Azure/GCP |
 
 ---
 
@@ -139,7 +149,10 @@ flowchart LR
 3. **Read Path (Slow)**: When modifiers like `$value` or `$metadata` are requested, hydrate model and transform
 4. **Event Path**: Single writer pattern ensures consistent persistence and cache updates
 
-### 🌐 Enterprise Features
+### 🌐 Planned / Experimental Features
+
+The sections below describe intended architecture and scope. Not all components are
+fully implemented yet.
 
 #### Federation Architecture
 
@@ -177,7 +190,7 @@ flowchart TB
 - **Delta Sync**: Only transfer changed data (bandwidth optimization)
 - **Conflict Resolution**: Configurable strategies (skip, overwrite, error, rename)
 
-#### AASX Package Management
+#### AASX Package Management (Planned)
 
 ```mermaid
 flowchart LR
@@ -189,7 +202,7 @@ flowchart LR
     Import --> Version[📊 Version Tracking]
 ```
 
-**Capabilities:**
+**Planned capabilities:**
 - OPC-compliant package validation
 - Preview imports before committing
 - Selective import (specific shells/submodels)
@@ -228,6 +241,9 @@ git submodule update --init --recursive
 # Install dependencies with uv
 uv sync
 
+# For local development without OIDC (explicitly opt-in)
+export ALLOW_ANONYMOUS_ADMIN=true
+
 # Run the development server
 uv run -- uvicorn titan.api.app:create_app --factory --host 0.0.0.0 --port 8080 --reload
 ```
@@ -236,7 +252,7 @@ uv run -- uvicorn titan.api.app:create_app --factory --host 0.0.0.0 --port 8080 
 
 ```bash
 # Start all services (API, PostgreSQL, Redis, Prometheus, Grafana)
-docker compose -f deployment/docker-compose.yml up -d
+ALLOW_ANONYMOUS_ADMIN=true docker compose -f deployment/docker-compose.yml up -d
 
 # Access the services
 # API:        http://localhost:8080
@@ -509,6 +525,17 @@ Titan-AAS is configured via environment variables:
 | `ENABLE_TRACING` | Enable OpenTelemetry | `true` |
 | `ENABLE_METRICS` | Enable Prometheus metrics | `true` |
 
+### Security Overrides (Explicit Opt-In)
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ALLOW_ANONYMOUS_ADMIN` | Allow anonymous admin access when OIDC is unset | `false` |
+| `PUBLIC_HEALTH_ENDPOINTS` | Expose `/health*` without auth | `false` |
+| `PUBLIC_METRICS_ENDPOINT` | Expose `/metrics` without auth | `false` |
+| `PUBLIC_DESCRIPTION_ENDPOINTS` | Expose `/description*` without auth | `false` |
+| `PUBLIC_JOBS_ENDPOINTS` | Expose `/jobs*` without auth | `false` |
+| `PUBLIC_DEBUG_ENDPOINTS` | Expose `/debug/profile*` without auth | `false` |
+
 ### Blob Storage
 
 | Variable | Description | Default |
@@ -535,7 +562,7 @@ Titan-AAS is configured via environment variables:
 - [API Guide](docs/api-guide.md) - Complete API reference
 
 ### Deployment & Operations
-- [Deployment Runbook](docs/deployment-runbook.md) - Production deployment guide
+- [Deployment Runbook](docs/deployment-runbook.md) - Draft runbook for future production use
 - [High Availability Guide](docs/ha-guidance.md) - Active-active deployment patterns
 - [Capacity Planning](docs/capacity-planning.md) - Sizing and scaling guidance
 - [Runbook Quick Reference](docs/runbook-quickref.md) - Operational procedures
@@ -545,10 +572,10 @@ Titan-AAS is configured via environment variables:
 - [Interop Matrix](docs/interop-matrix.md) - Endpoint-level interoperability details
 - [Benchmarks](docs/benchmarks.md) - Reproducible performance runs with p50/p95/p99 metrics
 
-### Production Gates
-- [Production Gates](docs/production-gates.md) - Go/No-Go checklist with measurable criteria
-- [Production Readiness](docs/production-readiness.md) - Release gates and go-live checklist
-- [Release Process](docs/release-process.md) - Versioning and release workflow
+### Production Planning (Draft)
+- [Production Gates](docs/production-gates.md) - Draft Go/No-Go checklist with measurable criteria
+- [Production Readiness](docs/production-readiness.md) - Draft release gates and go-live checklist
+- [Release Process](docs/release-process.md) - Proposed versioning and release workflow
 
 ### Security
 - [Security Assessment](docs/security-assessment.md) - Authentication, authorization, and controls

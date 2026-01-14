@@ -1,5 +1,7 @@
 """Tests for cache key generation."""
 
+import base64
+
 from titan.cache.keys import CacheKeys
 
 
@@ -34,12 +36,14 @@ class TestCacheKeys:
     def test_element_value_key(self) -> None:
         """SubmodelElement value key has correct format."""
         key = CacheKeys.submodel_element_value("sm123", "Temperature")
-        assert key == "titan:sm:sm123:elem:Temperature:value"
+        encoded = base64.urlsafe_b64encode(b"Temperature").decode("ascii").rstrip("=")
+        assert key == f"titan:sm:sm123:elem:{encoded}:value"
 
     def test_element_value_key_with_path(self) -> None:
         """SubmodelElement value key works with nested paths."""
         key = CacheKeys.submodel_element_value("sm123", "Nameplate.SerialNumber")
-        assert key == "titan:sm:sm123:elem:Nameplate.SerialNumber:value"
+        encoded = base64.urlsafe_b64encode(b"Nameplate.SerialNumber").decode("ascii").rstrip("=")
+        assert key == f"titan:sm:sm123:elem:{encoded}:value"
 
     def test_parse_valid_key(self) -> None:
         """Valid key is parsed correctly."""
@@ -55,8 +59,3 @@ class TestCacheKeys:
         """Invalid key returns None."""
         assert CacheKeys.parse_key("invalid") is None
         assert CacheKeys.parse_key("other:prefix:key") is None
-
-    def test_invalidation_pattern(self) -> None:
-        """Invalidation pattern uses wildcard."""
-        pattern = CacheKeys.invalidation_pattern("aas", "abc123")
-        assert pattern == "titan:aas:abc123:*"

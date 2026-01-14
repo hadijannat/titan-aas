@@ -1,6 +1,8 @@
 # Titan-AAS Deployment Runbook
 
 This runbook covers deployment, operations, and troubleshooting for Titan-AAS.
+**Titan-AAS is currently a prototype/research platform; treat this runbook as draft
+guidance for future production use.**
 
 ## Table of Contents
 
@@ -673,7 +675,7 @@ curl -s "$OIDC_ISSUER/protocol/openid-connect/certs" | jq .
 
 # 3. If provider is down, enable emergency bypass (use with caution!)
 # Option A: Switch to anonymous mode temporarily
-TITAN_AUTH_MODE=anonymous docker compose up -d titan
+ALLOW_ANONYMOUS_ADMIN=true docker compose up -d titan
 
 # Option B: Use cached JWKS (if configured)
 # Titan caches JWKS for OIDC_JWKS_CACHE_SECONDS (default 3600)

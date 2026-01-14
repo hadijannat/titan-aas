@@ -433,58 +433,6 @@ class AasxPackageTable(Base):
     )
 
 
-class AasxPackageDependencyTable(Base):
-    """Package dependency tracking table.
-
-    Tracks dependencies between AASX packages for validation and installation order.
-    Supports semantic versioning constraints and circular dependency detection.
-    """
-
-    __tablename__ = "aasx_package_dependencies"
-
-    # Primary key
-    id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid4())
-    )
-
-    # Source package (the one that has dependencies)
-    package_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False),
-        ForeignKey("aasx_packages.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-
-    # Target package (the dependency)
-    depends_on_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False),
-        ForeignKey("aasx_packages.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-
-    # Dependency type
-    dependency_type: Mapped[str] = mapped_column(String(50), nullable=False)
-
-    # Version constraint (semantic versioning)
-    version_constraint: Mapped[str | None] = mapped_column(Text, nullable=True)
-
-    # Human-readable description
-    description: Mapped[str | None] = mapped_column(Text, nullable=True)
-
-    # Timestamp
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        server_default=func.now(),
-    )
-
-    __table_args__ = (
-        # Indexes for efficient queries
-        Index("idx_pkg_deps_package_id", package_id),
-        Index("idx_pkg_deps_depends_on_id", depends_on_id),
-        # Unique constraint to prevent duplicate dependencies (in migration)
-    )
-
-
 # =============================================================================
 # Federation Sync Tables
 # =============================================================================
@@ -601,4 +549,85 @@ class FederationSyncLogTable(Base):
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+# =============================================================================
+# Operation Invocation Tables
+# =============================================================================
+
+
+class OperationInvocationTable(Base):
+    """Operation invocation tracking table.
+
+    Stores history of Operation element invocations for auditing, status polling,
+    and result retrieval. Invocations are initiated via the REST API and executed
+    by downstream connectors (OPC-UA, Modbus, HTTP).
+    """
+
+    __tablename__ = "operation_invocations"
+
+    # Primary key (invocation ID, used as handleId in REST API)
+    id: Mapped[str] = mapped_column(
+        UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid4())
+    )
+
+    # Reference to the submodel containing the Operation
+    submodel_id: Mapped[str] = mapped_column(Text, nullable=False, index=True)
+
+    # Base64URL encoded submodel ID for path matching
+    submodel_id_b64: Mapped[str] = mapped_column(String(4000), nullable=False, index=True)
+
+    # Path to the Operation element (e.g., "StartPump" or "Controls.StartPump")
+    id_short_path: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # Execution state: pending, running, completed, failed, timeout, cancelled
+    execution_state: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="pending", index=True
+    )
+
+    # Input arguments (JSONB array of {idShort, value, valueType})
+    input_arguments: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+
+    # Output arguments returned by the operation (JSONB array)
+    output_arguments: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+
+    # In-out arguments (modified by the operation)
+    inoutput_arguments: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+
+    # Error information for failed invocations
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    error_code: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    # Correlation ID for mapping to external systems (OPC-UA, Modbus)
+    correlation_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+
+    # Timeout in milliseconds (for async operations)
+    timeout_ms: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+
+    # User/service that requested the invocation
+    requested_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # Execution timing
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Record timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    __table_args__ = (
+        # Composite index for querying invocations by submodel and operation
+        Index("idx_op_invocations_submodel_path", submodel_id, id_short_path),
+        # Index for polling by state (pending/running operations)
+        Index("idx_op_invocations_state_created", execution_state, created_at),
+        # Index for correlation ID lookups (OPC-UA/Modbus response mapping)
+        Index("idx_op_invocations_correlation", correlation_id),
     )

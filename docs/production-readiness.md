@@ -1,6 +1,10 @@
-# Production Readiness Checklist
+# Production Readiness Checklist (Draft)
 
-This document defines the production readiness gates for Titan-AAS. Each section includes acceptance criteria that should be verified before production deployment.
+This document defines aspirational production readiness gates for Titan-AAS. **Titan-AAS
+is currently a prototype/research platform and is not production-ready.** This is a
+planning checklist, not a claim that the project is production-ready today. Each
+section includes acceptance criteria that should be verified before any production
+deployment.
 
 ## Overview
 
@@ -24,7 +28,7 @@ Titan-AAS is designed for industrial AAS v3.1 workloads. Production readiness re
 |-------------|--------|----------|
 | IDTA-01002 Part 2 API v3.1.1 | Partial | `conformance-report.json` |
 | IDTA-01003-a IEC 61360 | Partial | See `docs/conformance-matrix.md` |
-| IDTA-01004 Security | Implemented | See `docs/security.md` |
+| IDTA-01004 Security | Partial (config-dependent) | See `docs/security.md` |
 
 **CI Gate:** Contract tests must pass with SSP test case IDs linked.
 
@@ -84,10 +88,11 @@ All error responses follow IDTA-compliant format:
 
 | Mode | Configuration | Status |
 |------|---------------|--------|
-| Anonymous (dev) | `OIDC_ISSUER` unset | Implemented |
+| Anonymous (dev) | `OIDC_ISSUER` unset + `ALLOW_ANONYMOUS_ADMIN=true` | Opt-in |
 | OIDC | `OIDC_ISSUER` set | Implemented |
 
-**Security Warning:** Anonymous mode grants admin privileges. Never use in production.
+**Security Warning:** Anonymous mode grants admin privileges when explicitly enabled.
+Never use in production.
 
 See `docs/security-modes.md` for full security configuration matrix.
 
@@ -170,14 +175,14 @@ See `docs/deployment-runbook.md` for:
 
 ## D. Performance Gates
 
-### D.1 Performance Targets
+### D.1 Performance Targets (Non-Guarantees)
 
 | Metric | Target | Evidence |
 |--------|--------|----------|
-| p50 latency (cached) | < 10ms | `load-test-report.html` |
-| p99 latency (cached) | < 100ms | `load-test-report.html` |
-| Error rate | < 0.1% | `load-test-report.html` |
-| Throughput | 15,000+ RPS | With optimized infrastructure |
+| p50 latency (cached) | < 10ms | `load-test-report.html` (when available) |
+| p99 latency (cached) | < 100ms | `load-test-report.html` (when available) |
+| Error rate | < 0.1% | `load-test-report.html` (when available) |
+| Throughput | TBD | Depends on infrastructure and dataset |
 
 ### D.2 CI Performance Gate
 
@@ -258,7 +263,7 @@ Before deploying to production:
 
 ### Security Considerations
 
-1. **Anonymous mode** grants admin access - never use in production
+1. **Anonymous mode** grants admin access when explicitly enabled - never use in production
 2. **Admin users bypass ABAC** evaluation entirely
 3. **JWKS cache fallback** uses potentially stale keys during network failures
 

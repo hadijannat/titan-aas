@@ -99,11 +99,10 @@ class TestModbusClient:
         mock_client.connect = AsyncMock(side_effect=TimeoutError("Connection timeout"))
 
         with patch("pymodbus.client.AsyncModbusTcpClient", return_value=mock_client):
-            with patch("asyncio.wait_for", side_effect=TimeoutError("Connection timeout")):
-                result = await modbus_client_tcp.connect()
+            result = await modbus_client_tcp.connect()
 
-                assert result is False
-                assert not modbus_client_tcp.is_connected
+            assert result is False
+            assert not modbus_client_tcp.is_connected
 
     @pytest.mark.asyncio
     async def test_connect_tcp_error(self, modbus_client_tcp: ModbusClient) -> None:

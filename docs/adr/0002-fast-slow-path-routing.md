@@ -35,7 +35,7 @@ Client Request → Cache Check → DB doc_bytes → Stream Response
 - No JSON parsing
 - No Pydantic model instantiation
 - Direct byte streaming from PostgreSQL or Redis cache
-- Target: <10ms p50 latency
+- Target: <10ms p50 latency (requires benchmark evidence)
 
 ### Slow Path (With Modifiers)
 
@@ -46,7 +46,7 @@ Client Request → DB doc → Parse → Apply Modifiers → Serialize → Respon
 - Full Pydantic model parsing
 - Projection/transformation logic
 - Re-serialization to JSON
-- Target: <100ms p50 latency
+- Target: <100ms p50 latency (requires benchmark evidence)
 
 ### Implementation
 
@@ -78,7 +78,7 @@ class PathRouter:
 ### Positive
 
 - **Optimal performance for common case**: Simple reads hit target latency.
-- **Full IDTA compliance**: All modifiers supported via slow path.
+- **IDTA alignment**: Implemented modifiers are supported via slow path; coverage is tracked.
 - **Resource efficiency**: Avoids unnecessary parsing/serialization.
 - **Caching synergy**: Fast path leverages Redis byte cache directly.
 

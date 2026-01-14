@@ -11,6 +11,7 @@ Where:
 
 from __future__ import annotations
 
+import base64
 from typing import Literal
 
 EntityType = Literal["aas", "sm", "cd", "aas_desc", "sm_desc"]
@@ -56,8 +57,18 @@ class CacheKeys:
         """Key for SubmodelElement $value cache.
 
         Used for fast $value reads without full Submodel hydration.
+        The idShort path is encoded to avoid delimiter collisions.
         """
-        return f"{cls.PREFIX}:sm:{submodel_b64}:elem:{id_short_path}:value"
+        encoded_path = cls._encode_component(id_short_path)
+        return f"{cls.PREFIX}:sm:{submodel_b64}:elem:{encoded_path}:value"
+
+    @classmethod
+    def _encode_component(cls, value: str) -> str:
+        """Encode a key component to avoid delimiter collisions."""
+        if not value:
+            return ""
+        encoded = base64.urlsafe_b64encode(value.encode("utf-8")).decode("ascii")
+        return encoded.rstrip("=")
 
     @classmethod
     def parse_key(cls, key: str) -> dict[str, str] | None:
@@ -76,10 +87,3 @@ class CacheKeys:
             "variant": parts[3] if len(parts) > 3 else "",
         }
 
-    @classmethod
-    def invalidation_pattern(cls, entity_type: EntityType, identifier_b64: str) -> str:
-        """Pattern for invalidating all keys for an entity.
-
-        Use with Redis SCAN + DEL for cache invalidation.
-        """
-        return f"{cls.PREFIX}:{entity_type}:{identifier_b64}:*"

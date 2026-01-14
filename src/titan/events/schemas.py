@@ -119,9 +119,73 @@ class PackageEvent:
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
+class OperationInvocationEventType(str, Enum):
+    """Type of operation invocation event."""
+
+    INVOKED = "invoked"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    TIMEOUT = "timeout"
+    CANCELLED = "cancelled"
+
+
+class OperationExecutionState(str, Enum):
+    """Execution state of an operation invocation."""
+
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    TIMEOUT = "timeout"
+    CANCELLED = "cancelled"
+
+
+@dataclass(frozen=True, slots=True)
+class OperationInvocationEvent:
+    """Event for Operation element invocation.
+
+    Emitted when an Operation submodel element is invoked. Downstream connectors
+    (OPC-UA, Modbus, HTTP) subscribe to these events and execute the operation.
+    """
+
+    event_type: OperationInvocationEventType
+    invocation_id: str
+    submodel_id: str
+    submodel_id_b64: str
+    id_short_path: str
+    execution_state: OperationExecutionState
+    input_arguments: list[dict] | None = None
+    output_arguments: list[dict] | None = None
+    inoutput_arguments: list[dict] | None = None
+    error_message: str | None = None
+    error_code: str | None = None
+    correlation_id: str | None = None  # For mapping to OPC-UA/Modbus operations
+    timeout_ms: int | None = None  # Requested timeout for async operations
+    requested_by: str | None = None  # User/service that invoked the operation
+    started_at: datetime | None = None  # When execution started
+    completed_at: datetime | None = None  # When execution completed
+    entity: Literal["operation_invocation"] = "operation_invocation"
+    event_id: str = field(default_factory=lambda: str(uuid4()))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+
 # Base event protocol (for type hints)
-Event = AasEvent | SubmodelEvent | SubmodelElementEvent | ConceptDescriptionEvent | PackageEvent
+Event = (
+    AasEvent
+    | SubmodelEvent
+    | SubmodelElementEvent
+    | ConceptDescriptionEvent
+    | PackageEvent
+    | OperationInvocationEvent
+)
 
 
 # Union type for all events
-AnyEvent = AasEvent | SubmodelEvent | SubmodelElementEvent | ConceptDescriptionEvent | PackageEvent
+AnyEvent = (
+    AasEvent
+    | SubmodelEvent
+    | SubmodelElementEvent
+    | ConceptDescriptionEvent
+    | PackageEvent
+    | OperationInvocationEvent
+)

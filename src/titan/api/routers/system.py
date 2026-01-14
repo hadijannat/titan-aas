@@ -1,8 +1,22 @@
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
-router = APIRouter(tags=["system"])
+from titan.config import settings
+from titan.security.deps import require_permission_if_public
+from titan.security.rbac import Permission
+
+router = APIRouter(
+    tags=["system"],
+    dependencies=[
+        Depends(
+            require_permission_if_public(
+                Permission.READ_AAS,
+                lambda: settings.public_description_endpoints,
+            )
+        )
+    ],
+)
 
 
 @router.get("/description")

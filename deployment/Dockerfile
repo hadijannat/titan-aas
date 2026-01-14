@@ -11,7 +11,6 @@ WORKDIR /app
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv for fast dependency resolution
@@ -67,4 +66,4 @@ USER titan
 EXPOSE 8080
 
 # Run the application
-CMD ["python", "-m", "uvicorn", "titan.api.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["sh", "-c", "python -m uvicorn titan.api.app:create_app --factory --host 0.0.0.0 --port ${TITAN_PORT:-8080}"]

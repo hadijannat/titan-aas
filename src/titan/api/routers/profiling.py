@@ -15,15 +15,29 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
+from titan.config import settings
 from titan.observability.profiling import (
     get_collector,
     get_memory_snapshot,
 )
+from titan.security.deps import require_permission_if_public
+from titan.security.rbac import Permission
 
-router = APIRouter(prefix="/debug/profile", tags=["Debug"])
+router = APIRouter(
+    prefix="/debug/profile",
+    tags=["Debug"],
+    dependencies=[
+        Depends(
+            require_permission_if_public(
+                Permission.ADMIN,
+                lambda: settings.public_debug_endpoints,
+            )
+        )
+    ],
+)
 
 
 class ProfileStatsResponse(BaseModel):

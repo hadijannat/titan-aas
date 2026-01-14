@@ -10,6 +10,10 @@
 # Clone and start
 git clone https://github.com/hadijannat/titan-aas.git
 cd titan-aas
+
+# For local dev without OIDC (explicitly opt-in)
+export ALLOW_ANONYMOUS_ADMIN=true
+
 docker compose -f deployment/docker-compose.yml up -d
 
 # Verify it's running
@@ -94,11 +98,12 @@ curl -X POST http://localhost:8080/submodels \
 ID="urn:titan:aas:robot-arm-001"
 B64_ID=$(echo -n "$ID" | base64 | tr '+/' '-_' | tr -d '=')
 
-# Fast path read - returns raw bytes, sub-millisecond
+# Fast path read - returns raw bytes (latency varies by environment)
 time curl -s "http://localhost:8080/shells/$B64_ID"
 ```
 
-**What to look for**: Response time should be very fast (typically <10ms).
+**What to look for**: Response time should be low on warm cache, but will vary with
+network, hardware, and cache state.
 
 ---
 
@@ -183,7 +188,8 @@ curl -s -o /dev/null -w "%{http_code}" \
 
 Open in browser: **http://localhost:8080/docs**
 
-You'll see the full Swagger UI with all IDTA-compliant endpoints.
+You'll see Swagger UI for the implemented endpoints. IDTA coverage is partial and
+tracked in the conformance matrix.
 
 ---
 

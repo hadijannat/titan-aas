@@ -73,12 +73,15 @@ async def event_wired_client(
     from titan.api.routers import aas_repository, submodel_repository
     from titan.cache import redis as redis_module
     from titan.cache.redis import RedisCache
+    from titan.config import settings
     from titan.events import runtime as runtime_module
     from titan.persistence import db as db_module
 
     # Override the global event bus
     original_bus = runtime_module._event_bus
     runtime_module._event_bus = event_bus
+    original_allow_anonymous = settings.allow_anonymous_admin
+    settings.allow_anonymous_admin = True
 
     # Wire handler to event bus
     async def broadcast_handler(event: AnyEvent) -> None:
@@ -133,6 +136,7 @@ async def event_wired_client(
         yield client
 
     await test_redis.aclose()
+    settings.allow_anonymous_admin = original_allow_anonymous
     runtime_module._event_bus = original_bus
 
 

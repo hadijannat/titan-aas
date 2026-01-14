@@ -29,6 +29,7 @@ from titan.persistence.tables import (
     AasTable,
     BlobAssetTable,
     ConceptDescriptionTable,
+    OperationInvocationTable,
     SubmodelTable,
     generate_etag,
 )
@@ -1067,3 +1068,184 @@ class ConceptDescriptionRepository:
             next_cursor=next_cursor,
             count=count,
         )
+
+
+class OperationInvocationRepository:
+    """Repository for Operation Invocation tracking.
+
+    Stores and retrieves operation invocation records for async polling and auditing.
+    """
+
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    async def create(
+        self,
+        invocation_id: str,
+        submodel_id: str,
+        submodel_id_b64: str,
+        id_short_path: str,
+        execution_state: str,
+        input_arguments: Any | None = None,
+        inoutput_arguments: Any | None = None,
+        timeout_ms: int | None = None,
+        requested_by: str | None = None,
+        correlation_id: str | None = None,
+    ) -> OperationInvocationTable:
+        """Create a new operation invocation record.
+
+        Args:
+            invocation_id: Unique invocation ID (handle)
+            submodel_id: ID of the submodel containing the operation
+            submodel_id_b64: Base64URL-encoded submodel ID
+            id_short_path: Path to the Operation element
+            execution_state: Initial execution state (pending)
+            input_arguments: Input argument values
+            inoutput_arguments: In-out argument values
+            timeout_ms: Timeout in milliseconds
+            requested_by: User/service that invoked the operation
+            correlation_id: External correlation ID
+
+        Returns:
+            The created invocation record
+        """
+        # Convert Pydantic models to dicts if needed
+        input_args_dict = None
+        if input_arguments:
+            input_args_dict = [
+                arg.model_dump(by_alias=True) if hasattr(arg, "model_dump") else arg
+                for arg in input_arguments
+            ]
+
+        inoutput_args_dict = None
+        if inoutput_arguments:
+            inoutput_args_dict = [
+                arg.model_dump(by_alias=True) if hasattr(arg, "model_dump") else arg
+                for arg in inoutput_arguments
+            ]
+
+        row = OperationInvocationTable(
+            id=invocation_id,
+            submodel_id=submodel_id,
+            submodel_id_b64=submodel_id_b64,
+            id_short_path=id_short_path,
+            execution_state=execution_state,
+            input_arguments=input_args_dict,
+            inoutput_arguments=inoutput_args_dict,
+            timeout_ms=timeout_ms,
+            requested_by=requested_by,
+            correlation_id=correlation_id,
+        )
+        self.session.add(row)
+        await self.session.flush()
+        return row
+
+    async def get_by_id(self, invocation_id: str) -> OperationInvocationTable | None:
+        """Get an invocation by ID.
+
+        Args:
+            invocation_id: The invocation ID (handle)
+
+        Returns:
+            The invocation record or None if not found
+        """
+        stmt = select(OperationInvocationTable).where(OperationInvocationTable.id == invocation_id)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def update_state(
+        self,
+        invocation_id: str,
+        execution_state: str,
+        output_arguments: Any | None = None,
+        inoutput_arguments: Any | None = None,
+        error_message: str | None = None,
+        error_code: str | None = None,
+        started_at: Any | None = None,
+        completed_at: Any | None = None,
+    ) -> OperationInvocationTable | None:
+        """Update an invocation's execution state and results.
+
+        Args:
+            invocation_id: The invocation ID
+            execution_state: New execution state
+            output_arguments: Output argument values (for completed)
+            inoutput_arguments: Updated in-out argument values
+            error_message: Error message (for failed)
+            error_code: Error code (for failed)
+            started_at: When execution started
+            completed_at: When execution completed
+
+        Returns:
+            The updated record or None if not found
+        """
+        stmt = select(OperationInvocationTable).where(OperationInvocationTable.id == invocation_id)
+        result = await self.session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row is None:
+            return None
+
+        row.execution_state = execution_state
+
+        if output_arguments is not None:
+            row.output_arguments = output_arguments
+        if inoutput_arguments is not None:
+            row.inoutput_arguments = inoutput_arguments
+        if error_message is not None:
+            row.error_message = error_message
+        if error_code is not None:
+            row.error_code = error_code
+        if started_at is not None:
+            row.started_at = started_at
+        if completed_at is not None:
+            row.completed_at = completed_at
+
+        await self.session.flush()
+        return row
+
+    async def list_by_submodel(
+        self,
+        submodel_id: str,
+        id_short_path: str | None = None,
+        limit: int = 100,
+    ) -> list[OperationInvocationTable]:
+        """List invocations for a submodel.
+
+        Args:
+            submodel_id: Submodel identifier
+            id_short_path: Optional filter by operation path
+            limit: Maximum results
+
+        Returns:
+            List of invocation records
+        """
+        stmt = (
+            select(OperationInvocationTable)
+            .where(OperationInvocationTable.submodel_id == submodel_id)
+            .order_by(OperationInvocationTable.created_at.desc())
+            .limit(limit)
+        )
+
+        if id_short_path:
+            stmt = stmt.where(OperationInvocationTable.id_short_path == id_short_path)
+
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def list_pending(self, limit: int = 100) -> list[OperationInvocationTable]:
+        """List pending invocations (for processing).
+
+        Args:
+            limit: Maximum results
+
+        Returns:
+            List of pending invocation records
+        """
+        stmt = (
+            select(OperationInvocationTable)
+            .where(OperationInvocationTable.execution_state.in_(["pending", "running"]))
+            .order_by(OperationInvocationTable.created_at)
+            .limit(limit)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())

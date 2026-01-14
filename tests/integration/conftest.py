@@ -139,6 +139,7 @@ async def test_client(
     from fastapi import FastAPI
     from fastapi.responses import ORJSONResponse
 
+    from titan.config import settings
     from titan.api.errors import AasApiError, aas_api_exception_handler, generic_exception_handler
     from titan.api.middleware import CorrelationMiddleware, SecurityHeadersMiddleware
     from titan.api.routers import (
@@ -157,6 +158,9 @@ async def test_client(
     from titan.cache import redis as redis_module
     from titan.cache.redis import RedisCache
     from titan.persistence import db as db_module
+
+    original_allow_anonymous = settings.allow_anonymous_admin
+    settings.allow_anonymous_admin = True
 
     # Create a test-specific lifespan that does nothing
     @asynccontextmanager
@@ -224,6 +228,7 @@ async def test_client(
         yield client
 
     await test_redis.aclose()
+    settings.allow_anonymous_admin = original_allow_anonymous
 
 
 async def _wait_for_engine(engine, timeout: float = 30.0) -> None:

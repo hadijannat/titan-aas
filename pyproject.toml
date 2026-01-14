@@ -33,6 +33,7 @@ dependencies = [
   "opentelemetry-exporter-otlp>=1.25",
   "opentelemetry-instrumentation-fastapi>=0.46b0",
   "strawberry-graphql[fastapi]>=0.288.3",
+  "rdflib>=7.0",
 ]
 
 [project.optional-dependencies]
@@ -122,6 +123,8 @@ module = [
   "opentelemetry.instrumentation.sqlalchemy",
   "prometheus_client",
   "prometheus_client.*",
+  "rdflib",
+  "rdflib.*",
   "yaml",
   "yaml.*",
   "strawberry",
@@ -131,6 +134,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = [
+  "titan.adapters",
+  "titan.adapters.*",
+  "titan.validation",
+  "titan.validation.*",
   "titan.api.middleware.security_headers",
   "titan.api.routers.aasx",
   "titan.api.routers.aas_repository",

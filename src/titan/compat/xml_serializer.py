@@ -298,6 +298,7 @@ class XmlDeserializer:
             "submodels",
             "conceptDescriptions",
             "submodelElements",
+            "value",
             "keys",
             "description",
             "displayName",
@@ -390,8 +391,8 @@ class XmlDeserializer:
 
             text = text.strip()
 
-            # Only parse as boolean for known boolean tags or explicit true/false
-            if tag in self.BOOLEAN_TAGS or text.lower() in ("true", "false"):
+            # Only parse as boolean for known boolean tags
+            if tag in self.BOOLEAN_TAGS:
                 if text.lower() == "true":
                     return True
                 elif text.lower() == "false":
@@ -412,9 +413,9 @@ class XmlDeserializer:
         Returns:
             True if element is a known list container or has multiple children
         """
-        # Check if this is a known list container tag
+        # Check if this is a known list container tag with child elements
         if tag in self.LIST_CONTAINER_TAGS:
-            return True
+            return len(element) > 0
 
         if len(element) == 0:
             return False

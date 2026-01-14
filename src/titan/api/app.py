@@ -180,6 +180,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await get_event_bus().subscribe(modbus_event_handler)
         logger.info("Modbus event handler subscribed")
 
+    # Security warning for development-only settings
+    if settings.allow_anonymous_admin:
+        logger.warning(
+            "⚠️  SECURITY WARNING: ALLOW_ANONYMOUS_ADMIN=true - "
+            "ALL REQUESTS GET ADMIN ACCESS. This is intended for local development only. "
+            "NEVER enable this in production!"
+        )
+
     logger.info("Titan-AAS startup complete")
 
     yield

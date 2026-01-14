@@ -10,40 +10,38 @@ import asyncio
 import json
 import time
 from typing import Any
-from unittest.mock import MagicMock
-
 import orjson
 import paho.mqtt.client as mqtt_client
 import pytest
-from testcontainers.core.container import DockerContainer
+from collections.abc import Iterator
 
 from titan.connectors.mqtt import MqttConfig, MqttConnectionManager, MqttPublisher
 from titan.connectors.mqtt_subscriber import MqttSubscriber
 from titan.core.ids import encode_id_to_b64url
 from titan.events import AasEvent, EventType, SubmodelEvent
+from tests.integration.docker_utils import DockerService, run_container
 
 
 @pytest.fixture(scope="module")
-def mosquitto_broker() -> DockerContainer:
+def mosquitto_broker(docker_client) -> Iterator[DockerService]:
     """Start Mosquitto MQTT broker in container."""
-    container = DockerContainer("eclipse-mosquitto:2")
-    container.with_exposed_ports(1883)
-    container.with_command("mosquitto -c /mosquitto-no-auth.conf")
-    container.start()
-
-    # Give the broker time to start
-    time.sleep(2)
-
-    yield container
-
-    container.stop()
+    ports = {"1883/tcp": None}
+    with run_container(
+        docker_client,
+        "eclipse-mosquitto:2",
+        ports=ports,
+        command="mosquitto -c /mosquitto-no-auth.conf",
+    ) as service:
+        # Give the broker time to start
+        time.sleep(2)
+        yield service
 
 
 @pytest.fixture
-def mqtt_broker_config(mosquitto_broker: DockerContainer) -> MqttConfig:
+def mqtt_broker_config(mosquitto_broker: DockerService) -> MqttConfig:
     """Create MQTT config pointing to test broker."""
-    host = mosquitto_broker.get_container_host_ip()
-    port = mosquitto_broker.get_exposed_port(1883)
+    host = mosquitto_broker.host
+    port = mosquitto_broker.port(1883)
     return MqttConfig(
         broker=host,
         port=int(port),
@@ -193,11 +191,25 @@ class TestMqttSubscriberIntegration:
         mqtt_broker_config: MqttConfig,
     ) -> None:
         """Publish element value to MQTT, verify subscriber receives it."""
-        # Create mock session factory
-        mock_session = MagicMock()
+        class DummySession:
+            async def __aenter__(self) -> "DummySession":
+                return self
 
-        def mock_session_factory() -> MagicMock:
-            return mock_session
+            async def __aexit__(self, exc_type, exc, tb) -> bool:
+                return False
+
+            async def execute(self, *args: Any, **kwargs: Any):
+                class Result:
+                    def scalar_one_or_none(self) -> None:
+                        return None
+
+                return Result()
+
+            async def flush(self) -> None:
+                return None
+
+        def mock_session_factory() -> DummySession:
+            return DummySession()
 
         # Create connection manager
         connection_manager = MqttConnectionManager(mqtt_broker_config)

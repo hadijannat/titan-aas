@@ -20,6 +20,9 @@ from titan.events.schemas import (
     AasEvent,
     ConceptDescriptionEvent,
     EventType,
+    OperationExecutionState,
+    OperationInvocationEvent,
+    OperationInvocationEventType,
     SubmodelElementEvent,
     SubmodelEvent,
 )
@@ -206,6 +209,141 @@ async def publish_concept_description_event(
         identifier_b64=identifier_b64,
         doc_bytes=doc_bytes,
         etag=etag,
+    )
+    await event_bus.publish(event)
+    return event
+
+
+async def publish_operation_invoked(
+    event_bus: EventBus,
+    invocation_id: str,
+    submodel_id: str,
+    submodel_id_b64: str,
+    id_short_path: str,
+    input_arguments: list[dict] | None = None,
+    inoutput_arguments: list[dict] | None = None,
+    correlation_id: str | None = None,
+    timeout_ms: int | None = None,
+    requested_by: str | None = None,
+) -> OperationInvocationEvent:
+    """Publish an operation invoked event.
+
+    This event triggers downstream connectors (OPC-UA, Modbus, HTTP) to execute
+    the operation.
+
+    Args:
+        event_bus: Event bus to publish to
+        invocation_id: Unique ID for this invocation
+        submodel_id: ID of the submodel containing the operation
+        submodel_id_b64: Base64URL-encoded submodel ID
+        id_short_path: Path to the Operation element
+        input_arguments: Input argument values
+        inoutput_arguments: In-out argument values
+        correlation_id: Optional ID for mapping to external systems
+        timeout_ms: Timeout for async operations
+        requested_by: User/service that invoked the operation
+
+    Returns:
+        The published event
+    """
+    event = OperationInvocationEvent(
+        event_type=OperationInvocationEventType.INVOKED,
+        invocation_id=invocation_id,
+        submodel_id=submodel_id,
+        submodel_id_b64=submodel_id_b64,
+        id_short_path=id_short_path,
+        execution_state=OperationExecutionState.PENDING,
+        input_arguments=input_arguments,
+        inoutput_arguments=inoutput_arguments,
+        correlation_id=correlation_id,
+        timeout_ms=timeout_ms,
+        requested_by=requested_by,
+    )
+    await event_bus.publish(event)
+    return event
+
+
+async def publish_operation_completed(
+    event_bus: EventBus,
+    invocation_id: str,
+    submodel_id: str,
+    submodel_id_b64: str,
+    id_short_path: str,
+    output_arguments: list[dict] | None = None,
+    inoutput_arguments: list[dict] | None = None,
+    correlation_id: str | None = None,
+) -> OperationInvocationEvent:
+    """Publish an operation completed event.
+
+    Args:
+        event_bus: Event bus to publish to
+        invocation_id: The invocation ID from the original invoke
+        submodel_id: ID of the submodel containing the operation
+        submodel_id_b64: Base64URL-encoded submodel ID
+        id_short_path: Path to the Operation element
+        output_arguments: Output argument values
+        inoutput_arguments: Updated in-out argument values
+        correlation_id: Optional ID for mapping to external systems
+
+    Returns:
+        The published event
+    """
+    from datetime import UTC, datetime
+
+    event = OperationInvocationEvent(
+        event_type=OperationInvocationEventType.COMPLETED,
+        invocation_id=invocation_id,
+        submodel_id=submodel_id,
+        submodel_id_b64=submodel_id_b64,
+        id_short_path=id_short_path,
+        execution_state=OperationExecutionState.COMPLETED,
+        output_arguments=output_arguments,
+        inoutput_arguments=inoutput_arguments,
+        correlation_id=correlation_id,
+        completed_at=datetime.now(UTC),
+    )
+    await event_bus.publish(event)
+    return event
+
+
+async def publish_operation_failed(
+    event_bus: EventBus,
+    invocation_id: str,
+    submodel_id: str,
+    submodel_id_b64: str,
+    id_short_path: str,
+    error_message: str,
+    error_code: str | None = None,
+    correlation_id: str | None = None,
+) -> OperationInvocationEvent:
+    """Publish an operation failed event.
+
+    Args:
+        event_bus: Event bus to publish to
+        invocation_id: The invocation ID from the original invoke
+        submodel_id: ID of the submodel containing the operation
+        submodel_id_b64: Base64URL-encoded submodel ID
+        id_short_path: Path to the Operation element
+        error_message: Description of the failure
+        error_code: Optional error code
+        correlation_id: Optional ID for mapping to external systems
+
+    Returns:
+        The published event
+    """
+    from datetime import UTC, datetime
+
+    event = OperationInvocationEvent(
+        event_type=OperationInvocationEventType.FAILED,
+        invocation_id=invocation_id,
+        submodel_id=submodel_id,
+        submodel_id_b64=submodel_id_b64,
+        id_short_path=id_short_path,
+        execution_state=OperationExecutionState.FAILED,
+        error_message=error_message,
+        error_code=error_code,
+        correlation_id=correlation_id,
+        completed_at=datetime.now(UTC),
     )
     await event_bus.publish(event)
     return event

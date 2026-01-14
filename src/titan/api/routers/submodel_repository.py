@@ -10,6 +10,11 @@ Implements IDTA-01002 Part 2 Submodel Repository endpoints:
 - GET    /submodels/{submodelIdentifier}/submodel-elements/{idShortPath} - Get element
 - GET    /submodels/{submodelIdentifier}/$value            - Get Submodel $value
 
+Operation Invocation endpoints (IDTA-01002 Part 2):
+- POST   /submodels/{id}/submodel-elements/{path}/invoke          - Invoke operation
+- POST   /submodels/{id}/submodel-elements/{path}/invoke-async    - Invoke async
+- GET    /submodels/{id}/submodel-elements/{path}/operation-results/{handleId}
+
 All identifiers in path segments are Base64URL encoded per IDTA spec.
 """
 
@@ -19,6 +24,7 @@ from typing import Any
 
 import orjson
 from fastapi import APIRouter, Body, Depends, Header, Query, Request, Response
+from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -55,6 +61,12 @@ from titan.core.element_operations import (
 )
 from titan.core.ids import InvalidBase64Url, decode_id_from_b64url, encode_id_to_b64url
 from titan.core.model import Submodel
+from titan.core.model.submodel_elements import Operation
+from titan.core.operation_executor import (
+    InvokeOperationRequest,
+    OperationExecutor,
+    OperationValidationError,
+)
 from titan.core.projection import (
     ProjectionModifiers,
     apply_projection,
@@ -64,11 +76,18 @@ from titan.core.projection import (
     extract_value,
     navigate_id_short_path,
 )
+from titan.core.templates import (
+    InstantiationRequest,
+    InstantiationResult,
+    instantiate_template,
+)
 from titan.events import EventType, get_event_bus, publish_submodel_deleted, publish_submodel_event
+from titan.events.schemas import OperationExecutionState
 from titan.persistence.db import get_session
-from titan.persistence.repositories import SubmodelRepository
+from titan.persistence.repositories import OperationInvocationRepository, SubmodelRepository
 from titan.security.abac import ResourceType
-from titan.security.deps import require_permission
+from titan.security.deps import get_current_user, require_permission
+from titan.security.oidc import User
 from titan.security.rbac import Permission
 
 router = APIRouter(prefix="/submodels", tags=["Submodel Repository"])
@@ -1345,3 +1364,399 @@ async def delete_submodel_element(
     )
 
     return Response(status_code=204)
+
+
+# ============================================================================
+# Operation Invocation Endpoints (IDTA-01002 Part 2)
+# ============================================================================
+
+
+async def get_operation_invocation_repo(
+    session: AsyncSession = Depends(get_session),
+) -> OperationInvocationRepository:
+    """Get Operation Invocation repository instance."""
+    return OperationInvocationRepository(session)
+
+
+@router.post(
+    "/{submodel_identifier}/submodel-elements/{id_short_path:path}/invoke",
+    status_code=200,
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.INVOKE_OPERATION,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier", "id_short_path"],
+            )
+        )
+    ],
+)
+async def invoke_operation_sync(
+    submodel_identifier: str,
+    id_short_path: str,
+    request_body: InvokeOperationRequest,
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+    invocation_repo: OperationInvocationRepository = Depends(get_operation_invocation_repo),
+    session: AsyncSession = Depends(get_session),
+    user: User | None = Depends(get_current_user),
+) -> Response:
+    """Invoke an Operation synchronously.
+
+    Validates input arguments against declared inputVariables, emits an
+    OperationInvocationEvent, and returns a handle for polling results.
+
+    Note: This endpoint is event-based. Downstream connectors (OPC-UA, Modbus, HTTP)
+    subscribe to operation invocation events and execute the operation.
+    """
+    try:
+        identifier = decode_id_from_b64url(submodel_identifier)
+    except InvalidBase64Url:
+        raise InvalidBase64UrlError(submodel_identifier)
+
+    # Get submodel
+    result = await repo.get_bytes_by_id(identifier)
+    if result is None:
+        raise NotFoundError("Submodel", identifier)
+
+    doc_bytes, _ = result
+    doc = orjson.loads(doc_bytes)
+
+    # Navigate to element and verify it's an Operation
+    element = navigate_id_short_path(doc, id_short_path)
+    if element is None:
+        raise NotFoundError("SubmodelElement", id_short_path)
+
+    if element.get("modelType") != "Operation":
+        raise BadRequestError(f"Element at path '{id_short_path}' is not an Operation")
+
+    # Parse as Operation model for validation
+    try:
+        operation = Operation.model_validate(element)
+    except ValidationError as e:
+        raise BadRequestError(f"Invalid Operation element: {e}") from e
+
+    # Create executor and invoke
+    executor = OperationExecutor(get_event_bus())
+    requested_by = user.subject if user else None
+
+    try:
+        invoke_result = await executor.invoke(
+            submodel_id=identifier,
+            id_short_path=id_short_path,
+            operation=operation,
+            request=request_body,
+            requested_by=requested_by,
+        )
+    except OperationValidationError as e:
+        raise BadRequestError(e.message)
+
+    # Persist invocation record
+    await invocation_repo.create(
+        invocation_id=invoke_result.invocation_id,
+        submodel_id=identifier,
+        submodel_id_b64=submodel_identifier,
+        id_short_path=id_short_path,
+        execution_state=invoke_result.execution_state.value,
+        input_arguments=request_body.input_arguments,
+        inoutput_arguments=request_body.inoutput_arguments,
+        timeout_ms=request_body.timeout,
+        requested_by=requested_by,
+    )
+    await session.commit()
+
+    # Build response per IDTA-01002
+    response_data = {
+        "executionState": invoke_result.execution_state.value,
+        "outputArguments": invoke_result.output_arguments,
+        "inoutputArguments": invoke_result.inoutput_arguments,
+    }
+
+    return Response(
+        content=canonical_bytes(response_data),
+        media_type="application/json",
+        headers={"X-Invocation-Id": invoke_result.invocation_id},
+    )
+
+
+@router.post(
+    "/{submodel_identifier}/submodel-elements/{id_short_path:path}/invoke-async",
+    status_code=200,
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.INVOKE_OPERATION,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier", "id_short_path"],
+            )
+        )
+    ],
+)
+async def invoke_operation_async(
+    submodel_identifier: str,
+    id_short_path: str,
+    request_body: InvokeOperationRequest,
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+    invocation_repo: OperationInvocationRepository = Depends(get_operation_invocation_repo),
+    session: AsyncSession = Depends(get_session),
+    user: User | None = Depends(get_current_user),
+) -> Response:
+    """Invoke an Operation asynchronously.
+
+    Returns immediately with a handle (invocation ID) that can be used to
+    poll for results via GET operation-results/{handleId}.
+
+    Validates input arguments against declared inputVariables, emits an
+    OperationInvocationEvent for downstream connectors to execute.
+    """
+    try:
+        identifier = decode_id_from_b64url(submodel_identifier)
+    except InvalidBase64Url:
+        raise InvalidBase64UrlError(submodel_identifier)
+
+    # Get submodel
+    result = await repo.get_bytes_by_id(identifier)
+    if result is None:
+        raise NotFoundError("Submodel", identifier)
+
+    doc_bytes, _ = result
+    doc = orjson.loads(doc_bytes)
+
+    # Navigate to element and verify it's an Operation
+    element = navigate_id_short_path(doc, id_short_path)
+    if element is None:
+        raise NotFoundError("SubmodelElement", id_short_path)
+
+    if element.get("modelType") != "Operation":
+        raise BadRequestError(f"Element at path '{id_short_path}' is not an Operation")
+
+    # Parse as Operation model for validation
+    try:
+        operation = Operation.model_validate(element)
+    except ValidationError as e:
+        raise BadRequestError(f"Invalid Operation element: {e}") from e
+
+    # Create executor and invoke
+    executor = OperationExecutor(get_event_bus())
+    requested_by = user.subject if user else None
+
+    try:
+        invoke_result = await executor.invoke(
+            submodel_id=identifier,
+            id_short_path=id_short_path,
+            operation=operation,
+            request=request_body,
+            requested_by=requested_by,
+        )
+    except OperationValidationError as e:
+        raise BadRequestError(e.message)
+
+    # Persist invocation record
+    await invocation_repo.create(
+        invocation_id=invoke_result.invocation_id,
+        submodel_id=identifier,
+        submodel_id_b64=submodel_identifier,
+        id_short_path=id_short_path,
+        execution_state=invoke_result.execution_state.value,
+        input_arguments=request_body.input_arguments,
+        inoutput_arguments=request_body.inoutput_arguments,
+        timeout_ms=request_body.timeout,
+        requested_by=requested_by,
+    )
+    await session.commit()
+
+    # Build async response per IDTA-01002
+    response_data = {
+        "handleId": invoke_result.invocation_id,
+        "executionState": invoke_result.execution_state.value,
+    }
+
+    return Response(
+        content=canonical_bytes(response_data),
+        media_type="application/json",
+    )
+
+
+@router.get(
+    "/{submodel_identifier}/submodel-elements/{id_short_path:path}/operation-results/{handle_id}",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_SUBMODEL,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier", "id_short_path"],
+            )
+        )
+    ],
+)
+async def get_operation_result(
+    submodel_identifier: str,
+    id_short_path: str,
+    handle_id: str,
+    invocation_repo: OperationInvocationRepository = Depends(get_operation_invocation_repo),
+) -> Response:
+    """Get the result of an asynchronous operation invocation.
+
+    Returns the current execution state and, if completed, the output arguments.
+    Poll this endpoint until executionState is 'completed', 'failed', or 'timeout'.
+    """
+    try:
+        decode_id_from_b64url(submodel_identifier)
+    except InvalidBase64Url:
+        raise InvalidBase64UrlError(submodel_identifier)
+
+    # Get invocation record
+    invocation = await invocation_repo.get_by_id(handle_id)
+    if invocation is None:
+        raise NotFoundError("OperationResult", handle_id)
+
+    # Verify it matches the requested submodel/path
+    if invocation.id_short_path != id_short_path:
+        raise NotFoundError("OperationResult", handle_id)
+
+    # Build response per IDTA-01002
+    response_data: dict[str, Any] = {
+        "executionState": invocation.execution_state,
+    }
+
+    # Include results if completed
+    if invocation.execution_state == OperationExecutionState.COMPLETED.value:
+        response_data["outputArguments"] = invocation.output_arguments
+        response_data["inoutputArguments"] = invocation.inoutput_arguments
+    elif invocation.execution_state == OperationExecutionState.FAILED.value:
+        response_data["message"] = invocation.error_message
+        if invocation.error_code:
+            response_data["messageType"] = invocation.error_code
+
+    return Response(
+        content=canonical_bytes(response_data),
+        media_type="application/json",
+    )
+
+
+# ============================================================================
+# Template Instantiation Endpoints (SSP-003/004)
+# ============================================================================
+
+
+class InstantiateTemplateRequest(PydanticBaseModel):
+    """Request body for instantiating a Submodel from a template.
+
+    Attributes:
+        new_id: The identifier for the new instance (required)
+        id_short: Optional idShort override for the instance
+        value_overrides: Optional dict mapping idShortPath to new values
+        copy_semantic_id: Whether to copy semanticId from template (default True)
+    """
+
+    new_id: str
+    id_short: str | None = None
+    value_overrides: dict[str, Any] | None = None
+    copy_semantic_id: bool = True
+
+
+@router.post(
+    "/{submodel_identifier}/instantiate",
+    status_code=201,
+    dependencies=[Depends(require_permission(Permission.CREATE_SUBMODEL))],
+)
+async def instantiate_template_endpoint(
+    submodel_identifier: str,
+    request_body: InstantiateTemplateRequest,
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+    cache: RedisCache = Depends(get_cache),
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """Instantiate a new Submodel from a template.
+
+    Creates a new Submodel instance based on the template submodel at the given
+    identifier. The template must have kind=Template.
+
+    This endpoint supports the IDTA SSP-003 and SSP-004 template profiles.
+
+    Args:
+        submodel_identifier: Base64URL encoded identifier of the template
+        request_body: Instantiation parameters including new_id
+
+    Returns:
+        The newly created Submodel instance
+
+    Raises:
+        400 Bad Request: If the source is not a template or validation fails
+        404 Not Found: If the template doesn't exist
+        409 Conflict: If a Submodel with new_id already exists
+    """
+    try:
+        identifier = decode_id_from_b64url(submodel_identifier)
+    except InvalidBase64Url:
+        raise InvalidBase64UrlError(submodel_identifier)
+
+    # Get template submodel
+    result = await repo.get_bytes_by_id(identifier)
+    if result is None:
+        raise NotFoundError("Submodel", identifier)
+
+    doc_bytes, _ = result
+    template_doc = orjson.loads(doc_bytes)
+
+    # Check if new_id already exists
+    if await repo.exists(request_body.new_id):
+        raise ConflictError("Submodel", request_body.new_id)
+
+    # Create instantiation request
+    inst_request = InstantiationRequest(
+        new_id=request_body.new_id,
+        id_short=request_body.id_short,
+        value_overrides=request_body.value_overrides or {},
+        copy_semantic_id=request_body.copy_semantic_id,
+    )
+
+    # Instantiate
+    inst_result: InstantiationResult = instantiate_template(template_doc, inst_request)
+
+    if not inst_result.success:
+        raise BadRequestError(inst_result.error or "Template instantiation failed")
+
+    # Validate and create the new submodel
+    try:
+        new_submodel = Submodel.model_validate(inst_result.submodel_doc)
+    except ValidationError as e:
+        raise BadRequestError(f"Invalid instantiated submodel: {e}") from e
+
+    # Persist the new instance
+    try:
+        new_doc_bytes, new_etag = await repo.create(new_submodel)
+    except ValueError as e:
+        raise BadRequestError(str(e)) from e
+
+    await session.commit()
+
+    # Cache the new instance
+    new_identifier_b64 = encode_id_to_b64url(request_body.new_id)
+    await cache.set_submodel(new_identifier_b64, new_doc_bytes, new_etag)
+
+    # Extract semantic_id for event filtering
+    semantic_id = None
+    if new_submodel.semantic_id and new_submodel.semantic_id.keys:
+        semantic_id = new_submodel.semantic_id.keys[0].value
+
+    # Publish creation event
+    await publish_submodel_event(
+        event_bus=get_event_bus(),
+        event_type=EventType.CREATED,
+        identifier=request_body.new_id,
+        identifier_b64=new_identifier_b64,
+        doc_bytes=new_doc_bytes,
+        etag=new_etag,
+        semantic_id=semantic_id,
+    )
+
+    return Response(
+        content=new_doc_bytes,
+        status_code=201,
+        media_type="application/json",
+        headers={
+            "ETag": f'"{new_etag}"',
+            "Location": f"/submodels/{new_identifier_b64}",
+            "X-Template-Id": submodel_identifier,
+        },
+    )

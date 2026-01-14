@@ -8,10 +8,9 @@ Accepted
 
 Titan-AAS needs to process events across multiple instances:
 
-1. **Cache invalidation**: When one instance updates data, others must invalidate their caches.
-2. **WebSocket notifications**: Real-time updates to connected clients.
-3. **MQTT publishing**: External event broadcasting.
-4. **Audit logging**: Capturing all write operations.
+1. **WebSocket notifications**: Real-time updates to connected clients.
+2. **MQTT publishing**: External event broadcasting.
+3. **Audit logging**: Capturing all write operations.
 
 Requirements for the event system:
 - **Durability**: Events must not be lost during processing.

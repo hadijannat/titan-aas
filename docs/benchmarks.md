@@ -1,6 +1,8 @@
 # Benchmarks
 
 Titan-AAS provides reproducible benchmarking infrastructure for measuring API performance under load. This document describes the methodology and provides reference results.
+**All numbers below are illustrative unless accompanied by published artifacts** (e.g., `benchmark-results.json`
+in `docs/benchmarks/` with the exact methodology and environment). Do not treat these figures as guarantees.
 
 ## Quick Start
 

@@ -87,29 +87,44 @@ def basyx_aas_complex() -> tuple[
             model.Property(
                 id_short="IntProperty",
                 value_type=int,
-                value="42",
+                value=42,
             ),
             model.Property(
                 id_short="DoubleProperty",
                 value_type=float,
-                value="3.14159",
+                value=3.14159,
             ),
             model.Property(
                 id_short="BooleanProperty",
                 value_type=bool,
-                value="true",
+                value=True,
             ),
             model.Property(
                 id_short="Temperature",
                 value_type=float,
-                value="23.5",
-                semantic_id=model.ExternalReference(
+                value=23.5,
+                semantic_id=model.ModelReference(
                     (
                         model.Key(
-                            type_=model.KeyTypes.GLOBAL_REFERENCE,
-                            value="https://example.com/cd/Temperature",
+                            type_=model.KeyTypes.CONCEPT_DESCRIPTION,
+                            value=temp_cd.id,
                         ),
-                    )
+                    ),
+                    type_=model.ConceptDescription,
+                ),
+            ),
+            model.Property(
+                id_short="Humidity",
+                value_type=float,
+                value=55.0,
+                semantic_id=model.ModelReference(
+                    (
+                        model.Key(
+                            type_=model.KeyTypes.CONCEPT_DESCRIPTION,
+                            value=humidity_cd.id,
+                        ),
+                    ),
+                    type_=model.ConceptDescription,
                 ),
             ),
         ],
@@ -125,13 +140,13 @@ def basyx_aas_complex() -> tuple[
                 value=[
                     model.Property(
                         id_short="SensorId",
-                        value_type=model.DataTypeDefXsd.STRING,
+                        value_type=str,
                         value="SENSOR_001",
                     ),
                     model.Property(
                         id_short="Reading",
-                        value_type=model.DataTypeDefXsd.DOUBLE,
-                        value="45.6",
+                        value_type=float,
+                        value=45.6,
                     ),
                 ],
             ),
@@ -170,7 +185,8 @@ def basyx_aas_complex() -> tuple[
                         type_=model.KeyTypes.SUBMODEL,
                         value=sm.id,
                     ),
-                )
+                ),
+                type_=model.Submodel,
             )
             for sm in submodels
         ],

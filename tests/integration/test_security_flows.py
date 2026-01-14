@@ -73,31 +73,20 @@ class TestAuthenticationFlows:
     """Test authentication handling."""
 
     @pytest.mark.asyncio
-    async def test_anonymous_mode_grants_admin_access(
+    async def test_anonymous_mode_disabled_by_default(
         self,
         test_client: AsyncClient,
     ) -> None:
-        """When OIDC is not configured, anonymous users get admin access.
+        """When OIDC is not configured, anonymous access is denied by default."""
+        from titan.config import settings
 
-        This tests the development mode behavior where unauthenticated
-        requests receive full admin privileges.
-        """
-        # No Authorization header - should work in anonymous mode
-        response = await test_client.get("/shells")
-        assert response.status_code == 200
-
-        # Verify we can also write without auth
-        aas_data = {
-            "id": "urn:example:aas:test-anonymous",
-            "idShort": "TestAnonymous",
-            "modelType": "AssetAdministrationShell",
-            "assetInformation": {
-                "assetKind": "Instance",
-                "globalAssetId": "urn:example:asset:test-anonymous",
-            },
-        }
-        response = await test_client.post("/shells", json=aas_data)
-        assert response.status_code in (200, 201)
+        original_allow_anonymous = settings.allow_anonymous_admin
+        settings.allow_anonymous_admin = False
+        try:
+            response = await test_client.get("/shells")
+            assert response.status_code == 401
+        finally:
+            settings.allow_anonymous_admin = original_allow_anonymous
 
     @pytest.mark.asyncio
     async def test_invalid_bearer_format_returns_401(

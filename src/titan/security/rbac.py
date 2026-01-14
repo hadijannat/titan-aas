@@ -40,6 +40,9 @@ class Permission(str, Enum):
     UPDATE_CONCEPT_DESCRIPTION = "update:concept_description"
     DELETE_CONCEPT_DESCRIPTION = "delete:concept_description"
 
+    # Operation invocation
+    INVOKE_OPERATION = "invoke:operation"
+
     # Admin operations
     ADMIN = "admin:*"
 
@@ -84,6 +87,7 @@ ROLE_PERMISSIONS: dict[str, set[Permission]] = {
         Permission.UPDATE_DESCRIPTOR,
         Permission.CREATE_CONCEPT_DESCRIPTION,
         Permission.UPDATE_CONCEPT_DESCRIPTION,
+        Permission.INVOKE_OPERATION,
     },
     Role.TITAN_WRITE.value: {
         Permission.READ_AAS,
@@ -98,6 +102,7 @@ ROLE_PERMISSIONS: dict[str, set[Permission]] = {
         Permission.UPDATE_DESCRIPTOR,
         Permission.CREATE_CONCEPT_DESCRIPTION,
         Permission.UPDATE_CONCEPT_DESCRIPTION,
+        Permission.INVOKE_OPERATION,
     },
     Role.ADMIN.value: set(Permission),
     Role.TITAN_ADMIN.value: set(Permission),

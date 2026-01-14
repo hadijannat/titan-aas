@@ -1,6 +1,7 @@
 # Capacity Planning Guide
 
 This document provides sizing guidelines for Titan-AAS deployments based on workload characteristics.
+All figures are **planning targets** and must be validated with benchmarks in your environment.
 
 ---
 

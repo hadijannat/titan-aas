@@ -130,6 +130,26 @@ class Settings(BaseSettings):
     oidc_roles_claim: str | None = Field(default="roles", validation_alias="OIDC_ROLES_CLAIM")
     oidc_jwks_cache_seconds: int = Field(default=3600, validation_alias="OIDC_JWKS_CACHE_SECONDS")
 
+    # Authentication defaults
+    allow_anonymous_admin: bool = Field(
+        default=False, validation_alias="ALLOW_ANONYMOUS_ADMIN"
+    )
+    public_health_endpoints: bool = Field(
+        default=False, validation_alias="PUBLIC_HEALTH_ENDPOINTS"
+    )
+    public_metrics_endpoint: bool = Field(
+        default=False, validation_alias="PUBLIC_METRICS_ENDPOINT"
+    )
+    public_description_endpoints: bool = Field(
+        default=False, validation_alias="PUBLIC_DESCRIPTION_ENDPOINTS"
+    )
+    public_jobs_endpoints: bool = Field(
+        default=False, validation_alias="PUBLIC_JOBS_ENDPOINTS"
+    )
+    public_debug_endpoints: bool = Field(
+        default=False, validation_alias="PUBLIC_DEBUG_ENDPOINTS"
+    )
+
     # Observability
     enable_tracing: bool = Field(default=True, validation_alias="ENABLE_TRACING")
     otlp_endpoint: str | None = Field(default=None, validation_alias="OTLP_ENDPOINT")
@@ -185,6 +205,8 @@ class Settings(BaseSettings):
     enable_rate_limiting: bool = Field(default=True, validation_alias="ENABLE_RATE_LIMITING")
     rate_limit_requests: int = Field(default=100, validation_alias="RATE_LIMIT_REQUESTS")
     rate_limit_window: int = Field(default=60, validation_alias="RATE_LIMIT_WINDOW")
+    # Rate limit fail mode: "open" (allow if Redis down) or "closed" (reject if Redis down)
+    rate_limit_fail_mode: str = Field(default="open", validation_alias="RATE_LIMIT_FAIL_MODE")
 
     # Security Headers
     enable_security_headers: bool = Field(default=True, validation_alias="ENABLE_SECURITY_HEADERS")

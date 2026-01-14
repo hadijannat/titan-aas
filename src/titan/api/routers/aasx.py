@@ -1059,6 +1059,189 @@ async def get_package_submodels(
     return {"result": submodels}
 
 
+@router.get(
+    "/{package_id}/shells/{aas_id_short}",
+    dependencies=[Depends(require_permission(Permission.READ_AAS))],
+)
+async def get_package_shell_by_id_short(
+    package_id: str,
+    aas_id_short: str,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Get a specific shell from a package by idShort.
+
+    Extracts and returns the full AAS JSON for the shell with the matching
+    idShort from the AASX package.
+
+    Args:
+        package_id: Package identifier
+        aas_id_short: idShort of the shell to extract
+
+    Returns:
+        Full AAS JSON document
+    """
+    stmt = select(AasxPackageTable).where(AasxPackageTable.id == package_id)
+    result = await session.execute(stmt)
+    package = result.scalar_one_or_none()
+
+    if package is None:
+        raise NotFoundError("AasxPackage", package_id)
+
+    # Parse package to find the shell
+    content = await _retrieve_package(package.storage_uri)
+    importer = AasxImporter()
+    parsed = await importer.import_from_stream(BytesIO(content))
+
+    # Find shell by idShort
+    target_shell = None
+    for shell in parsed.shells:
+        if shell.id_short == aas_id_short:
+            target_shell = shell
+            break
+
+    if target_shell is None:
+        raise NotFoundError("Shell", aas_id_short)
+
+    # Return full AAS document
+    return target_shell.model_dump(by_alias=True, exclude_none=True)
+
+
+@router.get(
+    "/{package_id}/submodels/{submodel_id_short}",
+    dependencies=[Depends(require_permission(Permission.READ_SUBMODEL))],
+)
+async def get_package_submodel_by_id_short(
+    package_id: str,
+    submodel_id_short: str,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Get a specific submodel from a package by idShort.
+
+    Extracts and returns the full Submodel JSON for the submodel with the
+    matching idShort from the AASX package.
+
+    Args:
+        package_id: Package identifier
+        submodel_id_short: idShort of the submodel to extract
+
+    Returns:
+        Full Submodel JSON document
+    """
+    stmt = select(AasxPackageTable).where(AasxPackageTable.id == package_id)
+    result = await session.execute(stmt)
+    package = result.scalar_one_or_none()
+
+    if package is None:
+        raise NotFoundError("AasxPackage", package_id)
+
+    # Parse package to find the submodel
+    content = await _retrieve_package(package.storage_uri)
+    importer = AasxImporter()
+    parsed = await importer.import_from_stream(BytesIO(content))
+
+    # Find submodel by idShort
+    target_submodel = None
+    for sm in parsed.submodels:
+        if sm.id_short == submodel_id_short:
+            target_submodel = sm
+            break
+
+    if target_submodel is None:
+        raise NotFoundError("Submodel", submodel_id_short)
+
+    # Return full Submodel document
+    return target_submodel.model_dump(by_alias=True, exclude_none=True)
+
+
+@router.get(
+    "/{package_id}/concept-descriptions",
+    dependencies=[Depends(require_permission(Permission.READ_CONCEPT_DESCRIPTION))],
+)
+async def get_package_concept_descriptions(
+    package_id: str,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """List all concept descriptions contained in an AASX package.
+
+    Args:
+        package_id: Package identifier
+
+    Returns:
+        List of concept descriptions with basic metadata
+    """
+    stmt = select(AasxPackageTable).where(AasxPackageTable.id == package_id)
+    result = await session.execute(stmt)
+    package = result.scalar_one_or_none()
+
+    if package is None:
+        raise NotFoundError("AasxPackage", package_id)
+
+    # Parse package to get concept description details
+    content = await _retrieve_package(package.storage_uri)
+    importer = AasxImporter()
+    parsed = await importer.import_from_stream(BytesIO(content))
+
+    concept_descriptions = [
+        {
+            "id": cd.id,
+            "idShort": cd.id_short,
+            "isCaseOf": [
+                ref.keys[0].value if ref.keys else None
+                for ref in (cd.is_case_of or [])
+            ],
+        }
+        for cd in parsed.concept_descriptions
+    ]
+
+    return {"result": concept_descriptions}
+
+
+@router.get(
+    "/{package_id}/concept-descriptions/{cd_id_short}",
+    dependencies=[Depends(require_permission(Permission.READ_CONCEPT_DESCRIPTION))],
+)
+async def get_package_concept_description_by_id_short(
+    package_id: str,
+    cd_id_short: str,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Get a specific concept description from a package by idShort.
+
+    Extracts and returns the full ConceptDescription JSON.
+
+    Args:
+        package_id: Package identifier
+        cd_id_short: idShort of the concept description to extract
+
+    Returns:
+        Full ConceptDescription JSON document
+    """
+    stmt = select(AasxPackageTable).where(AasxPackageTable.id == package_id)
+    result = await session.execute(stmt)
+    package = result.scalar_one_or_none()
+
+    if package is None:
+        raise NotFoundError("AasxPackage", package_id)
+
+    # Parse package to find the concept description
+    content = await _retrieve_package(package.storage_uri)
+    importer = AasxImporter()
+    parsed = await importer.import_from_stream(BytesIO(content))
+
+    # Find concept description by idShort
+    target_cd = None
+    for cd in parsed.concept_descriptions:
+        if cd.id_short == cd_id_short:
+            target_cd = cd
+            break
+
+    if target_cd is None:
+        raise NotFoundError("ConceptDescription", cd_id_short)
+
+    # Return full ConceptDescription document
+    return target_cd.model_dump(by_alias=True, exclude_none=True)
+
+
 @router.post(
     "/{package_id}/validate",
     dependencies=[Depends(require_permission(Permission.READ_AAS))],

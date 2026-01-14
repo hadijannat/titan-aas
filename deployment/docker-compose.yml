@@ -70,12 +70,12 @@ services:
       dockerfile: deployment/Dockerfile
     container_name: titan-aas
     ports:
-      - "8080:8080"
+      - "${TITAN_PORT:-8080}:${TITAN_PORT:-8080}"
     environment:
       # Core settings
       TITAN_ENV: production
       TITAN_HOST: 0.0.0.0
-      TITAN_PORT: 8080
+      TITAN_PORT: ${TITAN_PORT:-8080}
       TITAN_LOG_LEVEL: INFO
 
       # Database
@@ -92,6 +92,9 @@ services:
       ENABLE_TRACING: "true"
       ENABLE_METRICS: "true"
       OTLP_ENDPOINT: http://jaeger:4317
+
+      # Development defaults (override via env)
+      ALLOW_ANONYMOUS_ADMIN: ${ALLOW_ANONYMOUS_ADMIN:-false}
 
       # OIDC (optional - uncomment to enable)
       # OIDC_ISSUER: https://your-idp.example.com/realms/titan
@@ -112,7 +115,7 @@ services:
           "CMD",
           "python",
           "-c",
-          "import httpx; httpx.get('http://localhost:8080/health').raise_for_status()",
+          "import os, httpx; port = os.getenv('TITAN_PORT', '8080'); httpx.get(f'http://localhost:{port}/health').raise_for_status()",
         ]
       interval: 30s
       timeout: 10s
@@ -147,7 +150,8 @@ services:
     depends_on:
       - titan
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/"]
+      # Note: If using nginx:alpine, wget is available. For minimal images, adjust accordingly.
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:80/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -170,7 +174,8 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--web.enable-lifecycle'
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      # Use wget with output redirection for more reliable healthcheck
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:9090/-/healthy || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -194,7 +199,7 @@ services:
     depends_on:
       - prometheus
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:3000/api/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -214,7 +219,7 @@ services:
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:16686/"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:16686/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -229,7 +234,8 @@ services:
     ports:
       - "9093:9093"
     volumes:
-      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      # Use minimal config for local/dev; swap to alertmanager.yml for production routing.
+      - ./alertmanager/alertmanager.dev.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager_data:/alertmanager
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
@@ -244,7 +250,7 @@ services:
       PAGERDUTY_SERVICE_KEY: ""
       SMTP_PASSWORD: ""
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9093/-/healthy"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:9093/-/healthy || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

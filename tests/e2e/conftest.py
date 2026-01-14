@@ -15,7 +15,11 @@ DEPLOYMENT_DIR = Path(__file__).parent.parent.parent / "deployment"
 COMPOSE_FILE = DEPLOYMENT_DIR / "docker-compose.yml"
 
 # Base URL for the API
-BASE_URL = os.environ.get("E2E_BASE_URL", "http://localhost:8080")
+def _get_base_url() -> str:
+    return os.environ.get(
+        "E2E_BASE_URL",
+        f"http://localhost:{os.environ.get('TITAN_PORT', '8080')}",
+    )
 
 # Timeout for waiting for services
 STARTUP_TIMEOUT = 120  # seconds
@@ -49,6 +53,14 @@ def docker_compose_up() -> Generator[None, None, None]:
         return
 
     compose_env = os.environ.copy()
+    compose_env.setdefault("ALLOW_ANONYMOUS_ADMIN", "true")
+    if "TITAN_PORT" not in compose_env and not _is_port_available(8080):
+        fallback_port = _pick_free_port()
+        compose_env["TITAN_PORT"] = str(fallback_port)
+        compose_env.setdefault("E2E_BASE_URL", f"http://localhost:{fallback_port}")
+        os.environ.setdefault("TITAN_PORT", str(fallback_port))
+        os.environ.setdefault("E2E_BASE_URL", f"http://localhost:{fallback_port}")
+        print(f"⚠️  Port 8080 in use; using TITAN_PORT={fallback_port} for E2E stack.")
     if "MOSQUITTO_PORT" not in compose_env and not _is_port_available(1883):
         fallback_port = _pick_free_port()
         compose_env["MOSQUITTO_PORT"] = str(fallback_port)
@@ -67,7 +79,7 @@ def docker_compose_up() -> Generator[None, None, None]:
     start_time = time.time()
     while time.time() - start_time < STARTUP_TIMEOUT:
         try:
-            response = httpx.get(f"{BASE_URL}/health", timeout=5)
+            response = httpx.get(f"{_get_base_url()}/health", timeout=5)
             if response.status_code == 200:
                 health = response.json()
                 if health.get("status") == "healthy":
@@ -104,13 +116,13 @@ def docker_compose_up() -> Generator[None, None, None]:
 @pytest.fixture
 def client(docker_compose_up: None) -> httpx.Client:
     """HTTP client for API requests."""
-    return httpx.Client(base_url=BASE_URL, timeout=30)
+    return httpx.Client(base_url=_get_base_url(), timeout=30)
 
 
 @pytest.fixture
 def async_client(docker_compose_up: None) -> httpx.AsyncClient:
     """Async HTTP client for API requests."""
-    return httpx.AsyncClient(base_url=BASE_URL, timeout=30)
+    return httpx.AsyncClient(base_url=_get_base_url(), timeout=30)
 
 
 @pytest.fixture

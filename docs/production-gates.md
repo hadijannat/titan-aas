@@ -1,7 +1,9 @@
-# Production Gates Checklist
+# Production Gates Checklist (Draft)
 
-This document provides measurable acceptance criteria for Titan-AAS releases.
-Each gate must be verified before a version can be considered production-ready.
+This document provides measurable acceptance criteria for future Titan-AAS releases.
+**Titan-AAS is currently a prototype/research platform and is not production-ready.**
+This is a planning checklist, not proof of production readiness. Each gate should be
+verified before a version can be considered production-ready.
 
 ---
 
@@ -182,7 +184,8 @@ Before tagging a release:
 
 ## Known Limitations
 
-1. **Anonymous mode grants admin**: In development mode without OIDC, all requests are treated as admin. Never use in production.
+1. **Anonymous mode grants admin**: Only when `ALLOW_ANONYMOUS_ADMIN=true` and OIDC is unset.
+   Never use in production.
 
 2. **JWKS cache fallback**: If OIDC provider is unavailable, cached keys are used. Stale keys may cause auth failures.
 

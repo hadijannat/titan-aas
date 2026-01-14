@@ -58,7 +58,7 @@ CREATE INDEX idx_shells_doc ON shells USING GIN (doc);
 - **Zero re-serialization overhead**: Clients receive exact bytes that were stored.
 - **Full query capability**: JSONB operators enable complex filtering.
 - **ETag support**: Content-based cache validation without parsing.
-- **Fast path performance**: 10ms p50 latency achievable on reads.
+- **Fast path performance**: Target (requires benchmark evidence; see `docs/benchmarks.md`).
 
 ### Negative
 

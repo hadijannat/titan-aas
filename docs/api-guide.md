@@ -1,6 +1,7 @@
 # Titan-AAS API Guide
 
-This guide covers the Titan-AAS REST API, which implements the IDTA-01002 Asset Administration Shell API specification.
+This guide covers the Titan-AAS REST API, which **targets** the IDTA-01002 Asset Administration Shell API
+specification. Coverage is partial; see `docs/conformance-matrix.md` for current status.
 
 ## Base URL
 

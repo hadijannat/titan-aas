@@ -13,12 +13,26 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from titan.config import settings
 from titan.jobs import Job, JobQueue, JobStatus
+from titan.security.deps import require_permission_if_public
+from titan.security.rbac import Permission
 
-router = APIRouter(prefix="/jobs", tags=["Jobs"])
+router = APIRouter(
+    prefix="/jobs",
+    tags=["Jobs"],
+    dependencies=[
+        Depends(
+            require_permission_if_public(
+                Permission.ADMIN,
+                lambda: settings.public_jobs_endpoints,
+            )
+        )
+    ],
+)
 
 # Shared queue instance
 _queue: JobQueue | None = None

@@ -1,0 +1,14 @@
+# Minimal Alertmanager config for local/dev stacks.
+
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: 'default-receiver'
+  group_by: ['alertname', 'severity', 'job']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+receivers:
+  - name: 'default-receiver'

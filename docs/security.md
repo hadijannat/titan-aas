@@ -28,9 +28,36 @@ Role extraction supports:
 Authorization helpers treat `admin` or `titan:admin` as admin roles, and
 `reader`/`writer`/`titan:read`/`titan:write` as read/write roles.
 
+## Anonymous Admin (Explicit Opt-In)
+
+If you need local development without OIDC, you can explicitly allow anonymous
+admin access:
+
+```bash
+ALLOW_ANONYMOUS_ADMIN=true
+```
+
+When enabled and `OIDC_ISSUER` is unset, unauthenticated requests receive full
+admin privileges. Never use this in production.
+
+## Public Endpoint Overrides (Explicit Opt-In)
+
+By default, sensitive endpoints require authentication. You can expose them
+explicitly for internal networks:
+
+```bash
+PUBLIC_HEALTH_ENDPOINTS=true
+PUBLIC_METRICS_ENDPOINT=true
+PUBLIC_DESCRIPTION_ENDPOINTS=true
+PUBLIC_JOBS_ENDPOINTS=true
+PUBLIC_DEBUG_ENDPOINTS=true
+```
+
 ## Rate Limiting
 
-Rate limiting is enabled by default via Redis-backed sliding windows.
+Rate limiting is enabled by default via Redis-backed sliding windows. It is intended for
+fairness and tenant isolation, **not** as a primary DDoS mitigation layer. Use an ingress
+gateway/WAF for volumetric protection.
 
 Configuration (env vars):
 

@@ -166,15 +166,28 @@ async def require_authenticated(
     """
     validator = get_token_validator()
 
-    # If OIDC not configured, create anonymous user with full access
+    # SECURITY: If OIDC not configured, require explicit dev-mode flag
+    # WARNING: ALLOW_ANONYMOUS_ADMIN grants full admin access to ALL requests
+    # This should ONLY be used for local development without authentication
     if validator is None:
-        anon = User(
-            sub="anonymous",
-            name="Anonymous",
-            roles=["admin"],  # Full access when auth disabled
+        if settings.allow_anonymous_admin:
+            # DEV-ONLY: Create anonymous admin for local testing
+            # A startup warning is logged in app.py lifespan
+            anon = User(
+                sub="anonymous",
+                name="Anonymous (DEV MODE)",
+                roles=["admin"],
+            )
+            request.state.user = anon
+            return anon
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=(
+                "Authentication is not configured. Set OIDC_ISSUER to enable OIDC or "
+                "ALLOW_ANONYMOUS_ADMIN=true for local development only."
+            ),
+            headers={"WWW-Authenticate": "Bearer"},
         )
-        request.state.user = anon
-        return anon
 
     if user is None:
         raise HTTPException(
@@ -230,6 +243,30 @@ async def require_admin(
             detail="Admin access required",
         )
     return user
+
+
+def require_permission_if_public(
+    permission: Permission,
+    public_flag: Callable[[], bool],
+) -> Callable[[Request, User | None], Awaitable[User | None]]:
+    """Create dependency that optionally requires a permission based on config."""
+
+    async def _require_permission_if_public(
+        request: Request,
+        user: Annotated[User | None, Depends(get_optional_user)],
+    ) -> User | None:
+        if public_flag():
+            return user
+
+        authenticated = await require_authenticated(request, user)
+        if not rbac_policy.has_permission(authenticated, permission):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Permission '{permission.value}' required",
+            )
+        return authenticated
+
+    return _require_permission_if_public
 
 
 def require_permission(

@@ -135,8 +135,25 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             limiter = self._get_limiter(redis)
             allowed, headers = await limiter.is_allowed(key)
         except Exception:
-            # If Redis is unavailable, allow the request
-            # but don't add rate limit headers
+            # Redis unavailable - check fail mode setting
+            from titan.config import settings
+
+            if settings.rate_limit_fail_mode == "closed":
+                # Fail-closed: reject requests when Redis is unavailable
+                return JSONResponse(
+                    status_code=503,
+                    content={
+                        "messages": [
+                            {
+                                "code": "ServiceUnavailable",
+                                "messageType": "Error",
+                                "text": "Rate limiting service unavailable. Please retry later.",
+                            }
+                        ]
+                    },
+                    headers={"Retry-After": "30"},
+                )
+            # Fail-open (default): allow request when Redis is unavailable
             return await call_next(request)
 
         if not allowed:
@@ -177,8 +194,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return f"ratelimit:token:{token_hash}"
 
         # Fall back to IP address
+        # Hash IP to prevent Redis key injection from malicious X-Forwarded-For headers
         client_ip = self._get_client_ip(request)
-        return f"ratelimit:ip:{client_ip}"
+        ip_hash = hashlib.sha256(client_ip.encode()).hexdigest()[:16]
+        return f"ratelimit:ip:{ip_hash}"
 
     def _get_client_ip(self, request: Request) -> str:
         """Extract client IP, handling proxies.

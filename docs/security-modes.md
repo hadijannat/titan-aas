@@ -33,7 +33,7 @@ Titan-AAS implements a layered security stack:
 
 | Mode | OIDC_ISSUER | ENABLE_ABAC | ENABLE_RATE_LIMITING | Risk Level |
 |------|-------------|-------------|----------------------|------------|
-| Development | unset | `false` | `false` | **HIGH** |
+| Development | unset + `ALLOW_ANONYMOUS_ADMIN=true` | `false` | `false` | **HIGH** |
 | OIDC Only | set | `false` | `true` | MEDIUM |
 | OIDC + RBAC | set | `false` | `true` | LOW |
 | OIDC + ABAC | set | `true` | `true` | **LOWEST** |
@@ -42,12 +42,13 @@ Titan-AAS implements a layered security stack:
 
 ## Mode Details
 
-### Development Mode (Anonymous)
+### Development Mode (Anonymous - Explicit Opt-In)
 
 **Configuration:**
 ```bash
 # No authentication configured
 # OIDC_ISSUER is unset
+ALLOW_ANONYMOUS_ADMIN=true
 ENABLE_RATE_LIMITING=false
 ENABLE_ABAC=false
 ```
@@ -63,8 +64,9 @@ ENABLE_ABAC=false
 ┌────────────────────────────────────────────────────────────────┐
 │ ⚠️  NEVER USE DEVELOPMENT MODE IN PRODUCTION                   │
 │                                                                 │
-│ When OIDC_ISSUER is not set, unauthenticated requests receive  │
-│ full admin privileges. This grants anonymous users:            │
+│ When OIDC_ISSUER is not set and ALLOW_ANONYMOUS_ADMIN is true, │
+│ unauthenticated requests receive full admin privileges. This   │
+│ grants anonymous users:                                        │
 │                                                                 │
 │ - Full CRUD on all AAS                                         │
 │ - Full CRUD on all Submodels                                   │
@@ -74,16 +76,27 @@ ENABLE_ABAC=false
 └────────────────────────────────────────────────────────────────┘
 ```
 
-**Code Reference:** `src/titan/security/deps.py:168-176`
+**Code Reference:** `src/titan/security/deps.py`
 ```python
-# If OIDC not configured, create anonymous user with full access
-if validator is None:
-    anon = User(
-        sub="anonymous",
-        name="Anonymous",
-        roles=["admin"],  # Full access when auth disabled
-    )
+# If OIDC not configured, allow anonymous admin only when explicitly enabled
+if validator is None and settings.allow_anonymous_admin:
+    anon = User(sub="anonymous", name="Anonymous", roles=["admin"])
     return anon
+```
+
+---
+
+### Public Endpoint Overrides (Explicit Opt-In)
+
+By default, sensitive endpoints require authentication. You can explicitly expose
+them for internal networks or local development:
+
+```bash
+PUBLIC_HEALTH_ENDPOINTS=true
+PUBLIC_METRICS_ENDPOINT=true
+PUBLIC_DESCRIPTION_ENDPOINTS=true
+PUBLIC_JOBS_ENDPOINTS=true
+PUBLIC_DEBUG_ENDPOINTS=true
 ```
 
 ---
@@ -334,6 +347,12 @@ Before deploying to production, verify:
 | `OIDC_CLIENT_ID` | unset | Client ID for token validation |
 | `OIDC_ROLES_CLAIM` | `roles` | JWT claim containing user roles |
 | `OIDC_JWKS_CACHE_SECONDS` | `3600` | JWKS cache TTL in seconds |
+| `ALLOW_ANONYMOUS_ADMIN` | `false` | Allow anonymous admin when OIDC is unset (dev only) |
+| `PUBLIC_HEALTH_ENDPOINTS` | `false` | Expose `/health*` without auth |
+| `PUBLIC_METRICS_ENDPOINT` | `false` | Expose `/metrics` without auth |
+| `PUBLIC_DESCRIPTION_ENDPOINTS` | `false` | Expose `/description*` without auth |
+| `PUBLIC_JOBS_ENDPOINTS` | `false` | Expose `/jobs*` without auth |
+| `PUBLIC_DEBUG_ENDPOINTS` | `false` | Expose `/debug/profile*` without auth |
 | `ENABLE_RATE_LIMITING` | `true` | Enable rate limiting |
 | `RATE_LIMIT_REQUESTS` | `100` | Requests per window |
 | `RATE_LIMIT_WINDOW` | `60` | Window duration in seconds |

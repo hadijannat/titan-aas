@@ -1,6 +1,6 @@
 # Titan-AAS Architecture
 
-Industrial-grade Asset Administration Shell runtime implementing IDTA-01001/01002 standards.
+Asset Administration Shell runtime targeting IDTA-01001/01002 standards.
 
 ---
 
@@ -11,7 +11,7 @@ src/titan/
 ├── core/           # Domain models (AAS, Submodel, SubmodelElements)
 ├── api/            # REST API endpoints (/shells, /submodels, /concept-descriptions)
 ├── persistence/    # PostgreSQL (JSONB + canonical bytes)
-├── cache/          # Redis (cache-aside + distributed invalidation)
+├── cache/          # Redis (cache-aside)
 ├── events/         # Event bus (single-writer + micro-batching)
 ├── connectors/     # MQTT integrations
 ├── security/       # OIDC auth + RBAC/ABAC + request signing
@@ -21,7 +21,7 @@ src/titan/
 ├── compat/         # AASX import/export compatibility
 ├── distributed/    # Leader election / coordination
 ├── jobs/           # Background jobs
-├── plugins/        # Extension hooks
+├── plugins/        # Extension hooks (planned)
 ├── graphql/        # GraphQL API (optional)
 └── cli/            # Command-line interface
 ```
@@ -58,7 +58,7 @@ src/titan/
 | `pagination.py` | Cursor-based pagination |
 
 **Fast vs Slow Path:**
-- **Fast:** No modifiers → stream pre-serialized bytes directly (sub-ms)
+- **Fast:** No modifiers → stream pre-serialized bytes directly (latency depends on cache/network)
 - **Slow:** Has modifiers → deserialize, apply projection, re-serialize
 
 ### persistence/ - Database
@@ -74,13 +74,12 @@ src/titan/
 **Key Pattern:** Store both `doc` (JSONB, GIN-indexed) and `doc_bytes` (canonical JSON). Queries use JSONB, reads stream bytes.
 
 ### cache/ - Redis
-**What:** Distributed cache with invalidation across instances.
+**What:** Cache-aside storage for serialized bytes with TTL-based expiry.
 
 | File | Purpose |
 |------|---------|
 | `redis.py` | RedisCache with get/set/delete operations |
 | `keys.py` | Cache key generation patterns |
-| `invalidation.py` | Pub/Sub broadcaster for cache sync |
 
 ### events/ - Event System
 **What:** Single-writer pattern for consistency and event broadcasting.
@@ -112,6 +111,37 @@ src/titan/
 | File | Purpose |
 |------|---------|
 | `mqtt.py` | MqttPublisher, topics: `titan/{entity}/{id}/{action}` |
+
+---
+
+## Rationale (Prototype Track)
+
+This section documents why Titan-AAS includes certain components instead of delegating
+everything to external SDKs. These choices are *deliberate and scoped* for a prototype.
+
+### AASX Import/Export
+- **Why it exists:** Titan needs deterministic, canonical payloads for fast-path streaming
+  and reproducible tests. A minimal in-tree AASX compatibility layer keeps the export/import
+  surface small and testable.
+- **What it is not:** A drop-in replacement for mature SDKs (e.g., BaSyx). For full-featured
+  authoring, transformation, or advanced validation, use external tooling.
+
+### Semantic Validation
+- **Default mode:** Lenient. Missing ConceptDescriptions or semantic definitions produce
+  warnings, not errors.
+- **Why:** Semantic IDs are optional and can reference arbitrary vocabularies; rejecting
+  valid AAS content would be incorrect for general use.
+
+### Middleware Wrappers
+- **Why it exists:** Centralizes configuration and defaults for standard Starlette middleware
+  (CORS, gzip, security headers) and keeps settings in one place.
+- **Scope:** No custom protocol logic; it is configuration glue, not a bespoke middleware stack.
+
+### Dual Observability & Event Transports
+- **Prometheus + OpenTelemetry:** Prometheus is for scrape-based operational metrics; OTel is
+  for distributed tracing. Both are optional and can be enabled independently.
+- **WebSocket + MQTT:** WebSocket targets browser/UI consumers; MQTT targets edge/IoT brokers.
+  If you only need one, disable the other.
 
 ### storage/ - Blob Storage
 **What:** Externalized storage for large File/Blob elements.
@@ -176,7 +206,7 @@ Request → Check Redis Cache ──hit──→ Stream bytes → Response
 2. **Single Writer:** All writes go through event bus → sequential processing (no races)
 3. **Cache-Aside:** Redis caches serialized bytes; Pub/Sub invalidates across instances
 4. **Fast Path:** Default reads bypass deserialization entirely
-5. **IDTA Compliance:** Full IDTA-01001/01002 spec implementation
+5. **IDTA Alignment:** Targets IDTA-01001/01002; coverage is tracked in the conformance matrix
 
 ---
 

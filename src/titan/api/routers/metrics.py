@@ -5,12 +5,25 @@ Exposes /metrics endpoint in Prometheus exposition format.
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from starlette.responses import Response
 
+from titan.config import settings
 from titan.observability.metrics import get_metrics
+from titan.security.deps import require_permission_if_public
+from titan.security.rbac import Permission
 
-router = APIRouter(tags=["observability"])
+router = APIRouter(
+    tags=["observability"],
+    dependencies=[
+        Depends(
+            require_permission_if_public(
+                Permission.ADMIN,
+                lambda: settings.public_metrics_endpoint,
+            )
+        )
+    ],
+)
 
 
 @router.get(

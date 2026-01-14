@@ -13,13 +13,26 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
 from titan.cache.redis import RedisCache, get_redis
+from titan.config import settings
 from titan.persistence.db import health_check as db_health_check
+from titan.security.deps import require_permission_if_public
+from titan.security.rbac import Permission
 
-router = APIRouter(tags=["health"])
+router = APIRouter(
+    tags=["health"],
+    dependencies=[
+        Depends(
+            require_permission_if_public(
+                Permission.ADMIN,
+                lambda: settings.public_health_endpoints,
+            )
+        )
+    ],
+)
 
 
 class HealthStatus(str, Enum):

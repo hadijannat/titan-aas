@@ -14,8 +14,11 @@ from httpx import ASGITransport, AsyncClient
 @pytest_asyncio.fixture
 async def api_client() -> AsyncIterator[AsyncClient]:
     """Create an API client for contract testing."""
+    from titan.config import settings
     from titan.api.app import create_app
 
+    original_allow_anonymous = settings.allow_anonymous_admin
+    settings.allow_anonymous_admin = True
     app = create_app()
 
     async with AsyncClient(
@@ -23,3 +26,5 @@ async def api_client() -> AsyncIterator[AsyncClient]:
         base_url="http://test",
     ) as client:
         yield client
+
+    settings.allow_anonymous_admin = original_allow_anonymous

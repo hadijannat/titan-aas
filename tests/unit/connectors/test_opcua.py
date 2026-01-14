@@ -82,11 +82,10 @@ class TestOpcUaClient:
         mock_client.connect = AsyncMock(side_effect=TimeoutError("Connection timeout"))
 
         with patch("asyncua.Client", return_value=mock_client):
-            with patch("asyncio.wait_for", side_effect=TimeoutError("Connection timeout")):
-                result = await opcua_client.connect()
+            result = await opcua_client.connect()
 
-                assert result is False
-                assert not opcua_client.is_connected
+            assert result is False
+            assert not opcua_client.is_connected
 
     @pytest.mark.asyncio
     async def test_connect_error(self, opcua_client: OpcUaClient) -> None:

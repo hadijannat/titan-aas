@@ -89,7 +89,8 @@ Titan-AAS automatically validates AASX structure during upload:
 
 - **OPC Compliance**: Verifies ZIP structure, relationships, content types
 - **AAS Metamodel**: Validates AAS/Submodel structure against IDTA-01001
-- **Semantic Validation**: Checks IEC 61360 data specifications (if configured)
+- **Semantic Validation**: Lenient checks; missing ConceptDescriptions or vocabularies
+  generate warnings (not hard failures). IEC 61360 content is validated only when present.
 
 Validation failures return HTTP 400 with detailed error messages.
 
@@ -208,7 +209,8 @@ Response:
 
 ## Version Control
 
-Titan-AAS provides enterprise-grade version control for AASX packages, enabling audit trails, rollback capabilities, and safe production deployments.
+Titan-AAS provides versioned snapshots for AASX packages to support audit trails,
+rollback workflows, and controlled deployments.
 
 ### Version Chain Architecture
 
@@ -459,6 +461,7 @@ Response:
 
 ### Comparison Performance
 
+**Illustrative estimates only** (replace with measured results):
 - **Small packages** (< 10 MB, < 50 entities): ~500ms
 - **Medium packages** (10-50 MB, 50-200 entities): ~2s
 - **Large packages** (> 50 MB, > 200 entities): ~5-10s
@@ -529,6 +532,7 @@ Recommended tag patterns:
 ### Tag Query Performance
 
 Tags are stored in a **JSONB column with GIN index**, enabling fast lookups:
+**Illustrative estimates only** (replace with measured results):
 - Tag query: ~10ms (indexed)
 - Version chain traversal: ~50ms for 100 versions
 
@@ -720,29 +724,7 @@ Titan-AAS uses **SHA256 content hashing** to deduplicate packages with identical
 3. If exists: Return existing package (no new storage)
 4. If new: Store in blob storage
 
-**Storage savings**: ~30-50% in environments with repeated uploads of the same package.
-
-### Dependency Tracking
-
-Titan-AAS tracks dependencies between packages (e.g., Package A requires Package B version >= 1.2.0):
-
-```python
-# Not exposed via REST API yet - managed via PackageManager
-from titan.packages import DependencyManager
-
-manager = DependencyManager(session)
-await manager.add_dependency(
-    package_id="pkg-a",
-    depends_on_id="pkg-b",
-    dependency_type="required",
-    version_constraint=">=1.2.0,<2.0.0"
-)
-```
-
-**Use cases**:
-- Installation order validation
-- Circular dependency detection
-- Conflict resolution
+**Storage savings (estimate)**: ~30-50% in environments with repeated uploads of the same package.
 
 ### Event Broadcasting
 
@@ -802,6 +784,9 @@ java -jar faaast-service.jar -m package.aasx
 
 ## Performance and Best Practices
 
+**All timings below are illustrative estimates** and must be validated with benchmarks for your
+deployment environment.
+
 ### Upload Performance
 
 | Package Size | Upload Time | Validation Time |
@@ -820,7 +805,7 @@ java -jar faaast-service.jar -m package.aasx
 
 Creating a version adds:
 - **Storage**: Full package copy (no delta storage currently)
-- **Time**: ~300ms for 10 MB packages
+- **Time**: ~300ms for 10 MB packages (estimate)
 - **Database**: One additional row in `aasx_packages` table
 
 **Best practices**:
@@ -849,10 +834,8 @@ Titan-AAS uses Redis caching for:
 - Shell/Submodel lookups (10-minute TTL)
 - Version lists (1-minute TTL)
 
-**Cache invalidation** occurs on:
-- Package update/delete
-- Version creation
-- Rollback operations
+Cache freshness currently relies on TTL expiration. Explicit invalidation for
+package-related keys is not wired by default.
 
 ### CI/CD Integration
 

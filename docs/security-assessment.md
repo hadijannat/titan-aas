@@ -1,6 +1,6 @@
 # Security Assessment
 
-This document provides security evidence for Titan-AAS production deployments.
+This document provides security evidence to support potential production deployments.
 It covers authentication, authorization, security controls, and known limitations.
 
 ---
