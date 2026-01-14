@@ -121,6 +121,7 @@ jobs:
           REDIS_URL: redis://localhost:6379/0
           TITAN_ENV: production
           ENABLE_RATE_LIMITING: "false"
+          PUBLIC_HEALTH_ENDPOINTS: "true"
           LOAD_TEST_P99_MS: "300"
           LOAD_TEST_MAX_ERROR_RATE: "0.01"
         run: |

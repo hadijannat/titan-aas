@@ -295,6 +295,7 @@ jobs:
             -e DATABASE_URL=postgresql+asyncpg://titan:titan@titan-test-postgres:5432/titan \
             -e REDIS_URL=redis://titan-test-redis:6379/0 \
             -e TITAN_ENV=production \
+            -e PUBLIC_HEALTH_ENDPOINTS=true \
             -p 8080:8080 \
             titan-aas:${{ github.sha }}
 
@@ -422,6 +423,7 @@ jobs:
           REDIS_URL: redis://localhost:6379/0
           TITAN_ENV: production
           ENABLE_RATE_LIMITING: "false"
+          PUBLIC_HEALTH_ENDPOINTS: "true"
         run: |
           uv run -- titan serve --host 0.0.0.0 --port 8080 &
           echo "Waiting for server to start..."
