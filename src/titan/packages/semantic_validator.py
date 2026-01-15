@@ -472,10 +472,11 @@ class SemanticValidator:
             if hasattr(content, "value_list") and content.value_list:
                 if hasattr(element, "value") and element.value:
                     # Handle both list and ValueList object
+                    value_list: Any = content.value_list
                     pairs = (
-                        content.value_list
-                        if isinstance(content.value_list, list)
-                        else getattr(content.value_list, "value_reference_pairs", [])
+                        value_list
+                        if isinstance(value_list, list)
+                        else getattr(value_list, "value_reference_pairs", [])
                     )
                     allowed_values = {vle.value for vle in pairs if hasattr(vle, "value")}
                     if allowed_values and element.value not in allowed_values:

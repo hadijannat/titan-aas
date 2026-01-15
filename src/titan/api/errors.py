@@ -63,7 +63,7 @@ class AasApiError(HTTPException):
             messages=[
                 Message(
                     code=self.code,
-                    message_type=self.message_type,
+                    messageType=self.message_type,
                     text=self.text,
                     timestamp=datetime.now(UTC).isoformat(),
                 )
@@ -154,7 +154,7 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
             messages=[
                 Message(
                     code="InternalServerError",
-                    message_type=MessageType.EXCEPTION,
+                    messageType=MessageType.EXCEPTION,
                     text="An unexpected error occurred",
                     timestamp=datetime.now(UTC).isoformat(),
                 )

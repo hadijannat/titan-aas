@@ -278,7 +278,10 @@ async def put_concept_description_by_id(
             location=f"/concept-descriptions/{cd_identifier}",
         )
 
-    doc_bytes, etag = await repo.update(identifier, concept_description)
+    update_result = await repo.update(identifier, concept_description)
+    if update_result is None:
+        raise NotFoundError("ConceptDescription", identifier)
+    doc_bytes, etag = update_result
     await session.commit()
 
     await cache.set_concept_description(cd_identifier, doc_bytes, etag)

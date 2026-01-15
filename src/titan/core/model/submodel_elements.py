@@ -415,7 +415,7 @@ class SubmodelElementList(SubmodelElementBase):
         elif type_value == AasSubmodelElements.SUBMODEL_ELEMENT.value:
             allowed = _SUBMODEL_ELEMENT_TYPES
         else:
-            allowed = {type_value}
+            allowed = frozenset({type_value})
 
         for elem in self.value:
             elem_type = _model_type_of(elem)
