@@ -37,6 +37,7 @@ def create_minimal_aasx() -> bytes:
         env_json = b"""{
             "assetAdministrationShells": [
                 {
+                    "modelType": "AssetAdministrationShell",
                     "id": "urn:test:aas:001",
                     "idShort": "TestAAS",
                     "assetInformation": {

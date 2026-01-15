@@ -14,6 +14,7 @@ class TestSubmodelElementCrud:
     @pytest.fixture
     def base_submodel(self) -> dict:
         return {
+            "modelType": "Submodel",
             "id": "urn:example:submodel:elements",
             "idShort": "ElementSubmodel",
             "submodelElements": [],
@@ -50,6 +51,7 @@ class TestSubmodelElementCrud:
     async def test_create_nested_element(self, test_client: AsyncClient) -> None:
         """POST /submodels/{id}/submodel-elements/{path} creates nested element."""
         submodel = {
+            "modelType": "Submodel",
             "id": "urn:example:submodel:collection",
             "idShort": "CollectionSubmodel",
             "submodelElements": [
@@ -92,6 +94,7 @@ class TestSubmodelElementCrud:
     async def test_create_list_element_with_index(self, test_client: AsyncClient) -> None:
         """POST into SubmodelElementList returns indexed path."""
         submodel = {
+            "modelType": "Submodel",
             "id": "urn:example:submodel:list",
             "idShort": "ListSubmodel",
             "submodelElements": [
@@ -135,6 +138,7 @@ class TestSubmodelElementCrud:
     async def test_update_patch_delete_element(self, test_client: AsyncClient) -> None:
         """PUT, PATCH, PATCH $value, and DELETE work for elements."""
         submodel = {
+            "modelType": "Submodel",
             "id": "urn:example:submodel:update",
             "idShort": "UpdateSubmodel",
             "submodelElements": [

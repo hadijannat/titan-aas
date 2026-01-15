@@ -100,6 +100,7 @@ class TestShellMutations:
             mutation {
                 createShell(input: {
                     id: "urn:example:aas:minimal"
+                    globalAssetId: "urn:example:asset:minimal"
                 }) {
                     success
                     shell {
@@ -130,6 +131,7 @@ class TestShellMutations:
                 createShell(input: {
                     id: "urn:example:aas:type"
                     assetKind: TYPE
+                    globalAssetId: "urn:example:asset:type"
                 }) {
                     success
                     shell {
@@ -282,6 +284,7 @@ class TestMutationWithVariables:
                 "id": "urn:example:aas:variable",
                 "idShort": "VariableShell",
                 "assetKind": "INSTANCE",
+                "globalAssetId": "urn:example:asset:variable",
             }
         }
 
@@ -335,6 +338,7 @@ class TestMutationValidation:
             mutation {
                 createShell(input: {
                     idShort: "NoId"
+                    globalAssetId: "urn:example:asset:no-id"
                 }) {
                     id
                 }
@@ -370,6 +374,7 @@ class TestMutationValidation:
                 createShell(input: {
                     id: "urn:example:aas:1"
                     assetKind: INVALID
+                    globalAssetId: "urn:example:asset:invalid"
                 }) {
                     id
                 }
@@ -391,6 +396,7 @@ class TestMutationSequence:
             mutation {
                 createShell(input: {
                     id: "urn:example:aas:sequence"
+                    globalAssetId: "urn:example:asset:sequence"
                 }) {
                     success
                     shell {
@@ -421,13 +427,13 @@ class TestMutationSequence:
         """Multiple mutations in single request."""
         query = """
             mutation {
-                shell1: createShell(input: { id: "urn:example:aas:1" }) {
+                shell1: createShell(input: { id: "urn:example:aas:1" globalAssetId: "urn:example:asset:1" }) {
                     success
                     shell {
                         id
                     }
                 }
-                shell2: createShell(input: { id: "urn:example:aas:2" }) {
+                shell2: createShell(input: { id: "urn:example:aas:2" globalAssetId: "urn:example:asset:2" }) {
                     success
                     shell {
                         id

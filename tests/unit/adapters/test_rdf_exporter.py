@@ -169,6 +169,7 @@ class TestExportShell:
     def make_shell(self) -> AssetAdministrationShell:
         """Create a test shell."""
         return AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="urn:example:shell:1",
             idShort="TestShell",
             assetInformation=AssetInformation(
@@ -263,14 +264,15 @@ class TestExportSubmodel:
     def make_submodel(self) -> Submodel:
         """Create a test submodel."""
         return Submodel(
+            model_type="Submodel",
             id="urn:example:submodel:1",
             idShort="TechnicalData",
             submodelElements=[
                 Property(
+                    model_type="Property",
                     idShort="MaxTemperature",
                     valueType="xs:double",
                     value="85.5",
-                    modelType="Property",
                 ),
             ],
         )
@@ -332,24 +334,25 @@ class TestExportSubmodelElementCollection:
     def make_smc_submodel(self) -> Submodel:
         """Create a submodel with nested SMC."""
         return Submodel(
+            model_type="Submodel",
             id="urn:example:submodel:smc",
             idShort="NestedData",
             submodelElements=[
                 SubmodelElementCollection(
+                    model_type="SubmodelElementCollection",
                     idShort="Configuration",
-                    modelType="SubmodelElementCollection",
                     value=[
                         Property(
+                            model_type="Property",
                             idShort="Setting1",
                             valueType="xs:string",
                             value="enabled",
-                            modelType="Property",
                         ),
                         Property(
+                            model_type="Property",
                             idShort="Setting2",
                             valueType="xs:int",
                             value="42",
-                            modelType="Property",
                         ),
                     ],
                 ),
@@ -432,6 +435,7 @@ class TestExportWithReferences:
         exporter = AasRdfExporter()
 
         shell = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="urn:example:shell:with-refs",
             idShort="ShellWithRefs",
             assetInformation=AssetInformation(
@@ -459,6 +463,7 @@ class TestExportWithReferences:
         exporter = AasRdfExporter()
 
         shell = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="urn:example:shell:ref-keys",
             idShort="ShellRefKeys",
             assetInformation=AssetInformation(
@@ -492,6 +497,7 @@ class TestBaseUri:
         exporter = AasRdfExporter(base_uri="https://example.com/aas")
 
         shell = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="shell-1",  # Not a full URI
             idShort="TestShell",
             assetInformation=AssetInformation(
@@ -510,6 +516,7 @@ class TestBaseUri:
         exporter = AasRdfExporter()
 
         shell = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="shell-1",  # Not a full URI
             idShort="TestShell",
             assetInformation=AssetInformation(
@@ -528,6 +535,7 @@ class TestBaseUri:
         exporter = AasRdfExporter(base_uri="https://example.com/aas")
 
         shell = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="https://other.example.com/shells/1",  # Full URI
             idShort="TestShell",
             assetInformation=AssetInformation(

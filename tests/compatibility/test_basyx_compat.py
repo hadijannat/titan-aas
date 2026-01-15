@@ -3,19 +3,17 @@
 Tests to verify that Titan-AAS produces output compatible with BaSyx SDK
 and can consume BaSyx-generated content.
 
-Note: The Pydantic models use extra="forbid" and don't accept modelType
-directly - it's handled at the API layer as a discriminator. These tests
-focus on format compatibility for data exchange.
+Note: modelType is required by the Titan Pydantic models to align with
+IDTA-01001 v3.0.x. These tests include modelType explicitly.
 """
 
 import json
 
 import pytest
 
-# Sample AAS/Submodel data in BaSyx format (without modelType for Pydantic)
-# Note: modelType is typically added at the API serialization layer
+# Sample AAS/Submodel data in BaSyx format (with modelType per v3.0.x)
 BASYX_SAMPLE_AAS = {
-    # "modelType": "AssetAdministrationShell",  # Handled at API layer
+    "modelType": "AssetAdministrationShell",
     "id": "https://example.com/aas/1234",
     "idShort": "ExampleAAS",
     "assetInformation": {
@@ -50,7 +48,7 @@ BASYX_SAMPLE_AAS = {
 }
 
 BASYX_SAMPLE_SUBMODEL = {
-    # "modelType": "Submodel",  # Handled at API layer
+    "modelType": "Submodel",
     "id": "https://example.com/submodel/identification",
     "idShort": "Identification",
     "semanticId": {
@@ -172,8 +170,7 @@ class TestBaSyxAASCompatibility:
     def test_serialize_to_basyx_format(self):
         """Test that serialized AAS is compatible with BaSyx.
 
-        Note: modelType is added at the API layer for JSON responses.
-        The Pydantic model itself doesn't include it.
+        Note: modelType is required by the model and present in responses.
         """
         from titan.core.model import AssetAdministrationShell
 
@@ -181,13 +178,10 @@ class TestBaSyxAASCompatibility:
         serialized = json.loads(aas.model_dump_json(by_alias=True, exclude_none=True))
 
         # Verify required BaSyx fields are present
-        # Note: modelType would be added by API layer, not model
         assert "id" in serialized
         assert "assetInformation" in serialized
         assert "assetKind" in serialized["assetInformation"]
 
-        # The API layer adds modelType for responses
-        serialized["modelType"] = "AssetAdministrationShell"
         assert serialized["modelType"] == "AssetAdministrationShell"
 
     def test_roundtrip_preserves_data(self):
@@ -310,8 +304,7 @@ class TestBaSyxSubmodelCompatibility:
     def test_serialize_to_basyx_format(self):
         """Test that serialized Submodel is compatible with BaSyx.
 
-        Note: modelType is added at the API layer for JSON responses.
-        SubmodelElements DO have modelType as it's used for discriminated unions.
+        Note: modelType is required by the model and present in responses.
         """
         from titan.core.model import Submodel
 
@@ -319,9 +312,9 @@ class TestBaSyxSubmodelCompatibility:
         serialized = json.loads(submodel.model_dump_json(by_alias=True, exclude_none=True))
 
         # Verify required BaSyx fields
-        # Note: Submodel modelType would be added by API layer
         assert "id" in serialized
         assert "submodelElements" in serialized
+        assert serialized["modelType"] == "Submodel"
 
         # SubmodelElements DO have modelType (discriminated union)
         for elem in serialized["submodelElements"]:
@@ -354,6 +347,7 @@ class TestBaSyxValueTypeCompatibility:
 
         # Test Property parsing directly (Submodel would be tested via API)
         property_data = {
+            "modelType": "Property",
             "idShort": "TestProp",
             "valueType": value_type,
             "value": value,
@@ -370,13 +364,13 @@ class TestBaSyxApiCompatibility:
 
     def test_list_response_format(self):
         """Test that list responses follow BaSyx format."""
-        # BaSyx uses { result: [...], paging_metadata: {...} }
-        expected_keys = {"result", "paging_metadata"}
+        # AAS v3.0.x uses { result: [...], pagingMetadata: {...} }
+        expected_keys = {"result", "pagingMetadata"}
 
         # Simulate API response
         response = {
             "result": [BASYX_SAMPLE_AAS],
-            "paging_metadata": {"cursor": None},
+            "pagingMetadata": {"cursor": None},
         }
 
         assert set(response.keys()) == expected_keys

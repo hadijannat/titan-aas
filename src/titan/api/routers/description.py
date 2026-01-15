@@ -30,36 +30,36 @@ router = APIRouter(
 )
 
 
-# IDTA-01002 Service Specification Profiles
+# IDTA-01002 Service Specification Profiles (v3.0.x)
 PROFILE_IDS = {
     # AAS Repository
-    "aas_repository_full": "https://admin-shell.io/aas/API/3/1/AssetAdministrationShellRepositoryServiceSpecification/SSP-001",
-    "aas_repository_read": "https://admin-shell.io/aas/API/3/1/AssetAdministrationShellRepositoryServiceSpecification/SSP-002",
-    "aas_repository_query": "https://admin-shell.io/aas/API/3/1/AssetAdministrationShellRepositoryServiceSpecification/SSP-003",
+    "aas_repository_full": "https://admin-shell.io/aas/API/3/0/AssetAdministrationShellRepositoryServiceSpecification/SSP-001",
+    "aas_repository_read": "https://admin-shell.io/aas/API/3/0/AssetAdministrationShellRepositoryServiceSpecification/SSP-002",
+    "aas_repository_query": "https://admin-shell.io/aas/API/3/0/AssetAdministrationShellRepositoryServiceSpecification/SSP-003",
     # Submodel Repository
-    "submodel_repository_full": "https://admin-shell.io/aas/API/3/1/SubmodelRepositoryServiceSpecification/SSP-001",
-    "submodel_repository_read": "https://admin-shell.io/aas/API/3/1/SubmodelRepositoryServiceSpecification/SSP-002",
-    "submodel_repository_template": "https://admin-shell.io/aas/API/3/1/SubmodelRepositoryServiceSpecification/SSP-003",
-    "submodel_repository_template_read": "https://admin-shell.io/aas/API/3/1/SubmodelRepositoryServiceSpecification/SSP-004",
-    "submodel_repository_query": "https://admin-shell.io/aas/API/3/1/SubmodelRepositoryServiceSpecification/SSP-005",
+    "submodel_repository_full": "https://admin-shell.io/aas/API/3/0/SubmodelRepositoryServiceSpecification/SSP-001",
+    "submodel_repository_read": "https://admin-shell.io/aas/API/3/0/SubmodelRepositoryServiceSpecification/SSP-002",
+    "submodel_repository_template": "https://admin-shell.io/aas/API/3/0/SubmodelRepositoryServiceSpecification/SSP-003",
+    "submodel_repository_template_read": "https://admin-shell.io/aas/API/3/0/SubmodelRepositoryServiceSpecification/SSP-004",
+    "submodel_repository_query": "https://admin-shell.io/aas/API/3/0/SubmodelRepositoryServiceSpecification/SSP-005",
     # Registry
-    "aas_registry_full": "https://admin-shell.io/aas/API/3/1/AssetAdministrationShellRegistryServiceSpecification/SSP-001",
-    "aas_registry_read": "https://admin-shell.io/aas/API/3/1/AssetAdministrationShellRegistryServiceSpecification/SSP-002",
-    "aas_registry_bulk": "https://admin-shell.io/aas/API/3/1/AssetAdministrationShellRegistryServiceSpecification/SSP-003",
-    "aas_registry_query": "https://admin-shell.io/aas/API/3/1/AssetAdministrationShellRegistryServiceSpecification/SSP-004",
-    "aas_registry_min_read": "https://admin-shell.io/aas/API/3/1/AssetAdministrationShellRegistryServiceSpecification/SSP-005",
-    "submodel_registry_full": "https://admin-shell.io/aas/API/3/1/SubmodelRegistryServiceSpecification/SSP-001",
-    "submodel_registry_read": "https://admin-shell.io/aas/API/3/1/SubmodelRegistryServiceSpecification/SSP-002",
-    "submodel_registry_bulk": "https://admin-shell.io/aas/API/3/1/SubmodelRegistryServiceSpecification/SSP-003",
-    "submodel_registry_query": "https://admin-shell.io/aas/API/3/1/SubmodelRegistryServiceSpecification/SSP-004",
+    "aas_registry_full": "https://admin-shell.io/aas/API/3/0/AssetAdministrationShellRegistryServiceSpecification/SSP-001",
+    "aas_registry_read": "https://admin-shell.io/aas/API/3/0/AssetAdministrationShellRegistryServiceSpecification/SSP-002",
+    "aas_registry_bulk": "https://admin-shell.io/aas/API/3/0/AssetAdministrationShellRegistryServiceSpecification/SSP-003",
+    "aas_registry_query": "https://admin-shell.io/aas/API/3/0/AssetAdministrationShellRegistryServiceSpecification/SSP-004",
+    "aas_registry_min_read": "https://admin-shell.io/aas/API/3/0/AssetAdministrationShellRegistryServiceSpecification/SSP-005",
+    "submodel_registry_full": "https://admin-shell.io/aas/API/3/0/SubmodelRegistryServiceSpecification/SSP-001",
+    "submodel_registry_read": "https://admin-shell.io/aas/API/3/0/SubmodelRegistryServiceSpecification/SSP-002",
+    "submodel_registry_bulk": "https://admin-shell.io/aas/API/3/0/SubmodelRegistryServiceSpecification/SSP-003",
+    "submodel_registry_query": "https://admin-shell.io/aas/API/3/0/SubmodelRegistryServiceSpecification/SSP-004",
     # Discovery
-    "discovery_full": "https://admin-shell.io/aas/API/3/1/DiscoveryServiceSpecification/SSP-001",
-    "discovery_read": "https://admin-shell.io/aas/API/3/1/DiscoveryServiceSpecification/SSP-002",
+    "discovery_full": "https://admin-shell.io/aas/API/3/0/DiscoveryServiceSpecification/SSP-001",
+    "discovery_read": "https://admin-shell.io/aas/API/3/0/DiscoveryServiceSpecification/SSP-002",
     # Concept Description Repository
-    "concept_description_full": "https://admin-shell.io/aas/API/3/1/ConceptDescriptionRepositoryServiceSpecification/SSP-001",
-    "concept_description_query": "https://admin-shell.io/aas/API/3/1/ConceptDescriptionRepositoryServiceSpecification/SSP-002",
+    "concept_description_full": "https://admin-shell.io/aas/API/3/0/ConceptDescriptionRepositoryServiceSpecification/SSP-001",
+    "concept_description_query": "https://admin-shell.io/aas/API/3/0/ConceptDescriptionRepositoryServiceSpecification/SSP-002",
     # AASX File Server
-    "aasx_file_server": "https://admin-shell.io/aas/API/3/1/AasxFileServerServiceSpecification/SSP-001",
+    "aasx_file_server": "https://admin-shell.io/aas/API/3/0/AasxFileServerServiceSpecification/SSP-001",
 }
 
 SUPPORTED_PROFILE_KEYS = [
@@ -152,7 +152,7 @@ async def get_description() -> dict[str, Any]:
             },
         },
         "version": {
-            "specificationVersion": "3.1.1",
+            "specificationVersion": "3.0",
             "serverVersion": "0.1.0",
             "serverName": "Titan-AAS",
         },

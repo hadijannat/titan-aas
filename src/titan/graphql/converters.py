@@ -323,6 +323,7 @@ def shell_from_input(input_data: Any) -> AssetAdministrationShell:
 
     # Create shell (use camelCase field names)
     return AssetAdministrationShell(
+        modelType="AssetAdministrationShell",
         id=input_data.id,
         idShort=input_data.id_short,
         assetInformation=asset_info,
@@ -339,6 +340,7 @@ def submodel_from_input(input_data: Any) -> PydanticSubmodel:
         Pydantic Submodel model
     """
     return PydanticSubmodel(
+        modelType="Submodel",
         id=input_data.id,
         idShort=input_data.id_short,
         submodelElements=[],
@@ -378,6 +380,7 @@ def concept_description_from_input(input_data: Any) -> Any:
     from titan.core.model import ConceptDescription as PydanticConceptDescription
 
     return PydanticConceptDescription(
+        modelType="ConceptDescription",
         id=input_data.id,
         idShort=input_data.id_short,
     )

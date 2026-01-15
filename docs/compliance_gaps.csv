@@ -1,0 +1,9 @@
+id,severity,summary,locations
+paging-metadata-key,major,Responses use paging_metadata instead of pagingMetadata.,src/titan/api/pagination.py
+modifier-support-mismatch,major,Description advertises content=reference/path but projection only supports metadata/value.,src/titan/api/routers/description.py;src/titan/core/projection.py
+query-profile-missing,major,Query endpoints are not implemented for repositories/registries.,src/titan/api/routers/aas_repository.py;src/titan/api/routers/submodel_repository.py;src/titan/api/routers/concept_description_repository.py;src/titan/api/routers/registry.py
+registry-async-bulk-missing,major,Async bulk status/result endpoints are not implemented.,src/titan/api/routers/registry.py
+aasx-validation-not-enforced,moderate,AASX validator exists but is not enforced on upload/import.,src/titan/api/routers/aasx.py;src/titan/packages/validator.py
+if-match-not-required-on-delete,minor,DELETE endpoints generally do not enforce If-Match preconditions.,src/titan/api/routers/aas_repository.py;src/titan/api/routers/submodel_repository.py;src/titan/api/routers/registry.py
+content-type-negotiation,minor,Responses default to application/json rather than aas-specific media types.,src/titan/api/routers/*
+strict-uri-regex-relaxed,minor,URI regex for PathType is relaxed vs RFC3986 to satisfy pydantic-core.,src/titan/core/model/identifiers.py

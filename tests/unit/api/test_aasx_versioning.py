@@ -49,6 +49,7 @@ def create_test_aasx(shell_id: str = "urn:test:aas:001") -> bytes:
         env_json = f"""{{
             "assetAdministrationShells": [
                 {{
+                    "modelType": "AssetAdministrationShell",
                     "id": "{shell_id}",
                     "idShort": "TestAAS",
                     "assetInformation": {{

@@ -88,13 +88,7 @@ class AasRepository(BaseRepository[AssetAdministrationShell, AasTable]):
         if row is None:
             return None
 
-        doc_bytes, etag = _doc_bytes_and_etag(row.doc)
-        if row.doc_bytes != doc_bytes or row.etag != etag:
-            row.doc_bytes = doc_bytes
-            row.etag = etag
-            await self.session.flush()
-
-        return (doc_bytes, etag)
+        return (row.doc_bytes, row.etag)
 
     async def get_bytes_by_id(self, identifier: str) -> tuple[bytes, str] | None:
         """Fast path: get by original identifier."""
@@ -104,13 +98,7 @@ class AasRepository(BaseRepository[AssetAdministrationShell, AasTable]):
         if row is None:
             return None
 
-        doc_bytes, etag = _doc_bytes_and_etag(row.doc)
-        if row.doc_bytes != doc_bytes or row.etag != etag:
-            row.doc_bytes = doc_bytes
-            row.etag = etag
-            await self.session.flush()
-
-        return (doc_bytes, etag)
+        return (row.doc_bytes, row.etag)
 
     # -------------------------------------------------------------------------
     # Slow path: model operations (for projections/transformations)
@@ -389,13 +377,7 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
         if row is None:
             return None
 
-        doc_bytes, etag = _doc_bytes_and_etag(row.doc)
-        if row.doc_bytes != doc_bytes or row.etag != etag:
-            row.doc_bytes = doc_bytes
-            row.etag = etag
-            await self.session.flush()
-
-        return (doc_bytes, etag)
+        return (row.doc_bytes, row.etag)
 
     async def get_bytes_by_id(self, identifier: str) -> tuple[bytes, str] | None:
         """Fast path: get by original identifier."""
@@ -405,13 +387,7 @@ class SubmodelRepository(BaseRepository[Submodel, SubmodelTable]):
         if row is None:
             return None
 
-        doc_bytes, etag = _doc_bytes_and_etag(row.doc)
-        if row.doc_bytes != doc_bytes or row.etag != etag:
-            row.doc_bytes = doc_bytes
-            row.etag = etag
-            await self.session.flush()
-
-        return (doc_bytes, etag)
+        return (row.doc_bytes, row.etag)
 
     # -------------------------------------------------------------------------
     # Slow path: model operations
@@ -843,13 +819,7 @@ class ConceptDescriptionRepository:
         if row is None:
             return None
 
-        doc_bytes, etag = _doc_bytes_and_etag(row.doc)
-        if row.doc_bytes != doc_bytes or row.etag != etag:
-            row.doc_bytes = doc_bytes
-            row.etag = etag
-            await self.session.flush()
-
-        return (doc_bytes, etag)
+        return (row.doc_bytes, row.etag)
 
     async def get_bytes_by_id(self, identifier: str) -> tuple[bytes, str] | None:
         """Fast path: get by original identifier."""
@@ -861,13 +831,7 @@ class ConceptDescriptionRepository:
         if row is None:
             return None
 
-        doc_bytes, etag = _doc_bytes_and_etag(row.doc)
-        if row.doc_bytes != doc_bytes or row.etag != etag:
-            row.doc_bytes = doc_bytes
-            row.etag = etag
-            await self.session.flush()
-
-        return (doc_bytes, etag)
+        return (row.doc_bytes, row.etag)
 
     async def list_all(self, limit: int = 100, offset: int = 0) -> list[tuple[bytes, str]]:
         """List all ConceptDescriptions (fast path)."""

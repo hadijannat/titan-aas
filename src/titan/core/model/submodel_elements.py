@@ -1,7 +1,8 @@
-"""IDTA-01001 Part 1 v3.1.2: SubmodelElement types.
+"""IDTA-01001 Part 1 v3.0.8: SubmodelElement types.
 
 This module defines all concrete SubmodelElement types with a discriminated
-union for efficient O(1) type resolution based on the modelType field.
+union for efficient O(1) type resolution based on the modelType field
+per IDTA-01001-3-0-1_schemasV3.0.8.
 
 The discriminated union pattern ensures that:
 1. Validation chooses the correct model in O(1) time
@@ -15,10 +16,12 @@ from collections.abc import Mapping
 from typing import Annotated, Any, Literal
 
 from pydantic import Discriminator, Field, Tag
+from pydantic import model_validator
 
 from titan.core.model import StrictModel
 from titan.core.model.administrative import HasDataSpecificationMixin
 from titan.core.model.descriptions import (
+    LangStringNameType,
     LangStringTextType,
     MultiLanguageTextType,
 )
@@ -29,6 +32,8 @@ from titan.core.model.identifiers import (
     Direction,
     EntityType,
     IdShort,
+    ISO8601_DURATION_PATTERN,
+    ISO8601_UTC_PATTERN,
     PathType,
     Reference,
     StateOfEvent,
@@ -59,7 +64,7 @@ class SubmodelElementBase(
         alias="idShort",
         description="Short identifier of the element (unique within parent)",
     )
-    display_name: list[LangStringTextType] | None = Field(
+    display_name: list[LangStringNameType] | None = Field(
         default=None,
         alias="displayName",
         description="Display name in multiple languages",
@@ -67,7 +72,7 @@ class SubmodelElementBase(
     description: list[LangStringTextType] | None = Field(
         default=None, description="Description in multiple languages"
     )
-    category: str | None = Field(
+    category: Annotated[str, Field(min_length=1, max_length=128)] | None = Field(
         default=None,
         description="Category of the element (CONSTANT, PARAMETER, VARIABLE)",
     )
@@ -119,6 +124,21 @@ class MultiLanguageProperty(SubmodelElementBase):
         alias="valueId",
         description="Reference to the value definition",
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_model_type(cls, data: Any) -> Any:
+        """Accept legacy modelType values by normalizing to MultiLanguageProperty."""
+        if isinstance(data, Mapping):
+            if data.get("model_type") == "Property":
+                updated = dict(data)
+                updated["model_type"] = "MultiLanguageProperty"
+                return updated
+            if data.get("modelType") == "Property":
+                updated = dict(data)
+                updated["modelType"] = "MultiLanguageProperty"
+                return updated
+        return data
 
 
 class Range(SubmodelElementBase):
@@ -176,11 +196,89 @@ class ReferenceElement(SubmodelElementBase):
     """
 
     model_type: Literal["ReferenceElement"] = Field(
-        default="ReferenceElement",
-        alias="modelType",
-        description="Model type discriminator",
+        default="ReferenceElement", alias="modelType", description="Model type discriminator"
     )
     value: Reference | None = Field(default=None, description="The reference value")
+
+
+# -----------------------------------------------------------------------------
+# DataElement Union (for schema conformance)
+# -----------------------------------------------------------------------------
+
+
+def _model_type_of(element: Any) -> str | None:
+    """Extract modelType from a SubmodelElement instance or dict."""
+    if isinstance(element, Mapping):
+        value = element.get("modelType") or element.get("model_type")
+        return value if isinstance(value, str) else None
+    return getattr(element, "model_type", None)
+
+
+def _ensure_unique_id_shorts(elements: list[Any] | None, context: str) -> None:
+    """Ensure idShorts are unique within a container."""
+    if not elements:
+        return
+    seen: set[str] = set()
+    for elem in elements:
+        id_short = getattr(elem, "id_short", None)
+        if id_short is None and isinstance(elem, Mapping):
+            id_short = elem.get("idShort") or elem.get("id_short")
+        if not id_short:
+            continue
+        if id_short in seen:
+            raise ValueError(f"Duplicate idShort in {context}: {id_short}")
+        seen.add(id_short)
+
+
+_DATA_ELEMENT_TYPES = frozenset(
+    {
+        "Property",
+        "MultiLanguageProperty",
+        "Range",
+        "Blob",
+        "File",
+        "ReferenceElement",
+    }
+)
+_EVENT_ELEMENT_TYPES = frozenset({"BasicEventElement"})
+_SUBMODEL_ELEMENT_TYPES = frozenset(
+    {
+        "AnnotatedRelationshipElement",
+        "BasicEventElement",
+        "Blob",
+        "Capability",
+        "Entity",
+        "File",
+        "MultiLanguageProperty",
+        "Operation",
+        "Property",
+        "Range",
+        "ReferenceElement",
+        "RelationshipElement",
+        "SubmodelElementCollection",
+        "SubmodelElementList",
+    }
+)
+
+
+def _data_element_discriminator(value: Any) -> str | None:
+    """Resolve modelType for DataElement discriminated union."""
+    if isinstance(value, Mapping):
+        model_type = value.get("modelType") or value.get("model_type")
+        return model_type if isinstance(model_type, str) else None
+    return getattr(value, "model_type", None)
+
+
+# DataElement types per IDTA-01001-3-0-1 v3.0.8 schema
+DataElementUnion = Annotated[
+    Annotated[Property, Tag("Property")]
+    | Annotated[MultiLanguageProperty, Tag("MultiLanguageProperty")]
+    | Annotated[Range, Tag("Range")]
+    | Annotated[Blob, Tag("Blob")]
+    | Annotated[File, Tag("File")]
+    | Annotated[ReferenceElement, Tag("ReferenceElement")],
+    Discriminator(_data_element_discriminator),
+]
 
 
 # -----------------------------------------------------------------------------
@@ -208,7 +306,11 @@ class AnnotatedRelationshipElement(SubmodelElementBase):
     """A relationship with additional annotations.
 
     Extends RelationshipElement with the ability to attach
-    SubmodelElements as annotations to provide more context.
+    DataElements as annotations to provide more context.
+
+    Per IDTA-01001-3-0-1 v3.0.8 schema, annotations must be DataElement
+    types only (Property, MultiLanguageProperty, Range, Blob, File,
+    ReferenceElement).
     """
 
     model_type: Literal["AnnotatedRelationshipElement"] = Field(
@@ -218,8 +320,8 @@ class AnnotatedRelationshipElement(SubmodelElementBase):
     )
     first: Reference = Field(..., description="Reference to the first element")
     second: Reference = Field(..., description="Reference to the second element")
-    annotations: list[SubmodelElementUnion] | None = Field(
-        default=None, description="Annotations on the relationship"
+    annotations: Annotated[list[DataElementUnion], Field(min_length=1)] | None = Field(
+        default=None, description="DataElement annotations on the relationship"
     )
 
 
@@ -243,6 +345,11 @@ class SubmodelElementCollection(SubmodelElementBase):
     value: list[SubmodelElementUnion] | None = Field(
         default=None, description="The contained SubmodelElements"
     )
+
+    @model_validator(mode="after")
+    def _validate_unique_id_shorts(self) -> "SubmodelElementCollection":
+        _ensure_unique_id_shorts(self.value, "SubmodelElementCollection")
+        return self
 
 
 class SubmodelElementList(SubmodelElementBase):
@@ -281,6 +388,45 @@ class SubmodelElementList(SubmodelElementBase):
         default=None, description="The contained SubmodelElements"
     )
 
+    @model_validator(mode="after")
+    def _validate_list_constraints(self) -> "SubmodelElementList":
+        """Validate list element type constraints and value type requirements."""
+        if self.type_value_list_element in (
+            AasSubmodelElements.PROPERTY,
+            AasSubmodelElements.RANGE,
+        ):
+            if self.value_type_list_element is None:
+                raise ValueError(
+                    "valueTypeListElement is required when typeValueListElement is Property or Range"
+                )
+        elif self.value_type_list_element is not None:
+            raise ValueError(
+                "valueTypeListElement is only allowed for Property or Range list types"
+            )
+
+        if not self.value:
+            return self
+
+        type_value = self.type_value_list_element.value
+        if type_value == AasSubmodelElements.DATA_ELEMENT.value:
+            allowed = _DATA_ELEMENT_TYPES
+        elif type_value == AasSubmodelElements.EVENT_ELEMENT.value:
+            allowed = _EVENT_ELEMENT_TYPES
+        elif type_value == AasSubmodelElements.SUBMODEL_ELEMENT.value:
+            allowed = _SUBMODEL_ELEMENT_TYPES
+        else:
+            allowed = {type_value}
+
+        for elem in self.value:
+            elem_type = _model_type_of(elem)
+            if elem_type is None or elem_type not in allowed:
+                raise ValueError(
+                    f"SubmodelElementList element type '{elem_type}' does not match "
+                    f"typeValueListElement '{type_value}'"
+                )
+
+        return self
+
 
 # -----------------------------------------------------------------------------
 # Entity
@@ -298,19 +444,24 @@ class Entity(SubmodelElementBase):
         default="Entity", alias="modelType", description="Model type discriminator"
     )
     entity_type: EntityType = Field(..., alias="entityType", description="Type of entity")
-    global_asset_id: Annotated[str, Field(min_length=1, max_length=2000)] | None = Field(
+    global_asset_id: Annotated[str, Field(min_length=1, max_length=2048)] | None = Field(
         default=None,
         alias="globalAssetId",
         description="Global identifier of the entity's asset",
     )
-    specific_asset_ids: list[SpecificAssetId] | None = Field(
+    specific_asset_ids: Annotated[list[SpecificAssetId], Field(min_length=1)] | None = Field(
         default=None,
         alias="specificAssetIds",
         description="Specific identifiers of the entity's asset",
     )
-    statements: list[SubmodelElementUnion] | None = Field(
+    statements: Annotated[list[SubmodelElementUnion], Field(min_length=1)] | None = Field(
         default=None, description="Statements about the entity"
     )
+
+    @model_validator(mode="after")
+    def _validate_unique_id_shorts(self) -> "Entity":
+        _ensure_unique_id_shorts(self.statements, "Entity.statements")
+        return self
 
 
 class SpecificAssetId(HasSemanticsMixin):
@@ -323,13 +474,8 @@ class SpecificAssetId(HasSemanticsMixin):
     name: Annotated[str, Field(min_length=1, max_length=64)] = Field(
         ..., description="Name of the specific asset ID"
     )
-    value: Annotated[str, Field(min_length=1, max_length=2000)] = Field(
+    value: Annotated[str, Field(min_length=1, max_length=2048)] = Field(
         ..., description="Value of the specific asset ID"
-    )
-    subject_id: Reference | None = Field(
-        default=None,
-        alias="subjectId",
-        description="Reference to the subject that defined this ID",
     )
     external_subject_id: Reference | None = Field(
         default=None,
@@ -347,7 +493,9 @@ class BasicEventElement(SubmodelElementBase):
     """A basic event element for publishing/subscribing to events.
 
     Used to define event sources and sinks in the AAS for
-    integration with messaging systems.
+    integration with messaging systems. Per IDTA-01001-3-0-1 v3.0.8:
+    - lastUpdate uses ISO 8601 UTC timestamp format
+    - minInterval/maxInterval use ISO 8601 duration format
     """
 
     model_type: Literal["BasicEventElement"] = Field(
@@ -358,7 +506,7 @@ class BasicEventElement(SubmodelElementBase):
     observed: Reference = Field(..., description="Reference to the observed element")
     direction: Direction = Field(..., description="Direction of the event (input/output)")
     state: StateOfEvent = Field(..., description="State of the event (on/off)")
-    message_topic: Annotated[str, Field(max_length=255)] | None = Field(
+    message_topic: Annotated[str, Field(min_length=1, max_length=255)] | None = Field(
         default=None, alias="messageTopic", description="Topic for the event messages"
     )
     message_broker: Reference | None = Field(
@@ -366,14 +514,20 @@ class BasicEventElement(SubmodelElementBase):
         alias="messageBroker",
         description="Reference to the message broker",
     )
-    last_update: Annotated[str, Field(max_length=50)] | None = Field(
-        default=None, alias="lastUpdate", description="Timestamp of last update"
+    last_update: Annotated[str, Field(pattern=ISO8601_UTC_PATTERN)] | None = Field(
+        default=None,
+        alias="lastUpdate",
+        description="ISO 8601 UTC timestamp of last update",
     )
-    min_interval: Annotated[str, Field(max_length=50)] | None = Field(
-        default=None, alias="minInterval", description="Minimum interval between events"
+    min_interval: Annotated[str, Field(pattern=ISO8601_DURATION_PATTERN)] | None = Field(
+        default=None,
+        alias="minInterval",
+        description="ISO 8601 duration for minimum interval between events",
     )
-    max_interval: Annotated[str, Field(max_length=50)] | None = Field(
-        default=None, alias="maxInterval", description="Maximum interval between events"
+    max_interval: Annotated[str, Field(pattern=ISO8601_DURATION_PATTERN)] | None = Field(
+        default=None,
+        alias="maxInterval",
+        description="ISO 8601 duration for maximum interval between events",
     )
 
 
@@ -400,13 +554,13 @@ class Operation(SubmodelElementBase):
     model_type: Literal["Operation"] = Field(
         default="Operation", alias="modelType", description="Model type discriminator"
     )
-    input_variables: list[OperationVariable] | None = Field(
+    input_variables: Annotated[list[OperationVariable], Field(min_length=1)] | None = Field(
         default=None, alias="inputVariables", description="Input parameters"
     )
-    output_variables: list[OperationVariable] | None = Field(
+    output_variables: Annotated[list[OperationVariable], Field(min_length=1)] | None = Field(
         default=None, alias="outputVariables", description="Output parameters"
     )
-    inoutput_variables: list[OperationVariable] | None = Field(
+    inoutput_variables: Annotated[list[OperationVariable], Field(min_length=1)] | None = Field(
         default=None,
         alias="inoutputVariables",
         description="Parameters that are both input and output",
@@ -421,9 +575,7 @@ class Capability(SubmodelElementBase):
     """
 
     model_type: Literal["Capability"] = Field(
-        default="Capability",
-        alias="modelType",
-        description="Model type discriminator",
+        default="Capability", alias="modelType", description="Model type discriminator"
     )
 
 

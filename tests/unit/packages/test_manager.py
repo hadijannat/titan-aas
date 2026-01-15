@@ -41,6 +41,7 @@ def create_test_aasx() -> bytes:
         env_json = b"""{
             "assetAdministrationShells": [
                 {
+                    "modelType": "AssetAdministrationShell",
                     "id": "urn:test:aas:001",
                     "idShort": "TestAAS",
                     "assetInformation": {
@@ -51,6 +52,7 @@ def create_test_aasx() -> bytes:
             ],
             "submodels": [
                 {
+                    "modelType": "Submodel",
                     "id": "urn:test:submodel:001",
                     "idShort": "TestSubmodel"
                 }

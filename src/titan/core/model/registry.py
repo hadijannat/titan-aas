@@ -1,4 +1,4 @@
-"""IDTA-01002 Part 2 v3.1.1: Registry types.
+"""IDTA-01002 Part 2 v3.0: Registry types.
 
 This module defines the Descriptor types used by the AAS Registry
 and Submodel Registry services for discovering AAS and Submodel

@@ -49,6 +49,7 @@ class TestTitanExportBaSyxImport:
         """Export simple shell from Titan, import to BaSyx."""
         # Create Titan shell
         titan_shell = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="urn:example:aas:titan:simple",
             idShort="TitanSimpleShell",
             assetInformation=AssetInformation(
@@ -96,25 +97,30 @@ class TestTitanExportBaSyxImport:
         """Export AAS with Properties submodel, import to BaSyx."""
         # Create submodel with various value types
         submodel = Submodel(
+            model_type="Submodel",
             id="urn:example:submodel:properties",
             idShort="PropertiesSubmodel",
             submodelElements=[
                 Property(
+                    model_type="Property",
                     idShort="StringProperty",
                     valueType=DataTypeDefXsd.XS_STRING,
                     value="test_value",
                 ),
                 Property(
+                    model_type="Property",
                     idShort="IntProperty",
                     valueType=DataTypeDefXsd.XS_INT,
                     value="42",
                 ),
                 Property(
+                    model_type="Property",
                     idShort="DoubleProperty",
                     valueType=DataTypeDefXsd.XS_DOUBLE,
                     value="3.14159",
                 ),
                 Property(
+                    model_type="Property",
                     idShort="BooleanProperty",
                     valueType=DataTypeDefXsd.XS_BOOLEAN,
                     value="true",
@@ -124,6 +130,7 @@ class TestTitanExportBaSyxImport:
 
         # Create shell referencing submodel
         shell = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="urn:example:aas:titan:with_submodel",
             idShort="TitanShellWithSubmodel",
             assetInformation=AssetInformation(
@@ -202,18 +209,22 @@ class TestTitanExportBaSyxImport:
     async def test_submodel_element_collection(self) -> None:
         """Export submodel with collections, import to BaSyx."""
         submodel = Submodel(
+            model_type="Submodel",
             id="urn:example:submodel:collection",
             idShort="CollectionSubmodel",
             submodelElements=[
                 SubmodelElementCollection(
+                    model_type="SubmodelElementCollection",
                     idShort="SensorData",
                     value=[
                         Property(
+                            model_type="Property",
                             idShort="SensorId",
                             valueType=DataTypeDefXsd.XS_STRING,
                             value="SENSOR_001",
                         ),
                         Property(
+                            model_type="Property",
                             idShort="Reading",
                             valueType=DataTypeDefXsd.XS_DOUBLE,
                             value="45.6",
@@ -224,6 +235,7 @@ class TestTitanExportBaSyxImport:
         )
 
         shell = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="urn:example:aas:collection",
             idShort="CollectionShell",
             assetInformation=AssetInformation(
@@ -269,10 +281,12 @@ class TestTitanExportBaSyxImport:
     async def test_multi_language_property(self) -> None:
         """Export MultiLanguageProperty, import to BaSyx."""
         submodel = Submodel(
+            model_type="Submodel",
             id="urn:example:submodel:mlp",
             idShort="MultiLangSubmodel",
             submodelElements=[
                 MultiLanguageProperty(
+                    model_type="Property",
                     idShort="ProductName",
                     value=[
                         LangStringTextType(language="en", text="Industrial Robot"),
@@ -284,6 +298,7 @@ class TestTitanExportBaSyxImport:
         )
 
         shell = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="urn:example:aas:mlp",
             idShort="MLPShell",
             assetInformation=AssetInformation(
@@ -331,10 +346,12 @@ class TestTitanExportBaSyxImport:
     async def test_reference_element(self) -> None:
         """Export ReferenceElement, import to BaSyx."""
         submodel = Submodel(
+            model_type="Submodel",
             id="urn:example:submodel:ref",
             idShort="ReferenceSubmodel",
             submodelElements=[
                 ReferenceElement(
+                    model_type="ReferenceElement",
                     idShort="ExternalRef",
                     value=Reference(
                         type=ReferenceTypes.EXTERNAL_REFERENCE,
@@ -350,6 +367,7 @@ class TestTitanExportBaSyxImport:
         )
 
         shell = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="urn:example:aas:ref",
             idShort="RefShell",
             assetInformation=AssetInformation(
@@ -392,21 +410,25 @@ class TestTitanExportBaSyxImport:
     async def test_relationship_element(self) -> None:
         """Export RelationshipElement, import to BaSyx."""
         submodel = Submodel(
+            model_type="Submodel",
             id="urn:example:submodel:rel",
             idShort="RelationshipSubmodel",
             submodelElements=[
                 # First create two properties to reference
                 Property(
+                    model_type="Property",
                     idShort="SourceProperty",
                     valueType=DataTypeDefXsd.XS_STRING,
                     value="source",
                 ),
                 Property(
+                    model_type="Property",
                     idShort="TargetProperty",
                     valueType=DataTypeDefXsd.XS_STRING,
                     value="target",
                 ),
                 RelationshipElement(
+                    model_type="RelationshipElement",
                     idShort="ConnectsTo",
                     first=Reference(
                         type=ReferenceTypes.MODEL_REFERENCE,
@@ -427,6 +449,7 @@ class TestTitanExportBaSyxImport:
         )
 
         shell = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="urn:example:aas:rel",
             idShort="RelShell",
             assetInformation=AssetInformation(
@@ -480,23 +503,75 @@ class TestSemanticEquivalence:
         """All XSD value types preserved in round-trip."""
         # Create submodel with all supported value types
         submodel = Submodel(
+            model_type="Submodel",
             id="urn:example:submodel:types",
             idShort="TypesSubmodel",
             submodelElements=[
-                Property(idShort="xs_string", valueType=DataTypeDefXsd.XS_STRING, value="text"),
-                Property(idShort="xs_int", valueType=DataTypeDefXsd.XS_INT, value="123"),
-                Property(idShort="xs_integer", valueType=DataTypeDefXsd.XS_INTEGER, value="456"),
-                Property(idShort="xs_long", valueType=DataTypeDefXsd.XS_LONG, value="789"),
-                Property(idShort="xs_short", valueType=DataTypeDefXsd.XS_SHORT, value="12"),
-                Property(idShort="xs_byte", valueType=DataTypeDefXsd.XS_BYTE, value="5"),
-                Property(idShort="xs_double", valueType=DataTypeDefXsd.XS_DOUBLE, value="3.14"),
-                Property(idShort="xs_float", valueType=DataTypeDefXsd.XS_FLOAT, value="2.71"),
-                Property(idShort="xs_boolean", valueType=DataTypeDefXsd.XS_BOOLEAN, value="true"),
-                Property(idShort="xs_date", valueType=DataTypeDefXsd.XS_DATE, value="2024-01-15"),
+                Property(
+                    model_type="Property",
+                    idShort="xs_string",
+                    valueType=DataTypeDefXsd.XS_STRING,
+                    value="text",
+                ),
+                Property(
+                    model_type="Property",
+                    idShort="xs_int",
+                    valueType=DataTypeDefXsd.XS_INT,
+                    value="123",
+                ),
+                Property(
+                    model_type="Property",
+                    idShort="xs_integer",
+                    valueType=DataTypeDefXsd.XS_INTEGER,
+                    value="456",
+                ),
+                Property(
+                    model_type="Property",
+                    idShort="xs_long",
+                    valueType=DataTypeDefXsd.XS_LONG,
+                    value="789",
+                ),
+                Property(
+                    model_type="Property",
+                    idShort="xs_short",
+                    valueType=DataTypeDefXsd.XS_SHORT,
+                    value="12",
+                ),
+                Property(
+                    model_type="Property",
+                    idShort="xs_byte",
+                    valueType=DataTypeDefXsd.XS_BYTE,
+                    value="5",
+                ),
+                Property(
+                    model_type="Property",
+                    idShort="xs_double",
+                    valueType=DataTypeDefXsd.XS_DOUBLE,
+                    value="3.14",
+                ),
+                Property(
+                    model_type="Property",
+                    idShort="xs_float",
+                    valueType=DataTypeDefXsd.XS_FLOAT,
+                    value="2.71",
+                ),
+                Property(
+                    model_type="Property",
+                    idShort="xs_boolean",
+                    valueType=DataTypeDefXsd.XS_BOOLEAN,
+                    value="true",
+                ),
+                Property(
+                    model_type="Property",
+                    idShort="xs_date",
+                    valueType=DataTypeDefXsd.XS_DATE,
+                    value="2024-01-15",
+                ),
             ],
         )
 
         shell = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="urn:example:aas:types",
             idShort="TypesShell",
             assetInformation=AssetInformation(

@@ -80,7 +80,12 @@ class TestProperty:
 
     def test_basic_property(self) -> None:
         """Basic property with string value."""
-        prop = Property(idShort="temperature", valueType=DataTypeDefXsd.XS_DOUBLE, value="25.5")
+        prop = Property(
+            model_type="Property",
+            idShort="temperature",
+            valueType=DataTypeDefXsd.XS_DOUBLE,
+            value="25.5",
+        )
         assert prop.id_short == "temperature"
         assert prop.value_type == DataTypeDefXsd.XS_DOUBLE
         assert prop.value == "25.5"
@@ -89,6 +94,7 @@ class TestProperty:
     def test_property_with_semantic_id(self) -> None:
         """Property with semantic identifier."""
         prop = Property(
+            model_type="Property",
             idShort="serialNumber",
             valueType=DataTypeDefXsd.XS_STRING,
             value="ABC-12345",
@@ -103,6 +109,7 @@ class TestProperty:
     def test_property_serializes_with_alias(self) -> None:
         """Property serializes with camelCase aliases."""
         prop = Property(
+            model_type="Property",
             idShort="test",
             valueType=DataTypeDefXsd.XS_STRING,
         )
@@ -119,6 +126,7 @@ class TestMultiLanguageProperty:
     def test_basic_multi_lang_property(self) -> None:
         """Multi-language property with values."""
         prop = MultiLanguageProperty(
+            model_type="MultiLanguageProperty",
             idShort="description",
             value=[
                 LangStringTextType(language="en", text="Description"),
@@ -135,6 +143,7 @@ class TestRange:
     def test_range_with_min_max(self) -> None:
         """Range with min and max values."""
         rng = Range(
+            model_type="Range",
             idShort="operatingTemp", valueType=DataTypeDefXsd.XS_DOUBLE, min="-40", max="85"
         )
         assert rng.min == "-40"
@@ -148,6 +157,7 @@ class TestBlob:
     def test_blob_with_content(self) -> None:
         """Blob with base64 content."""
         blob = Blob(
+            model_type="Blob",
             idShort="thumbnail",
             contentType="image/png",
             value="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
@@ -162,6 +172,7 @@ class TestFile:
     def test_file_with_path(self) -> None:
         """File with path reference."""
         file = File(
+            model_type="File",
             idShort="manual", contentType="application/pdf", value="/aasx/documentation/manual.pdf"
         )
         assert file.content_type == "application/pdf"
@@ -174,11 +185,27 @@ class TestSubmodelElementCollection:
     def test_collection_with_elements(self) -> None:
         """Collection containing nested elements."""
         collection = SubmodelElementCollection(
+            model_type="SubmodelElementCollection",
             idShort="address",
             value=[
-                Property(idShort="street", valueType=DataTypeDefXsd.XS_STRING, value="Main St"),
-                Property(idShort="city", valueType=DataTypeDefXsd.XS_STRING, value="Boston"),
-                Property(idShort="zip", valueType=DataTypeDefXsd.XS_STRING, value="02101"),
+                Property(
+                    model_type="Property",
+                    idShort="street",
+                    valueType=DataTypeDefXsd.XS_STRING,
+                    value="Main St",
+                ),
+                Property(
+                    model_type="Property",
+                    idShort="city",
+                    valueType=DataTypeDefXsd.XS_STRING,
+                    value="Boston",
+                ),
+                Property(
+                    model_type="Property",
+                    idShort="zip",
+                    valueType=DataTypeDefXsd.XS_STRING,
+                    value="02101",
+                ),
             ],
         )
         assert collection.model_type == "SubmodelElementCollection"
@@ -187,9 +214,17 @@ class TestSubmodelElementCollection:
     def test_nested_collections(self) -> None:
         """Collections can be nested."""
         inner = SubmodelElementCollection(
-            idShort="inner", value=[Property(idShort="prop", valueType=DataTypeDefXsd.XS_STRING)]
+            model_type="SubmodelElementCollection",
+            idShort="inner",
+            value=[
+                Property(model_type="Property", idShort="prop", valueType=DataTypeDefXsd.XS_STRING)
+            ],
         )
-        outer = SubmodelElementCollection(idShort="outer", value=[inner])
+        outer = SubmodelElementCollection(
+            model_type="SubmodelElementCollection",
+            idShort="outer",
+            value=[inner],
+        )
         assert outer.value[0].model_type == "SubmodelElementCollection"
 
 
@@ -199,13 +234,24 @@ class TestSubmodelElementList:
     def test_list_of_properties(self) -> None:
         """List containing properties."""
         lst = SubmodelElementList(
+            model_type="SubmodelElementList",
             idShort="measurements",
             typeValueListElement=AasSubmodelElements.PROPERTY,
             valueTypeListElement=DataTypeDefXsd.XS_DOUBLE,
             orderRelevant=True,
             value=[
-                Property(idShort="m1", valueType=DataTypeDefXsd.XS_DOUBLE, value="1.0"),
-                Property(idShort="m2", valueType=DataTypeDefXsd.XS_DOUBLE, value="2.0"),
+                Property(
+                    model_type="Property",
+                    idShort="m1",
+                    valueType=DataTypeDefXsd.XS_DOUBLE,
+                    value="1.0",
+                ),
+                Property(
+                    model_type="Property",
+                    idShort="m2",
+                    valueType=DataTypeDefXsd.XS_DOUBLE,
+                    value="2.0",
+                ),
             ],
         )
         assert lst.model_type == "SubmodelElementList"
@@ -218,6 +264,7 @@ class TestEntity:
     def test_self_managed_entity(self) -> None:
         """Self-managed entity with global asset ID."""
         entity = Entity(
+            model_type="Entity",
             idShort="motor",
             entityType=EntityType.SELF_MANAGED_ENTITY,
             globalAssetId="https://example.com/assets/motor-001",
@@ -261,13 +308,14 @@ class TestDiscriminatedUnion:
     def test_all_element_types_have_model_type(self) -> None:
         """All SubmodelElement types have modelType field."""
         elements = [
-            Property(idShort="p", valueType=DataTypeDefXsd.XS_STRING),
-            MultiLanguageProperty(idShort="mlp"),
-            Range(idShort="r", valueType=DataTypeDefXsd.XS_DOUBLE),
-            Blob(idShort="b", contentType="application/octet-stream"),
-            File(idShort="f", contentType="text/plain"),
-            ReferenceElement(idShort="re"),
+            Property(model_type="Property", idShort="p", valueType=DataTypeDefXsd.XS_STRING),
+            MultiLanguageProperty(model_type="MultiLanguageProperty", idShort="mlp"),
+            Range(model_type="Range", idShort="r", valueType=DataTypeDefXsd.XS_DOUBLE),
+            Blob(model_type="Blob", idShort="b", contentType="application/octet-stream"),
+            File(model_type="File", idShort="f", contentType="text/plain"),
+            ReferenceElement(model_type="ReferenceElement", idShort="re"),
             RelationshipElement(
+                model_type="RelationshipElement",
                 idShort="rel",
                 first=Reference(
                     type=ReferenceTypes.MODEL_REFERENCE,
@@ -278,10 +326,15 @@ class TestDiscriminatedUnion:
                     keys=[Key(type=KeyTypes.SUBMODEL, value="y")],
                 ),
             ),
-            SubmodelElementCollection(idShort="sec"),
-            SubmodelElementList(idShort="sel", typeValueListElement=AasSubmodelElements.PROPERTY),
-            Entity(idShort="e", entityType=EntityType.CO_MANAGED_ENTITY),
-            Capability(idShort="cap"),
+            SubmodelElementCollection(model_type="SubmodelElementCollection", idShort="sec"),
+            SubmodelElementList(
+                model_type="SubmodelElementList",
+                idShort="sel",
+                typeValueListElement=AasSubmodelElements.PROPERTY,
+                valueTypeListElement=DataTypeDefXsd.XS_STRING,
+            ),
+            Entity(model_type="Entity", idShort="e", entityType=EntityType.CO_MANAGED_ENTITY),
+            Capability(model_type="Capability", idShort="cap"),
         ]
         for elem in elements:
             data = elem.model_dump(by_alias=True)
@@ -295,12 +348,23 @@ class TestSubmodel:
     def test_basic_submodel(self) -> None:
         """Basic submodel with elements."""
         sm = Submodel(
+            model_type="Submodel",
             id="https://example.com/submodels/technical-data",
             idShort="TechnicalData",
             kind=ModellingKind.INSTANCE,
             submodelElements=[
-                Property(idShort="weight", valueType=DataTypeDefXsd.XS_DOUBLE, value="2.5"),
-                Property(idShort="height", valueType=DataTypeDefXsd.XS_DOUBLE, value="10.0"),
+                Property(
+                    model_type="Property",
+                    idShort="weight",
+                    valueType=DataTypeDefXsd.XS_DOUBLE,
+                    value="2.5",
+                ),
+                Property(
+                    model_type="Property",
+                    idShort="height",
+                    valueType=DataTypeDefXsd.XS_DOUBLE,
+                    value="10.0",
+                ),
             ],
         )
         assert sm.id == "https://example.com/submodels/technical-data"
@@ -309,9 +373,15 @@ class TestSubmodel:
     def test_submodel_serialization(self) -> None:
         """Submodel serializes correctly with aliases."""
         sm = Submodel(
+            model_type="Submodel",
             id="urn:example:submodel:1",
             submodelElements=[
-                Property(idShort="p1", valueType=DataTypeDefXsd.XS_STRING, value="test")
+                Property(
+                    model_type="Property",
+                    idShort="p1",
+                    valueType=DataTypeDefXsd.XS_STRING,
+                    value="test",
+                )
             ],
         )
         data = sm.model_dump(by_alias=True, exclude_none=True)
@@ -325,6 +395,7 @@ class TestAssetAdministrationShell:
     def test_basic_aas(self) -> None:
         """Basic AAS with asset information."""
         aas = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="https://example.com/aas/1",
             idShort="ExampleAAS",
             assetInformation=AssetInformation(
@@ -337,6 +408,7 @@ class TestAssetAdministrationShell:
     def test_aas_with_submodel_refs(self) -> None:
         """AAS with submodel references."""
         aas = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="https://example.com/aas/1",
             assetInformation=AssetInformation(
                 assetKind=AssetKind.INSTANCE, globalAssetId="https://example.com/assets/1"
@@ -357,6 +429,7 @@ class TestHasDataSpecification:
     def test_property_with_data_specification(self) -> None:
         """Property can have embedded data specifications."""
         prop = Property(
+            model_type="Property",
             idShort="voltage",
             valueType=DataTypeDefXsd.XS_DOUBLE,
             value="230",
@@ -372,6 +445,7 @@ class TestHasDataSpecification:
                         ],
                     ),
                     dataSpecificationContent=DataSpecificationIec61360(
+                        model_type="DataSpecificationIec61360",
                         preferredName=[
                             LangStringPreferredNameType(language="en", text="Voltage"),
                             LangStringPreferredNameType(language="de", text="Spannung"),
@@ -392,6 +466,7 @@ class TestStrictMode:
         """Extra fields are not allowed."""
         with pytest.raises(ValidationError):
             Property(
+                model_type="Property",
                 idShort="test",
                 valueType=DataTypeDefXsd.XS_STRING,
                 unknownField="should fail",  # type: ignore
@@ -401,6 +476,7 @@ class TestStrictMode:
         """idShort must match pattern ^[a-zA-Z_][a-zA-Z0-9_]*$."""
         with pytest.raises(ValidationError):
             Property(
+                model_type="Property",
                 idShort="123invalid",  # Can't start with number
                 valueType=DataTypeDefXsd.XS_STRING,
             )
@@ -412,6 +488,7 @@ class TestCanonicalSerialization:
     def test_model_dump_excludes_none(self) -> None:
         """model_dump with exclude_none removes null fields."""
         prop = Property(
+            model_type="Property",
             idShort="test",
             valueType=DataTypeDefXsd.XS_STRING,
         )
@@ -422,6 +499,7 @@ class TestCanonicalSerialization:
     def test_model_dump_uses_aliases(self) -> None:
         """model_dump with by_alias uses camelCase."""
         prop = Property(
+            model_type="Property",
             idShort="testProp",
             valueType=DataTypeDefXsd.XS_STRING,
         )

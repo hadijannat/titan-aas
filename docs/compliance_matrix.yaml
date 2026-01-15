@@ -1,0 +1,1197 @@
+version: 2
+generated_at: '2026-01-15'
+sources:
+  specs_root: specs/aas-specs-api
+  routers_root: src/titan/api/routers
+services:
+- name: AAS Repository
+  spec_dir: AssetAdministrationShellRepositoryServiceSpecification
+  endpoints:
+  - method: GET
+    path: /description
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/description.py
+    - src/titan/api/routers/system.py
+  - method: POST
+    path: /query/shells
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /serialization
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/serialization.py
+  - method: GET
+    path: /shells
+    status: partial
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+    notes: Uses paging_metadata (not pagingMetadata); cursor only for fast path; content=reference/path
+      not supported.
+  - method: POST
+    path: /shells
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/$reference
+    status: partial
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+    notes: Uses paging_metadata (not pagingMetadata); cursor only for fast path.
+  - method: DELETE
+    path: /shells/{aasIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}
+    status: partial
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+    notes: content=reference/path not supported by projection.
+  - method: PUT
+    path: /shells/{aasIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/$reference
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/asset-information
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: PUT
+    path: /shells/{aasIdentifier}/asset-information
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: DELETE
+    path: /shells/{aasIdentifier}/asset-information/thumbnail
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/asset-information/thumbnail
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: PUT
+    path: /shells/{aasIdentifier}/asset-information/thumbnail
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/submodel-refs
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: POST
+    path: /shells/{aasIdentifier}/submodel-refs
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: DELETE
+    path: /shells/{aasIdentifier}/submodel-refs/{submodelIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: DELETE
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: PATCH
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: PUT
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/$metadata
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: PATCH
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/$metadata
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/$path
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/$reference
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/$value
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: PATCH
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/$value
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: POST
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/$metadata
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/$path
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/$reference
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/$value
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: DELETE
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: PATCH
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: POST
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: PUT
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/$metadata
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: PATCH
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/$metadata
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/$path
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/$reference
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/$value
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: PATCH
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/$value
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: DELETE
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/attachment
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/attachment
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: PUT
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/attachment
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: POST
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/invoke
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: POST
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/invoke-async
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: POST
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/invoke-async/$value
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: POST
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/invoke/$value
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/operation-results/{handleId}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/operation-results/{handleId}/$value
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+  - method: GET
+    path: /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/operation-status/{handleId}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aas_repository.py
+- name: Submodel Repository
+  spec_dir: SubmodelRepositoryServiceSpecification
+  endpoints:
+  - method: GET
+    path: /description
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/description.py
+    - src/titan/api/routers/system.py
+  - method: POST
+    path: /query/submodels
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /serialization
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/serialization.py
+  - method: GET
+    path: /submodels
+    status: partial
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+    notes: Uses paging_metadata (not pagingMetadata); cursor only for fast path; content=reference/path
+      not supported.
+  - method: POST
+    path: /submodels
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: GET
+    path: /submodels/$metadata
+    status: partial
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+    notes: Uses paging_metadata (not pagingMetadata); cursor only for fast path.
+  - method: GET
+    path: /submodels/$path
+    status: partial
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+    notes: Uses paging_metadata (not pagingMetadata); cursor only for fast path.
+  - method: GET
+    path: /submodels/$reference
+    status: partial
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+    notes: Uses paging_metadata (not pagingMetadata); cursor only for fast path.
+  - method: GET
+    path: /submodels/$value
+    status: partial
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+    notes: Uses paging_metadata (not pagingMetadata); cursor only for fast path.
+  - method: DELETE
+    path: /submodels/{submodelIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: GET
+    path: /submodels/{submodelIdentifier}
+    status: partial
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+    notes: content=reference/path not supported by projection.
+  - method: PATCH
+    path: /submodels/{submodelIdentifier}
+    status: missing
+    implemented_by: []
+  - method: PUT
+    path: /submodels/{submodelIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: GET
+    path: /submodels/{submodelIdentifier}/$metadata
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: PATCH
+    path: /submodels/{submodelIdentifier}/$metadata
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: GET
+    path: /submodels/{submodelIdentifier}/$path
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: GET
+    path: /submodels/{submodelIdentifier}/$reference
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: GET
+    path: /submodels/{submodelIdentifier}/$value
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: PATCH
+    path: /submodels/{submodelIdentifier}/$value
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: GET
+    path: /submodels/{submodelIdentifier}/submodel-elements
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: POST
+    path: /submodels/{submodelIdentifier}/submodel-elements
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: GET
+    path: /submodels/{submodelIdentifier}/submodel-elements/$metadata
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: GET
+    path: /submodels/{submodelIdentifier}/submodel-elements/$path
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: GET
+    path: /submodels/{submodelIdentifier}/submodel-elements/$reference
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: GET
+    path: /submodels/{submodelIdentifier}/submodel-elements/$value
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: DELETE
+    path: /submodels/{submodelIdentifier}/submodel-elements/{idShortPath}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: GET
+    path: /submodels/{submodelIdentifier}/submodel-elements/{idShortPath}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: PATCH
+    path: /submodels/{submodelIdentifier}/submodel-elements/{idShortPath}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: POST
+    path: /submodels/{submodelIdentifier}/submodel-elements/{idShortPath}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: PUT
+    path: /submodels/{submodelIdentifier}/submodel-elements/{idShortPath}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: GET
+    path: /submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/$metadata
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: PATCH
+    path: /submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/$metadata
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/$path
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: GET
+    path: /submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/$reference
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: GET
+    path: /submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/$value
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: PATCH
+    path: /submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/$value
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: DELETE
+    path: /submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/attachment
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: GET
+    path: /submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/attachment
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: PUT
+    path: /submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/attachment
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: POST
+    path: /submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/invoke
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: POST
+    path: /submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/invoke-async
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: POST
+    path: /submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/invoke-async/$value
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: POST
+    path: /submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/invoke/$value
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: GET
+    path: /submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/operation-results/{handleId}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: GET
+    path: /submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/operation-results/{handleId}/$value
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+  - method: GET
+    path: /submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/operation-status/{handleId}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/submodel_repository.py
+- name: Concept Description Repository
+  spec_dir: ConceptDescriptionRepositoryServiceSpecification
+  endpoints:
+  - method: GET
+    path: /concept-descriptions
+    status: partial
+    implemented_by:
+    - src/titan/api/routers/concept_description_repository.py
+    notes: Uses paging_metadata (not pagingMetadata); cursor only for fast path.
+  - method: POST
+    path: /concept-descriptions
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/concept_description_repository.py
+  - method: DELETE
+    path: /concept-descriptions/{cdIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/concept_description_repository.py
+  - method: GET
+    path: /concept-descriptions/{cdIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/concept_description_repository.py
+  - method: PUT
+    path: /concept-descriptions/{cdIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/concept_description_repository.py
+  - method: GET
+    path: /description
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/description.py
+    - src/titan/api/routers/system.py
+  - method: POST
+    path: /query/concept-descriptions
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /serialization
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/serialization.py
+- name: AAS Registry
+  spec_dir: AssetAdministrationShellRegistryServiceSpecification
+  endpoints:
+  - method: GET
+    path: /bulk/result/{handleId}
+    status: missing
+    implemented_by: []
+  - method: DELETE
+    path: /bulk/shell-descriptors
+    status: missing
+    implemented_by: []
+  - method: POST
+    path: /bulk/shell-descriptors
+    status: missing
+    implemented_by: []
+  - method: PUT
+    path: /bulk/shell-descriptors
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /bulk/status/{handleId}
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /description
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/description.py
+    - src/titan/api/routers/system.py
+  - method: POST
+    path: /query/shell-descriptors
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /shell-descriptors
+    status: partial
+    implemented_by:
+    - src/titan/api/routers/registry.py
+    notes: Uses paging_metadata; no cursor-based pagination.
+  - method: POST
+    path: /shell-descriptors
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/registry.py
+  - method: DELETE
+    path: /shell-descriptors/{aasIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/registry.py
+  - method: GET
+    path: /shell-descriptors/{aasIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/registry.py
+  - method: PUT
+    path: /shell-descriptors/{aasIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/registry.py
+  - method: GET
+    path: /shell-descriptors/{aasIdentifier}/submodel-descriptors
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/registry.py
+  - method: POST
+    path: /shell-descriptors/{aasIdentifier}/submodel-descriptors
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/registry.py
+  - method: DELETE
+    path: /shell-descriptors/{aasIdentifier}/submodel-descriptors/{submodelIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/registry.py
+  - method: GET
+    path: /shell-descriptors/{aasIdentifier}/submodel-descriptors/{submodelIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/registry.py
+  - method: PUT
+    path: /shell-descriptors/{aasIdentifier}/submodel-descriptors/{submodelIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/registry.py
+- name: Submodel Registry
+  spec_dir: SubmodelRegistryServiceSpecification
+  endpoints:
+  - method: GET
+    path: /bulk/result/{handleId}
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /bulk/status/{handleId}
+    status: missing
+    implemented_by: []
+  - method: DELETE
+    path: /bulk/submodel-descriptors
+    status: missing
+    implemented_by: []
+  - method: POST
+    path: /bulk/submodel-descriptors
+    status: missing
+    implemented_by: []
+  - method: PUT
+    path: /bulk/submodel-descriptors
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /description
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/description.py
+    - src/titan/api/routers/system.py
+  - method: POST
+    path: /query/submodel-descriptors
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /submodel-descriptors
+    status: partial
+    implemented_by:
+    - src/titan/api/routers/registry.py
+    notes: Uses paging_metadata; no cursor-based pagination.
+  - method: POST
+    path: /submodel-descriptors
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/registry.py
+  - method: DELETE
+    path: /submodel-descriptors/{submodelIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/registry.py
+  - method: GET
+    path: /submodel-descriptors/{submodelIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/registry.py
+  - method: PUT
+    path: /submodel-descriptors/{submodelIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/registry.py
+- name: Discovery
+  spec_dir: DiscoveryServiceSpecification
+  endpoints:
+  - method: GET
+    path: /description
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/description.py
+    - src/titan/api/routers/system.py
+  - method: GET
+    path: /lookup/shells
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/discovery.py
+  - method: DELETE
+    path: /lookup/shells/{aasIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/discovery.py
+  - method: GET
+    path: /lookup/shells/{aasIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/discovery.py
+  - method: POST
+    path: /lookup/shells/{aasIdentifier}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/discovery.py
+  - method: POST
+    path: /lookup/shellsByAssetLink
+    status: partial
+    implemented_by:
+    - src/titan/api/routers/discovery.py
+    notes: Uses paging_metadata (not pagingMetadata).
+- name: AASX File Server
+  spec_dir: AasxFileServerServiceSpecification
+  endpoints:
+  - method: GET
+    path: /description
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/description.py
+    - src/titan/api/routers/system.py
+  - method: GET
+    path: /packages
+    status: partial
+    implemented_by:
+    - src/titan/api/routers/aasx.py
+    notes: Uses paging_metadata (not pagingMetadata).
+  - method: POST
+    path: /packages
+    status: partial
+    implemented_by:
+    - src/titan/api/routers/aasx.py
+    notes: AASX validation is not enforced on upload (validator exists).
+  - method: DELETE
+    path: /packages/{packageId}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aasx.py
+  - method: GET
+    path: /packages/{packageId}
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/aasx.py
+  - method: PUT
+    path: /packages/{packageId}
+    status: partial
+    implemented_by:
+    - src/titan/api/routers/aasx.py
+    notes: AASX validation is not enforced on update (validator exists).
+- name: AAS Service
+  spec_dir: AssetAdministrationShellServiceSpecification
+  endpoints:
+  - method: GET
+    path: /aas
+    status: missing
+    implemented_by: []
+  - method: PUT
+    path: /aas
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/$reference
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/asset-information
+    status: missing
+    implemented_by: []
+  - method: PUT
+    path: /aas/asset-information
+    status: missing
+    implemented_by: []
+  - method: DELETE
+    path: /aas/asset-information/thumbnail
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/asset-information/thumbnail
+    status: missing
+    implemented_by: []
+  - method: PUT
+    path: /aas/asset-information/thumbnail
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/submodel-refs
+    status: missing
+    implemented_by: []
+  - method: POST
+    path: /aas/submodel-refs
+    status: missing
+    implemented_by: []
+  - method: DELETE
+    path: /aas/submodel-refs/{submodelIdentifier}
+    status: missing
+    implemented_by: []
+  - method: DELETE
+    path: /aas/submodels/{submodelIdentifier}
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/submodels/{submodelIdentifier}
+    status: missing
+    implemented_by: []
+  - method: PATCH
+    path: /aas/submodels/{submodelIdentifier}
+    status: missing
+    implemented_by: []
+  - method: PUT
+    path: /aas/submodels/{submodelIdentifier}
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/submodels/{submodelIdentifier}/$metadata
+    status: missing
+    implemented_by: []
+  - method: PATCH
+    path: /aas/submodels/{submodelIdentifier}/$metadata
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/submodels/{submodelIdentifier}/$path
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/submodels/{submodelIdentifier}/$reference
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/submodels/{submodelIdentifier}/$value
+    status: missing
+    implemented_by: []
+  - method: PATCH
+    path: /aas/submodels/{submodelIdentifier}/$value
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements
+    status: missing
+    implemented_by: []
+  - method: POST
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/$metadata
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/$path
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/$reference
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/$value
+    status: missing
+    implemented_by: []
+  - method: DELETE
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}
+    status: missing
+    implemented_by: []
+  - method: PATCH
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}
+    status: missing
+    implemented_by: []
+  - method: POST
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}
+    status: missing
+    implemented_by: []
+  - method: PUT
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/$metadata
+    status: missing
+    implemented_by: []
+  - method: PATCH
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/$metadata
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/$path
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/$reference
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/$value
+    status: missing
+    implemented_by: []
+  - method: PATCH
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/$value
+    status: missing
+    implemented_by: []
+  - method: DELETE
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/attachment
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/attachment
+    status: missing
+    implemented_by: []
+  - method: PUT
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/attachment
+    status: missing
+    implemented_by: []
+  - method: POST
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/invoke
+    status: missing
+    implemented_by: []
+  - method: POST
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/invoke-asnyc
+    status: missing
+    implemented_by: []
+  - method: POST
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/invoke-async/$value
+    status: missing
+    implemented_by: []
+  - method: POST
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/invoke/$value
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/operation-results/{handleId}
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/operation-results/{handleId}/$value
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /aas/submodels/{submodelIdentifier}/submodel-elements/{idShortPath}/operation-status/{handleId}
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /description
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/description.py
+    - src/titan/api/routers/system.py
+  - method: GET
+    path: /serialization
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/serialization.py
+- name: Submodel Service
+  spec_dir: SubmodelServiceSpecification
+  endpoints:
+  - method: GET
+    path: /description
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/description.py
+    - src/titan/api/routers/system.py
+  - method: GET
+    path: /serialization
+    status: ok
+    implemented_by:
+    - src/titan/api/routers/serialization.py
+  - method: GET
+    path: /submodel
+    status: missing
+    implemented_by: []
+  - method: PATCH
+    path: /submodel
+    status: missing
+    implemented_by: []
+  - method: PUT
+    path: /submodel
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /submodel/$metadata
+    status: missing
+    implemented_by: []
+  - method: PATCH
+    path: /submodel/$metadata
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /submodel/$path
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /submodel/$reference
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /submodel/$value
+    status: missing
+    implemented_by: []
+  - method: PATCH
+    path: /submodel/$value
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /submodel/submodel-elements
+    status: missing
+    implemented_by: []
+  - method: POST
+    path: /submodel/submodel-elements
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /submodel/submodel-elements/$metadata
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /submodel/submodel-elements/$path
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /submodel/submodel-elements/$reference
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /submodel/submodel-elements/$value
+    status: missing
+    implemented_by: []
+  - method: DELETE
+    path: /submodel/submodel-elements/{idShortPath}
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /submodel/submodel-elements/{idShortPath}
+    status: missing
+    implemented_by: []
+  - method: PATCH
+    path: /submodel/submodel-elements/{idShortPath}
+    status: missing
+    implemented_by: []
+  - method: POST
+    path: /submodel/submodel-elements/{idShortPath}
+    status: missing
+    implemented_by: []
+  - method: PUT
+    path: /submodel/submodel-elements/{idShortPath}
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /submodel/submodel-elements/{idShortPath}/$metadata
+    status: missing
+    implemented_by: []
+  - method: PATCH
+    path: /submodel/submodel-elements/{idShortPath}/$metadata
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /submodel/submodel-elements/{idShortPath}/$path
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /submodel/submodel-elements/{idShortPath}/$reference
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /submodel/submodel-elements/{idShortPath}/$value
+    status: missing
+    implemented_by: []
+  - method: PATCH
+    path: /submodel/submodel-elements/{idShortPath}/$value
+    status: missing
+    implemented_by: []
+  - method: DELETE
+    path: /submodel/submodel-elements/{idShortPath}/attachment
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /submodel/submodel-elements/{idShortPath}/attachment
+    status: missing
+    implemented_by: []
+  - method: PUT
+    path: /submodel/submodel-elements/{idShortPath}/attachment
+    status: missing
+    implemented_by: []
+  - method: POST
+    path: /submodel/submodel-elements/{idShortPath}/invoke
+    status: missing
+    implemented_by: []
+  - method: POST
+    path: /submodel/submodel-elements/{idShortPath}/invoke-async
+    status: missing
+    implemented_by: []
+  - method: POST
+    path: /submodel/submodel-elements/{idShortPath}/invoke-async/$value
+    status: missing
+    implemented_by: []
+  - method: POST
+    path: /submodel/submodel-elements/{idShortPath}/invoke/$value
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /submodel/submodel-elements/{idShortPath}/operation-results/{handleId}
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /submodel/submodel-elements/{idShortPath}/operation-results/{handleId}/$value
+    status: missing
+    implemented_by: []
+  - method: GET
+    path: /submodel/submodel-elements/{idShortPath}/operation-status/{handleId}
+    status: missing
+    implemented_by: []
+global_gaps:
+- id: paging-metadata-key
+  severity: major
+  summary: Responses use paging_metadata instead of pagingMetadata.
+  locations:
+  - src/titan/api/pagination.py
+- id: modifier-support-mismatch
+  severity: major
+  summary: Description advertises content=reference/path but projection only supports
+    metadata/value.
+  locations:
+  - src/titan/api/routers/description.py
+  - src/titan/core/projection.py
+- id: query-profile-missing
+  severity: major
+  summary: Query endpoints are not implemented for repositories/registries.
+  locations:
+  - src/titan/api/routers/aas_repository.py
+  - src/titan/api/routers/submodel_repository.py
+  - src/titan/api/routers/concept_description_repository.py
+  - src/titan/api/routers/registry.py
+- id: registry-async-bulk-missing
+  severity: major
+  summary: Async bulk status/result endpoints are not implemented.
+  locations:
+  - src/titan/api/routers/registry.py
+- id: aasx-validation-not-enforced
+  severity: moderate
+  summary: AASX validator exists but is not enforced on upload/import.
+  locations:
+  - src/titan/api/routers/aasx.py
+  - src/titan/packages/validator.py
+- id: if-match-not-required-on-delete
+  severity: minor
+  summary: DELETE endpoints generally do not enforce If-Match preconditions.
+  locations:
+  - src/titan/api/routers/aas_repository.py
+  - src/titan/api/routers/submodel_repository.py
+  - src/titan/api/routers/registry.py
+- id: content-type-negotiation
+  severity: minor
+  summary: Responses default to application/json rather than aas-specific media types.
+  locations:
+  - src/titan/api/routers/*
+- id: strict-uri-regex-relaxed
+  severity: minor
+  summary: URI regex for PathType is relaxed vs RFC3986 to satisfy pydantic-core.
+  locations:
+  - src/titan/core/model/identifiers.py

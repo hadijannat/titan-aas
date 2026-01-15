@@ -36,14 +36,15 @@ class TestAasxPackage:
     def test_package_with_content(self):
         """Create a package with shells, submodels, and CDs."""
         shell = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="urn:aas:1",
             asset_information=AssetInformation(
                 asset_kind=AssetKind.INSTANCE,
                 global_asset_id="urn:asset:1",
             ),
         )
-        submodel = Submodel(id="urn:sm:1")
-        cd = ConceptDescription(id="urn:cd:1")
+        submodel = Submodel(model_type="Submodel", id="urn:sm:1")
+        cd = ConceptDescription(model_type="ConceptDescription", id="urn:cd:1")
 
         package = AasxPackage(
             shells=[shell],
@@ -101,6 +102,7 @@ class TestAasxExporter:
     async def test_export_with_shells_json(self):
         """Export package with shells to JSON."""
         shell = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="urn:aas:export:1",
             id_short="ExportTest",
             asset_information=AssetInformation(
@@ -127,6 +129,7 @@ class TestAasxExporter:
     async def test_export_with_concept_descriptions(self):
         """Export package with concept descriptions."""
         cd = ConceptDescription(
+            model_type="ConceptDescription",
             id="urn:cd:export:1",
             id_short="ExportCD",
             description=[{"language": "en", "text": "Export test CD"}],
@@ -156,6 +159,7 @@ class TestAasxImporter:
         """Import a JSON AASX package."""
         # First export
         shell = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="urn:aas:import:1",
             id_short="ImportTest",
             asset_information=AssetInformation(
@@ -181,6 +185,7 @@ class TestAasxImporter:
         """Import an XML AASX package."""
         # First export as XML
         shell = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="urn:aas:xml:1",
             id_short="XmlTest",
             asset_information=AssetInformation(
@@ -217,6 +222,7 @@ class TestAasxRoundTrip:
     async def test_json_roundtrip_full_environment(self):
         """Full environment round-trip with JSON."""
         shell = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="urn:aas:rt:1",
             id_short="RoundtripAAS",
             asset_information=AssetInformation(
@@ -226,10 +232,12 @@ class TestAasxRoundTrip:
         )
 
         submodel = Submodel(
+            model_type="Submodel",
             id="urn:sm:rt:1",
             id_short="RoundtripSubmodel",
             submodel_elements=[
                 Property(
+                    model_type="Property",
                     id_short="RoundtripProp",
                     value_type="xs:string",
                     value="roundtrip-value",
@@ -238,6 +246,7 @@ class TestAasxRoundTrip:
         )
 
         cd = ConceptDescription(
+            model_type="ConceptDescription",
             id="urn:cd:rt:1",
             id_short="RoundtripCD",
         )
@@ -266,6 +275,7 @@ class TestAasxRoundTrip:
     async def test_xml_roundtrip_full_environment(self):
         """Full environment round-trip with XML."""
         shell = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="urn:aas:xml:rt:1",
             id_short="XmlRoundtripAAS",
             asset_information=AssetInformation(
@@ -275,11 +285,13 @@ class TestAasxRoundTrip:
         )
 
         submodel = Submodel(
+            model_type="Submodel",
             id="urn:sm:xml:rt:1",
             id_short="XmlRoundtripSubmodel",
         )
 
         cd = ConceptDescription(
+            model_type="ConceptDescription",
             id="urn:cd:xml:rt:1",
             id_short="XmlRoundtripCD",
         )

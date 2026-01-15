@@ -155,7 +155,7 @@ class TestReplaceElement:
         doc = {"submodelElements": []}
 
         with pytest.raises(ElementNotFoundError):
-            replace_element(doc, "NonExistent", {"modelType": "Property", "idShort": "X"})
+            replace_element(doc, "NonExistent", {"modelType": "Property", "idShort": "X1"})
 
 
 class TestPatchElement:

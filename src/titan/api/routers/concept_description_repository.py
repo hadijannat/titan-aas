@@ -23,6 +23,7 @@ from titan.api.deps import (
     json_response_with_etag,
 )
 from titan.api.errors import (
+    BadRequestError,
     ConflictError,
     NotFoundError,
 )
@@ -246,18 +247,38 @@ async def put_concept_description_by_id(
 ) -> Response:
     """Update an existing ConceptDescription."""
     identifier = decode_identifier(cd_identifier)
+    if identifier != concept_description.id:
+        raise BadRequestError("Path identifier does not match ConceptDescription.id")
 
-    if if_match:
-        current = await repo.get_bytes_by_id(identifier)
-        if current:
-            _, current_etag = current
-            check_precondition(if_match, current_etag)
+    current = await repo.get_bytes_by_id(identifier)
 
-    result = await repo.update(identifier, concept_description)
-    if result is None:
-        raise NotFoundError("ConceptDescription", identifier)
+    if current and if_match:
+        _, current_etag = current
+        check_precondition(if_match, current_etag)
 
-    doc_bytes, etag = result
+    if current is None:
+        doc_bytes, etag = await repo.create(concept_description)
+        await session.commit()
+
+        await cache.set_concept_description(cd_identifier, doc_bytes, etag)
+
+        await publish_concept_description_event(
+            event_bus=get_event_bus(),
+            event_type=EventType.CREATED,
+            identifier=identifier,
+            identifier_b64=cd_identifier,
+            doc_bytes=doc_bytes,
+            etag=etag,
+        )
+
+        return json_response_with_etag(
+            doc_bytes,
+            etag,
+            status_code=201,
+            location=f"/concept-descriptions/{cd_identifier}",
+        )
+
+    doc_bytes, etag = await repo.update(identifier, concept_description)
     await session.commit()
 
     await cache.set_concept_description(cd_identifier, doc_bytes, etag)

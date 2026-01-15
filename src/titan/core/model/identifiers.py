@@ -1,7 +1,7 @@
-"""IDTA-01001 Part 1 v3.1.2: Identifiers, References, and Key Types.
+"""IDTA-01001 Part 1 v3.0.8: Identifiers, References, and Key Types.
 
 This module defines the fundamental identification and referencing constructs
-used throughout the AAS metamodel.
+used throughout the AAS metamodel per IDTA-01001-3-0-1_schemasV3.0.8.
 """
 
 from __future__ import annotations
@@ -54,8 +54,14 @@ class ReferenceTypes(str, Enum):
 
 
 class AasSubmodelElements(str, Enum):
-    """Enumeration of all concrete SubmodelElement types (modelType discriminator)."""
+    """Enumeration of SubmodelElement types (includes abstract base types per v3.0.8+).
 
+    Concrete types are used as modelType discriminators. Abstract types
+    (DataElement, EventElement, SubmodelElement) are included for schema
+    conformance and type constraints.
+    """
+
+    # Concrete types (used as modelType discriminators)
     ANNOTATED_RELATIONSHIP_ELEMENT = "AnnotatedRelationshipElement"
     BASIC_EVENT_ELEMENT = "BasicEventElement"
     BLOB = "Blob"
@@ -70,6 +76,11 @@ class AasSubmodelElements(str, Enum):
     RELATIONSHIP_ELEMENT = "RelationshipElement"
     SUBMODEL_ELEMENT_COLLECTION = "SubmodelElementCollection"
     SUBMODEL_ELEMENT_LIST = "SubmodelElementList"
+
+    # Abstract types (for schema conformance, not used as modelType)
+    DATA_ELEMENT = "DataElement"
+    EVENT_ELEMENT = "EventElement"
+    SUBMODEL_ELEMENT = "SubmodelElement"
 
 
 class EntityType(str, Enum):
@@ -162,11 +173,17 @@ class LevelType(str, Enum):
 
 
 class AssetKind(str, Enum):
-    """Kind of an Asset."""
+    """Kind of an Asset.
 
-    TYPE = "Type"
+    Per IDTA-01001-3-0-1 v3.0.8 JSON Schema:
+    - Instance: Asset is an instance (individual)
+    - NotApplicable: Asset kind is not applicable
+    - Type: Asset is a type (template/class)
+    """
+
     INSTANCE = "Instance"
     NOT_APPLICABLE = "NotApplicable"
+    TYPE = "Type"
 
 
 class ModellingKind(str, Enum):
@@ -193,7 +210,7 @@ class Key(StrictModel):
     """A key in a Reference."""
 
     type: KeyTypes = Field(..., description="Type of the key")
-    value: Annotated[str, Field(min_length=1, max_length=2000)] = Field(
+    value: Annotated[str, Field(min_length=1, max_length=2048)] = Field(
         ..., description="The value of the key"
     )
 
@@ -227,9 +244,49 @@ class Reference(StrictModel):
 
 
 # Type aliases for semantic clarity
-Identifier = Annotated[str, Field(min_length=1, max_length=2000)]
-IdShort = Annotated[str, Field(min_length=1, max_length=128, pattern=r"^[a-zA-Z_][a-zA-Z0-9_]*$")]
-ContentType = Annotated[str, Field(min_length=1, max_length=100)]
-PathType = Annotated[str, Field(min_length=1, max_length=2000)]
+Identifier = Annotated[str, Field(min_length=1, max_length=2048)]
+IdShort = Annotated[
+    str,
+    Field(
+        min_length=1,
+        max_length=128,
+        pattern=r"^[a-zA-Z](?:[a-zA-Z0-9_-]*[a-zA-Z0-9_])?$",
+    ),
+]
+
+# MIME type pattern per IDTA-01001-3-0-1 v3.0.8 JSON schema (RFC 2045/7231).
+# Format: type/subtype[;parameter=value]*
+MIME_TYPE_PATTERN = (
+    r"^([!#$%&'*+\-.^_`|~0-9a-zA-Z])+/([!#$%&'*+\-.^_`|~0-9a-zA-Z])+"
+    r"([ \t]*;[ \t]*([!#$%&'*+\-.^_`|~0-9a-zA-Z])+=("
+    r"([!#$%&'*+\-.^_`|~0-9a-zA-Z])+|"
+    r"\"(([\t !#-\[\]-~]|[\x80-\xff])|\\\\([\t !-~]|[\x80-\xff]))*\"))*$"
+)
+ContentType = Annotated[str, Field(min_length=1, max_length=128, pattern=MIME_TYPE_PATTERN)]
+
+# URI pattern per IDTA-01001-3-0-1 v3.0.8 JSON schema (RFC 3986).
+# NOTE: The full RFC 3986 regex from the spec is not compatible with the
+# Rust regex engine used by pydantic-core and fails schema compilation.
+# This relaxed pattern allows absolute/relative paths and URI schemes.
+URI_PATTERN = r"^(?:[a-zA-Z][a-zA-Z0-9+.-]*:(//)?\S+|/\S+|\S+)$"
+PathType = Annotated[str, Field(min_length=1, max_length=2048, pattern=URI_PATTERN)]
 BlobType = bytes
 ValueDataType = str
+
+# ISO 8601 Duration pattern per IDTA-01001-3-0-1 v3.0.8 JSON schema.
+# Format: P[n]Y[n]M[n]DT[n]H[n]M[n]S or PT[n]H[n]M[n]S
+ISO8601_DURATION_PATTERN = (
+    r"^-?P((([0-9]+Y([0-9]+M)?([0-9]+D)?|([0-9]+M)([0-9]+D)?|([0-9]+D))"
+    r"(T(([0-9]+H)([0-9]+M)?([0-9]+(\\.[0-9]+)?S)?|"
+    r"([0-9]+M)([0-9]+(\\.[0-9]+)?S)?|([0-9]+(\\.[0-9]+)?S)))?)|"
+    r"(T(([0-9]+H)([0-9]+M)?([0-9]+(\\.[0-9]+)?S)?|"
+    r"([0-9]+M)([0-9]+(\\.[0-9]+)?S)?|([0-9]+(\\.[0-9]+)?S))))$"
+)
+
+# ISO 8601 UTC timestamp pattern per IDTA-01001-3-0-1 v3.0.8 JSON schema.
+# Format: YYYY-MM-DDTHH:MM:SS[.sss](Z|+00:00|-00:00)
+ISO8601_UTC_PATTERN = (
+    r"^-?(([1-9][0-9][0-9][0-9]+)|(0[0-9][0-9][0-9]))-((0[1-9])|(1[0-2]))-"
+    r"((0[1-9])|([12][0-9])|(3[01]))T(((([01][0-9])|(2[0-3])):[0-5][0-9]:"
+    r"([0-5][0-9])(\.[0-9]+)?)|24:00:00(\.0+)?)(Z|\+00:00|-00:00)$"
+)

@@ -267,6 +267,9 @@ def _find_element_by_id_short(container: dict[str, Any], id_short: str) -> dict[
     if not elements:
         # For SubmodelElementCollection/List
         elements = container.get("value", [])
+    if not elements:
+        # For Entity statements or AnnotatedRelationshipElement annotations
+        elements = container.get("statements", []) or container.get("annotations", [])
 
     if isinstance(elements, list):
         for elem in elements:
@@ -281,6 +284,8 @@ def _get_element_at_index(container: dict[str, Any], index: int) -> dict[str, An
     elements = container.get("submodelElements", [])
     if not elements:
         elements = container.get("value", [])
+    if not elements:
+        elements = container.get("statements", []) or container.get("annotations", [])
 
     if isinstance(elements, list) and 0 <= index < len(elements):
         elem = elements[index]
@@ -403,6 +408,15 @@ def extract_reference_for_aas(aas: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def extract_reference_for_submodel(submodel: dict[str, Any]) -> dict[str, Any]:
+    """Extract $reference representation for a Submodel."""
+    submodel_id = submodel.get("id", "")
+    return {
+        "type": "ModelReference",
+        "keys": [{"type": "Submodel", "value": submodel_id}],
+    }
+
+
 def extract_path(element: dict[str, Any], id_short_path: str) -> dict[str, Any]:
     """Extract $path representation for a SubmodelElement.
 
@@ -418,3 +432,152 @@ def extract_path(element: dict[str, Any], id_short_path: str) -> dict[str, Any]:
     return {
         "idShortPath": id_short_path,
     }
+
+
+def collect_id_short_paths(submodel: dict[str, Any]) -> list[str]:
+    """Collect all idShortPaths for submodel elements (including hierarchy)."""
+    elements = submodel.get("submodelElements", [])
+    paths: list[str] = []
+    for elem in elements:
+        id_short = elem.get("idShort")
+        if id_short:
+            _collect_paths(elem, id_short, paths)
+    return paths
+
+
+def collect_element_references(submodel: dict[str, Any]) -> list[dict[str, Any]]:
+    """Collect references for all submodel elements (including hierarchy)."""
+    submodel_id = submodel.get("id", "")
+    elements = submodel.get("submodelElements", [])
+    references: list[dict[str, Any]] = []
+    for elem in elements:
+        id_short = elem.get("idShort")
+        if id_short:
+            _collect_references(elem, id_short, submodel_id, references)
+    return references
+
+
+def _collect_paths(element: dict[str, Any], path: str, out: list[str]) -> None:
+    """Recursively collect idShortPaths for nested elements."""
+    out.append(path)
+    model_type = element.get("modelType")
+
+    if model_type in ("SubmodelElementCollection",):
+        for child in element.get("value", []) or []:
+            child_id = child.get("idShort")
+            if child_id:
+                _collect_paths(child, f"{path}.{child_id}", out)
+        return
+
+    if model_type in ("Entity",):
+        for child in element.get("statements", []) or []:
+            child_id = child.get("idShort")
+            if child_id:
+                _collect_paths(child, f"{path}.{child_id}", out)
+        return
+
+    if model_type in ("AnnotatedRelationshipElement",):
+        for child in element.get("annotations", []) or []:
+            child_id = child.get("idShort")
+            if child_id:
+                _collect_paths(child, f"{path}.{child_id}", out)
+        return
+
+    if model_type == "SubmodelElementList":
+        for idx, child in enumerate(element.get("value", []) or []):
+            item_path = f"{path}[{idx}]"
+            out.append(item_path)
+            _collect_list_child_paths(child, item_path, out)
+
+
+def _collect_list_child_paths(element: dict[str, Any], path: str, out: list[str]) -> None:
+    """Collect nested paths for list elements without duplicating the list item path."""
+    model_type = element.get("modelType")
+    if model_type == "SubmodelElementCollection":
+        for child in element.get("value", []) or []:
+            child_id = child.get("idShort")
+            if child_id:
+                _collect_paths(child, f"{path}.{child_id}", out)
+    elif model_type == "Entity":
+        for child in element.get("statements", []) or []:
+            child_id = child.get("idShort")
+            if child_id:
+                _collect_paths(child, f"{path}.{child_id}", out)
+    elif model_type == "AnnotatedRelationshipElement":
+        for child in element.get("annotations", []) or []:
+            child_id = child.get("idShort")
+            if child_id:
+                _collect_paths(child, f"{path}.{child_id}", out)
+    elif model_type == "SubmodelElementList":
+        for idx, child in enumerate(element.get("value", []) or []):
+            item_path = f"{path}[{idx}]"
+            out.append(item_path)
+            _collect_list_child_paths(child, item_path, out)
+
+
+def _collect_references(
+    element: dict[str, Any],
+    path: str,
+    submodel_id: str,
+    out: list[dict[str, Any]],
+) -> None:
+    """Recursively collect references for nested elements."""
+    out.append(extract_reference(element, submodel_id, path))
+    model_type = element.get("modelType")
+
+    if model_type == "SubmodelElementCollection":
+        for child in element.get("value", []) or []:
+            child_id = child.get("idShort")
+            if child_id:
+                _collect_references(child, f"{path}.{child_id}", submodel_id, out)
+        return
+
+    if model_type == "Entity":
+        for child in element.get("statements", []) or []:
+            child_id = child.get("idShort")
+            if child_id:
+                _collect_references(child, f"{path}.{child_id}", submodel_id, out)
+        return
+
+    if model_type == "AnnotatedRelationshipElement":
+        for child in element.get("annotations", []) or []:
+            child_id = child.get("idShort")
+            if child_id:
+                _collect_references(child, f"{path}.{child_id}", submodel_id, out)
+        return
+
+    if model_type == "SubmodelElementList":
+        for idx, child in enumerate(element.get("value", []) or []):
+            item_path = f"{path}[{idx}]"
+            out.append(extract_reference(child, submodel_id, item_path))
+            _collect_list_child_references(child, item_path, submodel_id, out)
+
+
+def _collect_list_child_references(
+    element: dict[str, Any],
+    path: str,
+    submodel_id: str,
+    out: list[dict[str, Any]],
+) -> None:
+    """Collect nested references for list elements without duplicating the list item."""
+    model_type = element.get("modelType")
+    if model_type == "SubmodelElementCollection":
+        for child in element.get("value", []) or []:
+            child_id = child.get("idShort")
+            if child_id:
+                _collect_references(child, f"{path}.{child_id}", submodel_id, out)
+    elif model_type == "Entity":
+        for child in element.get("statements", []) or []:
+            child_id = child.get("idShort")
+            if child_id:
+                _collect_references(child, f"{path}.{child_id}", submodel_id, out)
+    elif model_type == "AnnotatedRelationshipElement":
+        for child in element.get("annotations", []) or []:
+            child_id = child.get("idShort")
+            if child_id:
+                _collect_references(child, f"{path}.{child_id}", submodel_id, out)
+    elif model_type == "SubmodelElementList":
+        for idx, child in enumerate(element.get("value", []) or []):
+            item_path = f"{path}[{idx}]"
+            out.append(extract_reference(child, submodel_id, item_path))
+            _collect_list_child_references(child, item_path, submodel_id, out)

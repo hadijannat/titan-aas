@@ -18,7 +18,7 @@ from datetime import datetime
 from typing import Annotated, Generic, TypeVar
 
 from fastapi import Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 T = TypeVar("T")
 
@@ -69,8 +69,10 @@ def decode_cursor(cursor: str) -> CursorData | None:
 class PaginatedResult(BaseModel, Generic[T]):
     """Paginated result following IDTA conventions."""
 
+    model_config = {"populate_by_name": True}
+
     result: list[T]
-    paging_metadata: PagingMetadata
+    paging_metadata: PagingMetadata = Field(alias="paging_metadata")
 
 
 class PagingMetadata(BaseModel):

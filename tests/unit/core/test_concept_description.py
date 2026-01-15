@@ -10,7 +10,7 @@ class TestConceptDescriptionBasic:
 
     def test_minimal_concept_description(self):
         """Create a ConceptDescription with only required fields."""
-        cd = ConceptDescription(id="urn:example:cd:1")
+        cd = ConceptDescription(model_type="ConceptDescription", id="urn:example:cd:1")
 
         assert cd.id == "urn:example:cd:1"
         assert cd.id_short is None
@@ -23,6 +23,7 @@ class TestConceptDescriptionBasic:
     def test_concept_description_with_id_short(self):
         """Create a ConceptDescription with idShort."""
         cd = ConceptDescription(
+            model_type="ConceptDescription",
             id="urn:example:cd:2",
             id_short="Temperature",
         )
@@ -33,6 +34,7 @@ class TestConceptDescriptionBasic:
     def test_concept_description_with_description(self):
         """Create a ConceptDescription with multi-language description."""
         cd = ConceptDescription(
+            model_type="ConceptDescription",
             id="urn:example:cd:3",
             id_short="Temperature",
             description=[
@@ -50,6 +52,7 @@ class TestConceptDescriptionBasic:
     def test_concept_description_with_display_name(self):
         """Create a ConceptDescription with display name."""
         cd = ConceptDescription(
+            model_type="ConceptDescription",
             id="urn:example:cd:4",
             display_name=[
                 {"language": "en", "text": "Temperature"},
@@ -67,6 +70,7 @@ class TestConceptDescriptionIsCaseOf:
     def test_is_case_of_single_reference(self):
         """ConceptDescription with a single isCaseOf reference."""
         cd = ConceptDescription(
+            model_type="ConceptDescription",
             id="urn:example:cd:temp",
             id_short="Temperature",
             is_case_of=[
@@ -89,6 +93,7 @@ class TestConceptDescriptionIsCaseOf:
     def test_is_case_of_multiple_references(self):
         """ConceptDescription with multiple isCaseOf references."""
         cd = ConceptDescription(
+            model_type="ConceptDescription",
             id="urn:example:cd:multi",
             id_short="MultiReference",
             is_case_of=[
@@ -112,6 +117,7 @@ class TestConceptDescriptionSerialization:
     def test_serialization_uses_aliases(self):
         """Serialization should use camelCase aliases."""
         cd = ConceptDescription(
+            model_type="ConceptDescription",
             id="urn:example:cd:alias",
             id_short="AliasTest",
             display_name=[{"language": "en", "text": "Alias"}],
@@ -137,7 +143,7 @@ class TestConceptDescriptionSerialization:
 
     def test_serialization_excludes_none(self):
         """Serialization should exclude None values."""
-        cd = ConceptDescription(id="urn:example:cd:minimal")
+        cd = ConceptDescription(model_type="ConceptDescription", id="urn:example:cd:minimal")
 
         data = cd.model_dump(mode="json", by_alias=True, exclude_none=True)
 
@@ -163,7 +169,7 @@ class TestConceptDescriptionSerialization:
             ],
         }
 
-        cd = ConceptDescription.model_validate(data)
+        cd = ConceptDescription.model_validate(data | {"modelType": "ConceptDescription"})
 
         assert cd.id == "urn:example:cd:deser"
         assert cd.id_short == "DeserTest"
@@ -183,12 +189,17 @@ class TestConceptDescriptionValidation:
         """idShort must match the pattern constraint."""
         # idShort cannot start with a number
         with pytest.raises(Exception):
-            ConceptDescription(id="urn:example:cd:invalid", id_short="123Invalid")
+            ConceptDescription(
+                model_type="ConceptDescription",
+                id="urn:example:cd:invalid",
+                id_short="123Invalid",
+            )
 
     def test_extra_fields_forbidden(self):
         """Extra fields should be rejected (strict mode)."""
         with pytest.raises(Exception):
             ConceptDescription(
+                model_type="ConceptDescription",
                 id="urn:example:cd:extra",
                 unknown_field="value",  # type: ignore
             )

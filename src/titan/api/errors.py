@@ -11,7 +11,7 @@ from enum import Enum
 
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class MessageType(str, Enum):
@@ -29,7 +29,7 @@ class Message(BaseModel):
     model_config = {"extra": "forbid", "populate_by_name": True}
 
     code: str
-    message_type: MessageType
+    message_type: MessageType = Field(alias="messageType")
     text: str
     timestamp: str | None = None
 

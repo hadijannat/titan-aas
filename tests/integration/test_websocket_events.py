@@ -157,9 +157,13 @@ class TestWebSocketEventFlow:
 
         # Create an AAS via API
         aas = {
+            "modelType": "AssetAdministrationShell",
             "id": "urn:example:aas:ws-event-test",
             "idShort": "WebSocketEventTestAAS",
-            "assetInformation": {"assetKind": "Instance"},
+            "assetInformation": {
+                "assetKind": "Instance",
+                "globalAssetId": "urn:example:asset:ws-event-test",
+            },
         }
         response = await event_wired_client.post("/shells", json=aas)
         assert response.status_code == 201
@@ -188,9 +192,13 @@ class TestWebSocketEventFlow:
 
         # Create first
         aas = {
+            "modelType": "AssetAdministrationShell",
             "id": "urn:example:aas:update-event-test",
             "idShort": "UpdateEventTestAAS",
-            "assetInformation": {"assetKind": "Instance"},
+            "assetInformation": {
+                "assetKind": "Instance",
+                "globalAssetId": "urn:example:asset:update-event-test",
+            },
         }
         await event_wired_client.post("/shells", json=aas)
         await event_bus.drain()
@@ -224,9 +232,13 @@ class TestWebSocketEventFlow:
 
         # Create first
         aas = {
+            "modelType": "AssetAdministrationShell",
             "id": "urn:example:aas:delete-event-test",
             "idShort": "DeleteEventTestAAS",
-            "assetInformation": {"assetKind": "Instance"},
+            "assetInformation": {
+                "assetKind": "Instance",
+                "globalAssetId": "urn:example:asset:delete-event-test",
+            },
         }
         await event_wired_client.post("/shells", json=aas)
         await event_bus.drain()
@@ -259,6 +271,7 @@ class TestWebSocketEventFlow:
 
         # Create submodel
         submodel = {
+            "modelType": "Submodel",
             "id": "urn:example:submodel:ws-event-test",
             "idShort": "WebSocketEventTestSubmodel",
             "submodelElements": [],
@@ -294,9 +307,13 @@ class TestWebSocketEventFlow:
 
         # Create an AAS
         aas = {
+            "modelType": "AssetAdministrationShell",
             "id": "urn:example:aas:multi-sub-test",
             "idShort": "MultiSubscriberTestAAS",
-            "assetInformation": {"assetKind": "Instance"},
+            "assetInformation": {
+                "assetKind": "Instance",
+                "globalAssetId": "urn:example:asset:multi-sub-test",
+            },
         }
         response = await event_wired_client.post("/shells", json=aas)
         assert response.status_code == 201
@@ -326,6 +343,7 @@ class TestWebSocketEventFlow:
 
         # Create a Submodel (should NOT be received)
         submodel = {
+            "modelType": "Submodel",
             "id": "urn:example:submodel:filtered-out",
             "idShort": "FilteredOutSubmodel",
             "submodelElements": [],
@@ -338,9 +356,13 @@ class TestWebSocketEventFlow:
 
         # Create an AAS (should be received)
         aas = {
+            "modelType": "AssetAdministrationShell",
             "id": "urn:example:aas:filtered-in",
             "idShort": "FilteredInAAS",
-            "assetInformation": {"assetKind": "Instance"},
+            "assetInformation": {
+                "assetKind": "Instance",
+                "globalAssetId": "urn:example:asset:filtered-in",
+            },
         }
         await event_wired_client.post("/shells", json=aas)
         await event_bus.drain()
@@ -366,9 +388,13 @@ class TestWebSocketEventFlow:
 
         # Create an AAS
         aas = {
+            "modelType": "AssetAdministrationShell",
             "id": "urn:example:aas:no-receive-test",
             "idShort": "NoReceiveTestAAS",
-            "assetInformation": {"assetKind": "Instance"},
+            "assetInformation": {
+                "assetKind": "Instance",
+                "globalAssetId": "urn:example:asset:no-receive-test",
+            },
         }
         await event_wired_client.post("/shells", json=aas)
         await event_bus.drain()
@@ -393,9 +419,13 @@ class TestEventPayloadContent:
 
         aas_id = "urn:example:aas:payload-test-123"
         aas = {
+            "modelType": "AssetAdministrationShell",
             "id": aas_id,
             "idShort": "PayloadTestAAS",
-            "assetInformation": {"assetKind": "Instance"},
+            "assetInformation": {
+                "assetKind": "Instance",
+                "globalAssetId": "urn:example:asset:payload-test-123",
+            },
         }
         await event_wired_client.post("/shells", json=aas)
         await event_bus.drain()
@@ -417,9 +447,13 @@ class TestEventPayloadContent:
         subscription = await ws_manager.connect(mock_ws)
 
         aas = {
+            "modelType": "AssetAdministrationShell",
             "id": "urn:example:aas:etag-event-test",
             "idShort": "ETagEventTestAAS",
-            "assetInformation": {"assetKind": "Instance"},
+            "assetInformation": {
+                "assetKind": "Instance",
+                "globalAssetId": "urn:example:asset:etag-event-test",
+            },
         }
         await event_wired_client.post("/shells", json=aas)
         await event_bus.drain()

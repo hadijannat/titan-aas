@@ -1,7 +1,8 @@
-"""IDTA-01001 Part 1 v3.1.2 + IDTA-01002 Part 2 v3.1.1: Domain Models.
+"""IDTA-01001 Part 1 v3.0.8 + IDTA-01002 Part 2 v3.0: Domain Models.
 
 This module provides the complete AAS domain model hierarchy following
-the IDTA Release 25-01 specification bundle.
+the IDTA specification bundle, with full conformance to the JSON Schema
+published at: https://github.com/admin-shell-io/aas-specs
 
 All models use Pydantic v2 with strict mode for validation.
 SubmodelElements use a discriminated union on modelType for O(1) type resolution.
@@ -52,6 +53,10 @@ from titan.core.model.descriptions import (
     MultiLanguageShortNameType,
     MultiLanguageTextType,
 )
+
+# Import after all types are defined due to forward references
+from titan.core.model.environment import Environment
+from titan.core.model.event_payload import EventPayload
 from titan.core.model.identifiers import (
     AasSubmodelElements,
     AssetKind,
@@ -78,6 +83,7 @@ from titan.core.model.qualifiers import (
     HasExtensionsMixin,
     HasQualifiersMixin,
     Qualifier,
+    ValueList,
     ValueReferencePair,
 )
 from titan.core.model.registry import (
@@ -94,6 +100,7 @@ from titan.core.model.submodel_elements import (
     BasicEventElement,
     Blob,
     Capability,
+    DataElementUnion,
     Entity,
     File,
     MultiLanguageProperty,
@@ -156,6 +163,7 @@ __all__ = [
     # Qualifiers/Extensions
     "Extension",
     "Qualifier",
+    "ValueList",
     "ValueReferencePair",
     # Administrative
     "AdministrativeInformation",
@@ -163,6 +171,7 @@ __all__ = [
     "EmbeddedDataSpecification",
     "LevelTypeSpec",
     # SubmodelElements
+    "DataElementUnion",
     "AnnotatedRelationshipElement",
     "BasicEventElement",
     "Blob",
@@ -195,4 +204,11 @@ __all__ = [
     "Endpoint",
     "ProtocolInformation",
     "SubmodelDescriptor",
+    # Environment (AASX serialization container)
+    "Environment",
+    # Event messaging
+    "EventPayload",
 ]
+
+# Rebuild Environment model to resolve forward references now that all types are loaded
+Environment.model_rebuild()

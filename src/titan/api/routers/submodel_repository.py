@@ -23,7 +23,7 @@ from __future__ import annotations
 from typing import Any
 
 import orjson
-from fastapi import APIRouter, Body, Depends, Header, Query, Request, Response
+from fastapi import APIRouter, Body, Depends, File, Form, Header, Query, Request, Response, UploadFile
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -40,6 +40,12 @@ from titan.api.errors import (
     ConflictError,
     NotFoundError,
 )
+from titan.api.operation_utils import arguments_to_value_map, coerce_value_only_arguments
+from titan.api.attachment_utils import (
+    apply_attachment_payload,
+    build_attachment_response,
+    clear_attachment_payload,
+)
 from titan.api.pagination import (
     DEFAULT_LIMIT,
     CursorParam,
@@ -52,6 +58,7 @@ from titan.api.routing import (
     LevelParam,
     is_fast_path,
 )
+from titan.api.submodel_update_utils import apply_submodel_metadata_patch, apply_submodel_value_patch
 from titan.cache import RedisCache, get_redis
 from titan.core.canonicalize import canonical_bytes
 from titan.core.element_operations import (
@@ -75,9 +82,12 @@ from titan.core.operation_executor import (
 from titan.core.projection import (
     ProjectionModifiers,
     apply_projection,
+    collect_element_references,
+    collect_id_short_paths,
     extract_metadata,
     extract_path,
     extract_reference,
+    extract_reference_for_submodel,
     extract_value,
     navigate_id_short_path,
 )
@@ -111,6 +121,102 @@ async def get_cache() -> RedisCache:
     """Get Redis cache instance."""
     redis = await get_redis()
     return RedisCache(redis)
+
+
+async def _query_submodels(
+    request: Request,
+    limit: int,
+    cursor: str | None,
+    semantic_id: str | None,
+    id_short: str | None,
+    kind: str | None,
+    repo: SubmodelRepository,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Load submodel documents with optional filters."""
+    has_id_short_filter = id_short is not None
+    has_kind_filter = kind is not None
+
+    if is_fast_path(request) and not has_id_short_filter and not has_kind_filter:
+        paged_result = await repo.list_paged_zero_copy(
+            limit=limit,
+            cursor=cursor,
+            semantic_id=semantic_id,
+        )
+        payload = orjson.loads(paged_result.response_bytes)
+        items = payload.get("result", [])
+        paging = payload.get("paging_metadata") or {"cursor": None}
+        return items, paging
+
+    if kind and not has_id_short_filter and not semantic_id:
+        results = await repo.find_by_kind(kind, limit=limit)
+    elif semantic_id and not has_id_short_filter and not kind:
+        results = await repo.find_by_semantic_id(semantic_id, limit=limit)
+    else:
+        results = await repo.list_all(limit=limit, offset=0)
+
+    items: list[dict[str, Any]] = []
+    for doc_bytes, _etag in results:
+        doc = orjson.loads(doc_bytes)
+
+        if id_short and doc.get("idShort") != id_short:
+            continue
+        if kind and doc.get("kind") != kind:
+            continue
+
+        if semantic_id and has_id_short_filter:
+            doc_semantic_id = None
+            sem_ref = doc.get("semanticId")
+            if sem_ref and isinstance(sem_ref, dict):
+                keys = sem_ref.get("keys", [])
+                if keys and isinstance(keys, list) and len(keys) > 0:
+                    doc_semantic_id = keys[-1].get("value")
+            if doc_semantic_id != semantic_id:
+                continue
+
+        items.append(doc)
+
+    return items, {"cursor": None}
+
+
+async def _persist_submodel_doc_update(
+    identifier: str,
+    identifier_b64: str,
+    updated_doc: dict[str, Any],
+    repo: SubmodelRepository,
+    cache: RedisCache,
+    session: AsyncSession,
+) -> tuple[bytes, str, Submodel]:
+    """Validate and persist a full Submodel document update."""
+    try:
+        submodel = Submodel.model_validate(updated_doc)
+    except ValidationError as e:
+        raise BadRequestError(str(e)) from e
+
+    update_result = await repo.update(identifier, submodel)
+    if update_result is None:
+        raise NotFoundError("Submodel", identifier)
+
+    doc_bytes, etag = update_result
+    await session.commit()
+
+    await cache.set_submodel(identifier_b64, doc_bytes, etag)
+    await cache.invalidate_submodel_elements(identifier_b64)
+
+    semantic_id = None
+    if submodel.semantic_id and submodel.semantic_id.keys:
+        semantic_id = submodel.semantic_id.keys[0].value
+
+    await publish_submodel_event(
+        event_bus=get_event_bus(),
+        event_type=EventType.UPDATED,
+        identifier=identifier,
+        identifier_b64=identifier_b64,
+        doc_bytes=doc_bytes,
+        etag=etag,
+        semantic_id=semantic_id,
+    )
+
+    return doc_bytes, etag, submodel
 
 
 @router.get(
@@ -196,6 +302,128 @@ async def get_all_submodels(
         }
 
         return json_bytes_response(canonical_bytes(response_data))
+
+
+def _extract_submodel_values(doc: dict[str, Any]) -> dict[str, Any]:
+    elements = doc.get("submodelElements", [])
+    values: dict[str, Any] = {}
+    for elem in elements:
+        id_short = elem.get("idShort")
+        if id_short:
+            values[id_short] = extract_value(elem)
+    return values
+
+
+@router.get(
+    "/$metadata",
+    dependencies=[Depends(require_permission(Permission.READ_SUBMODEL))],
+)
+async def get_all_submodels_metadata(
+    request: Request,
+    limit: LimitParam = DEFAULT_LIMIT,
+    cursor: CursorParam = None,
+    semantic_id: str | None = Query(None, alias="semanticId"),
+    id_short: str | None = Query(None, alias="idShort"),
+    kind: str | None = Query(None, description="Filter by kind: Instance or Template"),
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+) -> Response:
+    """Get all Submodels in $metadata representation."""
+    items, paging = await _query_submodels(
+        request=request,
+        limit=limit,
+        cursor=cursor,
+        semantic_id=semantic_id,
+        id_short=id_short,
+        kind=kind,
+        repo=repo,
+    )
+    metadata = [extract_metadata(doc) for doc in items]
+    response_data = {"result": metadata, "paging_metadata": paging}
+    return json_bytes_response(canonical_bytes(response_data))
+
+
+@router.get(
+    "/$reference",
+    dependencies=[Depends(require_permission(Permission.READ_SUBMODEL))],
+)
+async def get_all_submodels_reference(
+    request: Request,
+    limit: LimitParam = DEFAULT_LIMIT,
+    cursor: CursorParam = None,
+    semantic_id: str | None = Query(None, alias="semanticId"),
+    id_short: str | None = Query(None, alias="idShort"),
+    kind: str | None = Query(None, description="Filter by kind: Instance or Template"),
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+) -> Response:
+    """Get References for all Submodels."""
+    items, paging = await _query_submodels(
+        request=request,
+        limit=limit,
+        cursor=cursor,
+        semantic_id=semantic_id,
+        id_short=id_short,
+        kind=kind,
+        repo=repo,
+    )
+    references = [extract_reference_for_submodel(doc) for doc in items]
+    response_data = {"result": references, "paging_metadata": paging}
+    return json_bytes_response(canonical_bytes(response_data))
+
+
+@router.get(
+    "/$path",
+    dependencies=[Depends(require_permission(Permission.READ_SUBMODEL))],
+)
+async def get_all_submodels_path(
+    request: Request,
+    limit: LimitParam = DEFAULT_LIMIT,
+    cursor: CursorParam = None,
+    semantic_id: str | None = Query(None, alias="semanticId"),
+    id_short: str | None = Query(None, alias="idShort"),
+    kind: str | None = Query(None, description="Filter by kind: Instance or Template"),
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+) -> Response:
+    """Get all Submodels in $path representation."""
+    items, paging = await _query_submodels(
+        request=request,
+        limit=limit,
+        cursor=cursor,
+        semantic_id=semantic_id,
+        id_short=id_short,
+        kind=kind,
+        repo=repo,
+    )
+    paths = [doc.get("idShort") for doc in items if doc.get("idShort")]
+    response_data = {"result": paths, "paging_metadata": paging}
+    return json_bytes_response(canonical_bytes(response_data))
+
+
+@router.get(
+    "/$value",
+    dependencies=[Depends(require_permission(Permission.READ_SUBMODEL))],
+)
+async def get_all_submodels_value(
+    request: Request,
+    limit: LimitParam = DEFAULT_LIMIT,
+    cursor: CursorParam = None,
+    semantic_id: str | None = Query(None, alias="semanticId"),
+    id_short: str | None = Query(None, alias="idShort"),
+    kind: str | None = Query(None, description="Filter by kind: Instance or Template"),
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+) -> Response:
+    """Get all Submodels in $value representation."""
+    items, paging = await _query_submodels(
+        request=request,
+        limit=limit,
+        cursor=cursor,
+        semantic_id=semantic_id,
+        id_short=id_short,
+        kind=kind,
+        repo=repo,
+    )
+    values = [_extract_submodel_values(doc) for doc in items]
+    response_data = {"result": values, "paging_metadata": paging}
+    return json_bytes_response(canonical_bytes(response_data))
 
 
 @router.post(
@@ -328,32 +556,57 @@ async def put_submodel_by_id(
 ) -> Response:
     """Update an existing Submodel."""
     identifier = decode_identifier(submodel_identifier)
+    if identifier != submodel.id:
+        raise BadRequestError("Path identifier does not match Submodel.id")
 
-    if if_match:
-        current = await repo.get_bytes_by_id(identifier)
-        if current:
-            _, current_etag = current
-            check_precondition(if_match, current_etag)
+    current = await repo.get_bytes_by_id(identifier)
+
+    if current and if_match:
+        _, current_etag = current
+        check_precondition(if_match, current_etag)
 
     try:
-        result = await repo.update(identifier, submodel)
+        if current is None:
+            doc_bytes, etag = await repo.create(submodel)
+            await session.commit()
+
+            await cache.set_submodel(submodel_identifier, doc_bytes, etag)
+            await cache.invalidate_submodel_elements(submodel_identifier)
+
+            semantic_id = None
+            if submodel.semantic_id and submodel.semantic_id.keys:
+                semantic_id = submodel.semantic_id.keys[0].value
+
+            await publish_submodel_event(
+                event_bus=get_event_bus(),
+                event_type=EventType.CREATED,
+                identifier=identifier,
+                identifier_b64=submodel_identifier,
+                doc_bytes=doc_bytes,
+                etag=etag,
+                semantic_id=semantic_id,
+            )
+
+            return json_response_with_etag(
+                doc_bytes,
+                etag,
+                status_code=201,
+                location=f"/submodels/{submodel_identifier}",
+            )
+
+        doc_bytes, etag = await repo.update(identifier, submodel)
     except ValueError as e:
         raise BadRequestError(str(e)) from e
-    if result is None:
-        raise NotFoundError("Submodel", identifier)
 
-    doc_bytes, etag = result
     await session.commit()
 
     await cache.set_submodel(submodel_identifier, doc_bytes, etag)
     await cache.invalidate_submodel_elements(submodel_identifier)
 
-    # Extract semantic_id for event filtering
     semantic_id = None
     if submodel.semantic_id and submodel.semantic_id.keys:
         semantic_id = submodel.semantic_id.keys[0].value
 
-    # Publish event for real-time subscribers
     await publish_submodel_event(
         event_bus=get_event_bus(),
         event_type=EventType.UPDATED,
@@ -444,12 +697,195 @@ async def get_submodel_elements(
     doc = orjson.loads(doc_bytes)
     elements = doc.get("submodelElements", [])
 
+    if content == "reference":
+        references = collect_element_references(doc)
+        response_data = {
+            "result": references,
+            "paging_metadata": {"cursor": None},
+        }
+        return json_bytes_response(canonical_bytes(response_data))
+
+    if content == "path":
+        paths = collect_id_short_paths(doc)
+        response_data = {
+            "result": paths,
+            "paging_metadata": {"cursor": None},
+        }
+        return json_bytes_response(canonical_bytes(response_data))
+
     if not is_fast_path(request):
         modifiers = ProjectionModifiers(level=level, extent=extent, content=content)
         elements = [apply_projection(elem, modifiers) for elem in elements]
 
     response_data = {
         "result": elements,
+        "paging_metadata": {"cursor": None},
+    }
+
+    return json_bytes_response(canonical_bytes(response_data))
+
+
+@router.get(
+    "/{submodel_identifier}/submodel-elements/$metadata",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_SUBMODEL,
+                resource_id_params=["submodel_identifier"],
+            )
+        )
+    ],
+)
+async def get_all_submodel_elements_metadata(
+    submodel_identifier: str,
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+    cache: RedisCache = Depends(get_cache),
+) -> Response:
+    """Get $metadata for all SubmodelElements (including hierarchy)."""
+    identifier = decode_identifier(submodel_identifier)
+
+    cached = await cache.get_submodel(submodel_identifier)
+    if cached:
+        doc_bytes, _ = cached
+    else:
+        result = await repo.get_bytes_by_id(identifier)
+        if result is None:
+            raise NotFoundError("Submodel", identifier)
+        doc_bytes, etag = result
+        await cache.set_submodel(submodel_identifier, doc_bytes, etag)
+
+    doc = orjson.loads(doc_bytes)
+    elements = doc.get("submodelElements", [])
+    metadata = [extract_metadata(elem) for elem in elements]
+
+    response_data = {
+        "result": metadata,
+        "paging_metadata": {"cursor": None},
+    }
+
+    return json_bytes_response(canonical_bytes(response_data))
+
+
+@router.get(
+    "/{submodel_identifier}/submodel-elements/$value",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_SUBMODEL,
+                resource_id_params=["submodel_identifier"],
+            )
+        )
+    ],
+)
+async def get_all_submodel_elements_value(
+    submodel_identifier: str,
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+    cache: RedisCache = Depends(get_cache),
+) -> Response:
+    """Get $value for all SubmodelElements (value-only representation)."""
+    identifier = decode_identifier(submodel_identifier)
+
+    cached = await cache.get_submodel(submodel_identifier)
+    if cached:
+        doc_bytes, _ = cached
+    else:
+        result = await repo.get_bytes_by_id(identifier)
+        if result is None:
+            raise NotFoundError("Submodel", identifier)
+        doc_bytes, etag = result
+        await cache.set_submodel(submodel_identifier, doc_bytes, etag)
+
+    doc = orjson.loads(doc_bytes)
+    elements = doc.get("submodelElements", [])
+
+    values: dict[str, Any] = {}
+    for elem in elements:
+        id_short = elem.get("idShort")
+        if id_short:
+            values[id_short] = extract_value(elem)
+
+    response_data = {
+        "result": values,
+        "paging_metadata": {"cursor": None},
+    }
+
+    return json_bytes_response(canonical_bytes(response_data))
+
+
+@router.get(
+    "/{submodel_identifier}/submodel-elements/$reference",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_SUBMODEL,
+                resource_id_params=["submodel_identifier"],
+            )
+        )
+    ],
+)
+async def get_all_submodel_elements_reference(
+    submodel_identifier: str,
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+    cache: RedisCache = Depends(get_cache),
+) -> Response:
+    """Get References for all SubmodelElements (including hierarchy)."""
+    identifier = decode_identifier(submodel_identifier)
+
+    cached = await cache.get_submodel(submodel_identifier)
+    if cached:
+        doc_bytes, _ = cached
+    else:
+        result = await repo.get_bytes_by_id(identifier)
+        if result is None:
+            raise NotFoundError("Submodel", identifier)
+        doc_bytes, etag = result
+        await cache.set_submodel(submodel_identifier, doc_bytes, etag)
+
+    doc = orjson.loads(doc_bytes)
+    references = collect_element_references(doc)
+
+    response_data = {
+        "result": references,
+        "paging_metadata": {"cursor": None},
+    }
+
+    return json_bytes_response(canonical_bytes(response_data))
+
+
+@router.get(
+    "/{submodel_identifier}/submodel-elements/$path",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_SUBMODEL,
+                resource_id_params=["submodel_identifier"],
+            )
+        )
+    ],
+)
+async def get_all_submodel_elements_path(
+    submodel_identifier: str,
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+    cache: RedisCache = Depends(get_cache),
+) -> Response:
+    """Get idShortPaths for all SubmodelElements (including hierarchy)."""
+    identifier = decode_identifier(submodel_identifier)
+
+    cached = await cache.get_submodel(submodel_identifier)
+    if cached:
+        doc_bytes, _ = cached
+    else:
+        result = await repo.get_bytes_by_id(identifier)
+        if result is None:
+            raise NotFoundError("Submodel", identifier)
+        doc_bytes, etag = result
+        await cache.set_submodel(submodel_identifier, doc_bytes, etag)
+
+    doc = orjson.loads(doc_bytes)
+    paths = collect_id_short_paths(doc)
+
+    response_data = {
+        "result": paths,
         "paging_metadata": {"cursor": None},
     }
 
@@ -503,6 +939,14 @@ async def get_submodel_element_by_path(
     if element is None:
         raise NotFoundError("SubmodelElement", id_short_path)
 
+    if content == "reference":
+        submodel_id = doc.get("id", "")
+        reference = extract_reference(element, submodel_id, id_short_path)
+        return json_bytes_response(canonical_bytes(reference))
+
+    if content == "path":
+        return json_bytes_response(canonical_bytes(extract_path(element, id_short_path)))
+
     if not is_fast_path(request):
         modifiers = ProjectionModifiers(level=level, extent=extent, content=content)
         element = apply_projection(element, modifiers)
@@ -553,6 +997,50 @@ async def get_submodel_value(
             values[id_short] = extract_value(elem)
 
     return json_bytes_response(canonical_bytes(values))
+
+
+@router.patch(
+    "/{submodel_identifier}/$value",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.UPDATE_SUBMODEL,
+                resource_id_params=["submodel_identifier"],
+            )
+        )
+    ],
+)
+async def patch_submodel_value(
+    submodel_identifier: str,
+    payload: Any = Body(...),
+    if_match: str | None = Header(None, alias="If-Match"),
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+    cache: RedisCache = Depends(get_cache),
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """Patch Submodel values using idShortPath keys."""
+    identifier = decode_identifier(submodel_identifier)
+    result = await repo.get_bytes_by_id(identifier)
+    if result is None:
+        raise NotFoundError("Submodel", identifier)
+
+    doc_bytes, current_etag = result
+    check_precondition(if_match, current_etag)
+
+    doc = orjson.loads(doc_bytes)
+    values_payload = payload.get("values") if isinstance(payload, dict) else payload
+    updated_doc = apply_submodel_value_patch(doc, values_payload)
+
+    _, etag, _ = await _persist_submodel_doc_update(
+        identifier,
+        submodel_identifier,
+        updated_doc,
+        repo,
+        cache,
+        session,
+    )
+
+    return no_content_response(etag)
 
 
 @router.get(
@@ -648,6 +1136,119 @@ async def get_submodel_metadata(
     metadata = extract_metadata(doc)
 
     return json_bytes_response(canonical_bytes(metadata))
+
+
+@router.patch(
+    "/{submodel_identifier}/$metadata",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.UPDATE_SUBMODEL,
+                resource_id_params=["submodel_identifier"],
+            )
+        )
+    ],
+)
+async def patch_submodel_metadata(
+    submodel_identifier: str,
+    updates: dict,
+    if_match: str | None = Header(None, alias="If-Match"),
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+    cache: RedisCache = Depends(get_cache),
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """Patch Submodel metadata fields."""
+    identifier = decode_identifier(submodel_identifier)
+    result = await repo.get_bytes_by_id(identifier)
+    if result is None:
+        raise NotFoundError("Submodel", identifier)
+
+    doc_bytes, current_etag = result
+    check_precondition(if_match, current_etag)
+
+    doc = orjson.loads(doc_bytes)
+    updated_doc = apply_submodel_metadata_patch(doc, updates)
+
+    _, etag, _ = await _persist_submodel_doc_update(
+        identifier,
+        submodel_identifier,
+        updated_doc,
+        repo,
+        cache,
+        session,
+    )
+
+    return no_content_response(etag)
+
+
+@router.get(
+    "/{submodel_identifier}/$reference",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_SUBMODEL,
+                resource_id_params=["submodel_identifier"],
+            )
+        )
+    ],
+)
+async def get_submodel_reference(
+    submodel_identifier: str,
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+    cache: RedisCache = Depends(get_cache),
+) -> Response:
+    """Get the $reference of a Submodel."""
+    identifier = decode_identifier(submodel_identifier)
+
+    cached = await cache.get_submodel(submodel_identifier)
+    if cached:
+        doc_bytes, _ = cached
+    else:
+        result = await repo.get_bytes_by_id(identifier)
+        if result is None:
+            raise NotFoundError("Submodel", identifier)
+        doc_bytes, etag = result
+        await cache.set_submodel(submodel_identifier, doc_bytes, etag)
+
+    doc = orjson.loads(doc_bytes)
+    reference = extract_reference_for_submodel(doc)
+
+    return json_bytes_response(canonical_bytes(reference))
+
+
+@router.get(
+    "/{submodel_identifier}/$path",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_SUBMODEL,
+                resource_id_params=["submodel_identifier"],
+            )
+        )
+    ],
+)
+async def get_submodel_path(
+    submodel_identifier: str,
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+    cache: RedisCache = Depends(get_cache),
+) -> Response:
+    """Get the $path representation of a Submodel."""
+    identifier = decode_identifier(submodel_identifier)
+
+    cached = await cache.get_submodel(submodel_identifier)
+    if cached:
+        doc_bytes, _ = cached
+    else:
+        result = await repo.get_bytes_by_id(identifier)
+        if result is None:
+            raise NotFoundError("Submodel", identifier)
+        doc_bytes, etag = result
+        await cache.set_submodel(submodel_identifier, doc_bytes, etag)
+
+    doc = orjson.loads(doc_bytes)
+    paths = collect_id_short_paths(doc)
+
+    return json_bytes_response(canonical_bytes(paths))
 
 
 @router.get(
@@ -784,6 +1385,164 @@ async def get_element_path(
 
     path_result = extract_path(element, id_short_path)
     return json_bytes_response(canonical_bytes(path_result))
+
+
+# ============================================================================
+# Attachment Endpoint
+# ============================================================================
+
+
+@router.get(
+    "/{submodel_identifier}/submodel-elements/{id_short_path:path}/attachment",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_SUBMODEL,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier", "id_short_path"],
+            )
+        )
+    ],
+)
+async def get_element_attachment(
+    submodel_identifier: str,
+    id_short_path: str,
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+    cache: RedisCache = Depends(get_cache),
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """Download attachment for a File or Blob SubmodelElement."""
+    identifier = decode_identifier(submodel_identifier)
+
+    cached = await cache.get_submodel(submodel_identifier)
+    if cached:
+        doc_bytes, _ = cached
+    else:
+        result = await repo.get_bytes_by_id(identifier)
+        if result is None:
+            raise NotFoundError("Submodel", identifier)
+        doc_bytes, etag = result
+        await cache.set_submodel(submodel_identifier, doc_bytes, etag)
+
+    doc = orjson.loads(doc_bytes)
+    element = navigate_id_short_path(doc, id_short_path)
+    if element is None:
+        raise NotFoundError("SubmodelElement", id_short_path)
+
+    model_type = element.get("modelType")
+    if model_type not in ("File", "Blob"):
+        raise BadRequestError("Attachment is only valid for File or Blob elements")
+
+    value = element.get("value")
+    if not value:
+        raise NotFoundError("Attachment", id_short_path)
+
+    content_type = element.get("contentType") or "application/octet-stream"
+    return await build_attachment_response(value, content_type, session)
+
+
+@router.put(
+    "/{submodel_identifier}/submodel-elements/{id_short_path:path}/attachment",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.UPDATE_SUBMODEL,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier", "id_short_path"],
+            )
+        )
+    ],
+)
+async def put_element_attachment(
+    submodel_identifier: str,
+    id_short_path: str,
+    file: UploadFile = File(...),
+    file_name: str | None = Form(None),
+    if_match: str | None = Header(None, alias="If-Match"),
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+    cache: RedisCache = Depends(get_cache),
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """Upload attachment for a File or Blob SubmodelElement."""
+    identifier = decode_identifier(submodel_identifier)
+
+    result = await repo.get_bytes_by_id(identifier)
+    if result is None:
+        raise NotFoundError("Submodel", identifier)
+
+    doc_bytes, current_etag = result
+    check_precondition(if_match, current_etag)
+
+    doc = orjson.loads(doc_bytes)
+    element = navigate_id_short_path(doc, id_short_path)
+    if element is None:
+        raise NotFoundError("SubmodelElement", id_short_path)
+
+    content = await file.read()
+    apply_attachment_payload(element, content, file.content_type)
+
+    _, etag, _ = await _persist_submodel_doc_update(
+        identifier,
+        submodel_identifier,
+        doc,
+        repo,
+        cache,
+        session,
+    )
+
+    return no_content_response(etag)
+
+
+@router.delete(
+    "/{submodel_identifier}/submodel-elements/{id_short_path:path}/attachment",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.UPDATE_SUBMODEL,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier", "id_short_path"],
+            )
+        )
+    ],
+)
+async def delete_element_attachment(
+    submodel_identifier: str,
+    id_short_path: str,
+    if_match: str | None = Header(None, alias="If-Match"),
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+    cache: RedisCache = Depends(get_cache),
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """Delete attachment for a File or Blob SubmodelElement."""
+    identifier = decode_identifier(submodel_identifier)
+
+    result = await repo.get_bytes_by_id(identifier)
+    if result is None:
+        raise NotFoundError("Submodel", identifier)
+
+    doc_bytes, current_etag = result
+    check_precondition(if_match, current_etag)
+
+    doc = orjson.loads(doc_bytes)
+    element = navigate_id_short_path(doc, id_short_path)
+    if element is None:
+        raise NotFoundError("SubmodelElement", id_short_path)
+
+    if not element.get("value"):
+        raise NotFoundError("Attachment", id_short_path)
+
+    clear_attachment_payload(element)
+
+    _, etag, _ = await _persist_submodel_doc_update(
+        identifier,
+        submodel_identifier,
+        doc,
+        repo,
+        cache,
+        session,
+    )
+
+    return no_content_response(etag)
 
 
 # ============================================================================
@@ -1312,6 +2071,67 @@ async def get_operation_invocation_repo(
     return OperationInvocationRepository(session)
 
 
+async def _invoke_operation(
+    submodel_identifier: str,
+    id_short_path: str,
+    request_body: InvokeOperationRequest,
+    repo: SubmodelRepository,
+    invocation_repo: OperationInvocationRepository,
+    session: AsyncSession,
+    user: User | None,
+) -> InvokeOperationResult:
+    """Invoke an Operation and persist invocation record."""
+    identifier = decode_identifier(submodel_identifier)
+
+    result = await repo.get_bytes_by_id(identifier)
+    if result is None:
+        raise NotFoundError("Submodel", identifier)
+
+    doc_bytes, _ = result
+    doc = orjson.loads(doc_bytes)
+
+    element = navigate_id_short_path(doc, id_short_path)
+    if element is None:
+        raise NotFoundError("SubmodelElement", id_short_path)
+
+    if element.get("modelType") != "Operation":
+        raise BadRequestError(f"Element at path '{id_short_path}' is not an Operation")
+
+    try:
+        operation = Operation.model_validate(element)
+    except ValidationError as e:
+        raise BadRequestError(f"Invalid Operation element: {e}") from e
+
+    executor = OperationExecutor(get_event_bus())
+    requested_by = user.subject if user else None
+
+    try:
+        invoke_result = await executor.invoke(
+            submodel_id=identifier,
+            id_short_path=id_short_path,
+            operation=operation,
+            request=request_body,
+            requested_by=requested_by,
+        )
+    except OperationValidationError as e:
+        raise BadRequestError(e.message)
+
+    await invocation_repo.create(
+        invocation_id=invoke_result.invocation_id,
+        submodel_id=identifier,
+        submodel_id_b64=submodel_identifier,
+        id_short_path=id_short_path,
+        execution_state=invoke_result.execution_state.value,
+        input_arguments=request_body.input_arguments,
+        inoutput_arguments=request_body.inoutput_arguments,
+        timeout_ms=request_body.timeout,
+        requested_by=requested_by,
+    )
+    await session.commit()
+
+    return invoke_result
+
+
 @router.post(
     "/{submodel_identifier}/submodel-elements/{id_short_path:path}/invoke",
     status_code=200,
@@ -1342,64 +2162,77 @@ async def invoke_operation_sync(
     Note: This endpoint is event-based. Downstream connectors (OPC-UA, Modbus, HTTP)
     subscribe to operation invocation events and execute the operation.
     """
-    identifier = decode_identifier(submodel_identifier)
-
-    # Get submodel
-    result = await repo.get_bytes_by_id(identifier)
-    if result is None:
-        raise NotFoundError("Submodel", identifier)
-
-    doc_bytes, _ = result
-    doc = orjson.loads(doc_bytes)
-
-    # Navigate to element and verify it's an Operation
-    element = navigate_id_short_path(doc, id_short_path)
-    if element is None:
-        raise NotFoundError("SubmodelElement", id_short_path)
-
-    if element.get("modelType") != "Operation":
-        raise BadRequestError(f"Element at path '{id_short_path}' is not an Operation")
-
-    # Parse as Operation model for validation
-    try:
-        operation = Operation.model_validate(element)
-    except ValidationError as e:
-        raise BadRequestError(f"Invalid Operation element: {e}") from e
-
-    # Create executor and invoke
-    executor = OperationExecutor(get_event_bus())
-    requested_by = user.subject if user else None
-
-    try:
-        invoke_result = await executor.invoke(
-            submodel_id=identifier,
-            id_short_path=id_short_path,
-            operation=operation,
-            request=request_body,
-            requested_by=requested_by,
-        )
-    except OperationValidationError as e:
-        raise BadRequestError(e.message)
-
-    # Persist invocation record
-    await invocation_repo.create(
-        invocation_id=invoke_result.invocation_id,
-        submodel_id=identifier,
-        submodel_id_b64=submodel_identifier,
+    invoke_result = await _invoke_operation(
+        submodel_identifier=submodel_identifier,
         id_short_path=id_short_path,
-        execution_state=invoke_result.execution_state.value,
-        input_arguments=request_body.input_arguments,
-        inoutput_arguments=request_body.inoutput_arguments,
-        timeout_ms=request_body.timeout,
-        requested_by=requested_by,
+        request_body=request_body,
+        repo=repo,
+        invocation_repo=invocation_repo,
+        session=session,
+        user=user,
     )
-    await session.commit()
 
     # Build response per IDTA-01002
     response_data = {
         "executionState": invoke_result.execution_state.value,
         "outputArguments": invoke_result.output_arguments,
         "inoutputArguments": invoke_result.inoutput_arguments,
+    }
+
+    return Response(
+        content=canonical_bytes(response_data),
+        media_type="application/json",
+        headers={"X-Invocation-Id": invoke_result.invocation_id},
+    )
+
+
+@router.post(
+    "/{submodel_identifier}/submodel-elements/{id_short_path:path}/invoke/$value",
+    status_code=200,
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.INVOKE_OPERATION,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier", "id_short_path"],
+            )
+        )
+    ],
+)
+async def invoke_operation_sync_value_only(
+    submodel_identifier: str,
+    id_short_path: str,
+    payload: dict,
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+    invocation_repo: OperationInvocationRepository = Depends(get_operation_invocation_repo),
+    session: AsyncSession = Depends(get_session),
+    user: User | None = Depends(get_current_user),
+) -> Response:
+    """Invoke an Operation synchronously (value-only representation)."""
+    input_args = coerce_value_only_arguments(payload.get("inputArguments"), "inputArguments")
+    inoutput_args = coerce_value_only_arguments(payload.get("inoutputArguments"), "inoutputArguments")
+    request_body = InvokeOperationRequest.model_validate(
+        {
+            "inputArguments": input_args,
+            "inoutputArguments": inoutput_args,
+            "timeout": payload.get("timeout"),
+        }
+    )
+
+    invoke_result = await _invoke_operation(
+        submodel_identifier=submodel_identifier,
+        id_short_path=id_short_path,
+        request_body=request_body,
+        repo=repo,
+        invocation_repo=invocation_repo,
+        session=session,
+        user=user,
+    )
+
+    response_data = {
+        "executionState": invoke_result.execution_state.value,
+        "outputArguments": arguments_to_value_map(invoke_result.output_arguments),
+        "inoutputArguments": arguments_to_value_map(invoke_result.inoutput_arguments),
     }
 
     return Response(
@@ -1439,60 +2272,71 @@ async def invoke_operation_async(
     Validates input arguments against declared inputVariables, emits an
     OperationInvocationEvent for downstream connectors to execute.
     """
-    identifier = decode_identifier(submodel_identifier)
-
-    # Get submodel
-    result = await repo.get_bytes_by_id(identifier)
-    if result is None:
-        raise NotFoundError("Submodel", identifier)
-
-    doc_bytes, _ = result
-    doc = orjson.loads(doc_bytes)
-
-    # Navigate to element and verify it's an Operation
-    element = navigate_id_short_path(doc, id_short_path)
-    if element is None:
-        raise NotFoundError("SubmodelElement", id_short_path)
-
-    if element.get("modelType") != "Operation":
-        raise BadRequestError(f"Element at path '{id_short_path}' is not an Operation")
-
-    # Parse as Operation model for validation
-    try:
-        operation = Operation.model_validate(element)
-    except ValidationError as e:
-        raise BadRequestError(f"Invalid Operation element: {e}") from e
-
-    # Create executor and invoke
-    executor = OperationExecutor(get_event_bus())
-    requested_by = user.subject if user else None
-
-    try:
-        invoke_result = await executor.invoke(
-            submodel_id=identifier,
-            id_short_path=id_short_path,
-            operation=operation,
-            request=request_body,
-            requested_by=requested_by,
-        )
-    except OperationValidationError as e:
-        raise BadRequestError(e.message)
-
-    # Persist invocation record
-    await invocation_repo.create(
-        invocation_id=invoke_result.invocation_id,
-        submodel_id=identifier,
-        submodel_id_b64=submodel_identifier,
+    invoke_result = await _invoke_operation(
+        submodel_identifier=submodel_identifier,
         id_short_path=id_short_path,
-        execution_state=invoke_result.execution_state.value,
-        input_arguments=request_body.input_arguments,
-        inoutput_arguments=request_body.inoutput_arguments,
-        timeout_ms=request_body.timeout,
-        requested_by=requested_by,
+        request_body=request_body,
+        repo=repo,
+        invocation_repo=invocation_repo,
+        session=session,
+        user=user,
     )
-    await session.commit()
 
     # Build async response per IDTA-01002
+    response_data = {
+        "handleId": invoke_result.invocation_id,
+        "executionState": invoke_result.execution_state.value,
+    }
+
+    return Response(
+        content=canonical_bytes(response_data),
+        media_type="application/json",
+    )
+
+
+@router.post(
+    "/{submodel_identifier}/submodel-elements/{id_short_path:path}/invoke-async/$value",
+    status_code=200,
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.INVOKE_OPERATION,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier", "id_short_path"],
+            )
+        )
+    ],
+)
+async def invoke_operation_async_value_only(
+    submodel_identifier: str,
+    id_short_path: str,
+    payload: dict,
+    repo: SubmodelRepository = Depends(get_submodel_repo),
+    invocation_repo: OperationInvocationRepository = Depends(get_operation_invocation_repo),
+    session: AsyncSession = Depends(get_session),
+    user: User | None = Depends(get_current_user),
+) -> Response:
+    """Invoke an Operation asynchronously (value-only representation)."""
+    input_args = coerce_value_only_arguments(payload.get("inputArguments"), "inputArguments")
+    inoutput_args = coerce_value_only_arguments(payload.get("inoutputArguments"), "inoutputArguments")
+    request_body = InvokeOperationRequest.model_validate(
+        {
+            "inputArguments": input_args,
+            "inoutputArguments": inoutput_args,
+            "timeout": payload.get("timeout"),
+        }
+    )
+
+    invoke_result = await _invoke_operation(
+        submodel_identifier=submodel_identifier,
+        id_short_path=id_short_path,
+        request_body=request_body,
+        repo=repo,
+        invocation_repo=invocation_repo,
+        session=session,
+        user=user,
+    )
+
     response_data = {
         "handleId": invoke_result.invocation_id,
         "executionState": invoke_result.execution_state.value,
@@ -1527,7 +2371,7 @@ async def get_operation_result(
     Returns the current execution state and, if completed, the output arguments.
     Poll this endpoint until executionState is 'completed', 'failed', or 'timeout'.
     """
-    decode_identifier(submodel_identifier)
+    identifier = decode_identifier(submodel_identifier)
 
     # Get invocation record
     invocation = await invocation_repo.get_by_id(handle_id)
@@ -1535,7 +2379,7 @@ async def get_operation_result(
         raise NotFoundError("OperationResult", handle_id)
 
     # Verify it matches the requested submodel/path
-    if invocation.id_short_path != id_short_path:
+    if invocation.id_short_path != id_short_path or invocation.submodel_id != identifier:
         raise NotFoundError("OperationResult", handle_id)
 
     # Build response per IDTA-01002
@@ -1547,6 +2391,92 @@ async def get_operation_result(
     if invocation.execution_state == OperationExecutionState.COMPLETED.value:
         response_data["outputArguments"] = invocation.output_arguments
         response_data["inoutputArguments"] = invocation.inoutput_arguments
+    elif invocation.execution_state == OperationExecutionState.FAILED.value:
+        response_data["message"] = invocation.error_message
+        if invocation.error_code:
+            response_data["messageType"] = invocation.error_code
+
+    return Response(
+        content=canonical_bytes(response_data),
+        media_type="application/json",
+    )
+
+
+@router.get(
+    "/{submodel_identifier}/submodel-elements/{id_short_path:path}/operation-status/{handle_id}",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_SUBMODEL,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier", "id_short_path"],
+            )
+        )
+    ],
+)
+async def get_operation_status(
+    submodel_identifier: str,
+    id_short_path: str,
+    handle_id: str,
+    invocation_repo: OperationInvocationRepository = Depends(get_operation_invocation_repo),
+) -> Response:
+    """Get the status of an async operation invocation."""
+    identifier = decode_identifier(submodel_identifier)
+
+    invocation = await invocation_repo.get_by_id(handle_id)
+    if invocation is None:
+        raise NotFoundError("OperationResult", handle_id)
+    if invocation.id_short_path != id_short_path or invocation.submodel_id != identifier:
+        raise NotFoundError("OperationResult", handle_id)
+
+    response_data: dict[str, Any] = {
+        "executionState": invocation.execution_state,
+    }
+    if invocation.execution_state == OperationExecutionState.FAILED.value:
+        response_data["message"] = invocation.error_message
+        if invocation.error_code:
+            response_data["messageType"] = invocation.error_code
+
+    return Response(
+        content=canonical_bytes(response_data),
+        media_type="application/json",
+    )
+
+
+@router.get(
+    "/{submodel_identifier}/submodel-elements/{id_short_path:path}/operation-results/{handle_id}/$value",
+    dependencies=[
+        Depends(
+            require_permission(
+                Permission.READ_SUBMODEL,
+                resource_type=ResourceType.SUBMODEL_ELEMENT,
+                resource_id_params=["submodel_identifier", "id_short_path"],
+            )
+        )
+    ],
+)
+async def get_operation_result_value_only(
+    submodel_identifier: str,
+    id_short_path: str,
+    handle_id: str,
+    invocation_repo: OperationInvocationRepository = Depends(get_operation_invocation_repo),
+) -> Response:
+    """Get value-only results of an async operation invocation."""
+    identifier = decode_identifier(submodel_identifier)
+
+    invocation = await invocation_repo.get_by_id(handle_id)
+    if invocation is None:
+        raise NotFoundError("OperationResult", handle_id)
+    if invocation.id_short_path != id_short_path or invocation.submodel_id != identifier:
+        raise NotFoundError("OperationResult", handle_id)
+
+    response_data: dict[str, Any] = {
+        "executionState": invocation.execution_state,
+    }
+
+    if invocation.execution_state == OperationExecutionState.COMPLETED.value:
+        response_data["outputArguments"] = arguments_to_value_map(invocation.output_arguments)
+        response_data["inoutputArguments"] = arguments_to_value_map(invocation.inoutput_arguments)
     elif invocation.execution_state == OperationExecutionState.FAILED.value:
         response_data["message"] = invocation.error_message
         if invocation.error_code:

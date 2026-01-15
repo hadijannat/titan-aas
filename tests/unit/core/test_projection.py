@@ -204,9 +204,13 @@ class TestExtractReferenceForAas:
     def test_extract_aas_reference(self) -> None:
         """Extract reference for an AAS."""
         aas = {
+            "modelType": "AssetAdministrationShell",
             "id": "urn:example:aas:robot-001",
             "idShort": "RobotArm",
-            "assetInformation": {"assetKind": "Instance"},
+            "assetInformation": {
+                "assetKind": "Instance",
+                "globalAssetId": "urn:example:asset:robot-001",
+            },
         }
         result = extract_reference_for_aas(aas)
 

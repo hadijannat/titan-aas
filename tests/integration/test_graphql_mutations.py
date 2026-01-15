@@ -104,6 +104,7 @@ async def test_create_shell_mutation_duplicate_id(
             "id": "https://example.com/shells/duplicate-test",
             "idShort": "DuplicateShell",
             "assetKind": "INSTANCE",
+            "globalAssetId": "https://example.com/assets/duplicate-test",
         }
     }
 

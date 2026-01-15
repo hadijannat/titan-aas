@@ -38,7 +38,7 @@ router = APIRouter(prefix="/lookup", tags=["Discovery"])
 
 
 class AssetLink(BaseModel):
-    """Asset link for discovery queries (IDTA-01002 Part 2 v3.1.1).
+    """Asset link for discovery queries (IDTA-01002 Part 2 v3.0).
 
     Per Constraint AASd-116, the global asset ID is represented as a
     specific asset ID with name="globalAssetId".
@@ -462,13 +462,17 @@ async def delete_asset_links_by_id(
     doc_bytes, _ = result
     doc = orjson.loads(doc_bytes)
 
-    # Clear asset information (but keep the structure)
+    # Clear asset information (remove links while keeping descriptor valid)
     doc["globalAssetId"] = None
     doc["specificAssetIds"] = []
 
-    if "assetInformation" in doc:
-        doc["assetInformation"]["globalAssetId"] = None
-        doc["assetInformation"]["specificAssetIds"] = []
+    asset_info = doc.get("assetInformation")
+    if isinstance(asset_info, dict):
+        if "assetKind" not in doc and "assetKind" in asset_info:
+            doc["assetKind"] = asset_info["assetKind"]
+        if "assetType" not in doc and "assetType" in asset_info:
+            doc["assetType"] = asset_info["assetType"]
+    doc.pop("assetInformation", None)
 
     # Update the descriptor in the database
     from titan.core.model.registry import AssetAdministrationShellDescriptor

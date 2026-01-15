@@ -26,6 +26,7 @@ class TestXmlSerializer:
     def test_serialize_shell(self):
         """Serialize a single AAS."""
         shell = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="urn:example:aas:1",
             id_short="TestAAS",
             asset_information=AssetInformation(
@@ -45,10 +46,12 @@ class TestXmlSerializer:
     def test_serialize_submodel_with_elements(self):
         """Serialize a submodel with elements."""
         submodel = Submodel(
+            model_type="Submodel",
             id="urn:example:submodel:1",
             id_short="TestSubmodel",
             submodel_elements=[
                 Property(
+                    model_type="Property",
                     id_short="Temperature",
                     value_type="xs:double",
                     value="25.5",
@@ -67,6 +70,7 @@ class TestXmlSerializer:
     def test_serialize_concept_description(self):
         """Serialize a concept description."""
         cd = ConceptDescription(
+            model_type="ConceptDescription",
             id="urn:example:cd:temperature",
             id_short="Temperature",
             description=[{"language": "en", "text": "Measured temperature"}],
@@ -190,6 +194,7 @@ class TestXmlRoundTrip:
     def test_shell_roundtrip(self):
         """Serialize and deserialize a shell."""
         original = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="urn:example:aas:roundtrip",
             id_short="RoundtripAAS",
             asset_information=AssetInformation(
@@ -215,10 +220,12 @@ class TestXmlRoundTrip:
     def test_submodel_roundtrip(self):
         """Serialize and deserialize a submodel with elements."""
         original = Submodel(
+            model_type="Submodel",
             id="urn:example:submodel:roundtrip",
             id_short="RoundtripSubmodel",
             submodel_elements=[
                 Property(
+                    model_type="Property",
                     id_short="Value1",
                     value_type="xs:string",
                     value="test-value",
@@ -240,6 +247,7 @@ class TestXmlRoundTrip:
     def test_concept_description_roundtrip(self):
         """Serialize and deserialize a concept description."""
         original = ConceptDescription(
+            model_type="ConceptDescription",
             id="urn:example:cd:roundtrip",
             id_short="RoundtripConcept",
             description=[{"language": "en", "text": "Roundtrip test"}],
@@ -258,6 +266,7 @@ class TestXmlRoundTrip:
     def test_full_environment_roundtrip(self):
         """Serialize and deserialize a complete environment."""
         shell = AssetAdministrationShell(
+            model_type="AssetAdministrationShell",
             id="urn:example:aas:full",
             id_short="FullAAS",
             asset_information=AssetInformation(
@@ -267,11 +276,13 @@ class TestXmlRoundTrip:
         )
 
         submodel = Submodel(
+            model_type="Submodel",
             id="urn:example:submodel:full",
             id_short="FullSubmodel",
         )
 
         cd = ConceptDescription(
+            model_type="ConceptDescription",
             id="urn:example:cd:full",
             id_short="FullConcept",
         )

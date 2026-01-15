@@ -1,7 +1,8 @@
-"""IDTA-01001 Part 1 v3.1.2: Administrative information and data specifications.
+"""IDTA-01001 Part 1 v3.0.8: Administrative information and data specifications.
 
 This module defines AdministrativeInformation, HasDataSpecification,
-EmbeddedDataSpecification, and the IEC 61360 data specification content.
+EmbeddedDataSpecification, and the IEC 61360 data specification content
+per IDTA-01001-3-0-1_schemasV3.0.8.
 
 Note: HasDataSpecification is explicitly NOT implemented in BaSyx Python SDK.
 This is a Titan-only feature that provides full IDTA spec compliance.
@@ -9,7 +10,7 @@ This is a Titan-only feature that provides full IDTA spec compliance.
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import Field
 
@@ -23,30 +24,11 @@ from titan.core.model.identifiers import (
     DataTypeIec61360,
     Reference,
 )
-from titan.core.model.qualifiers import ValueReferencePair
+from titan.core.model.qualifiers import ValueList
 
-
-class AdministrativeInformation(StrictModel):
-    """Administrative metadata for an identifiable element.
-
-    Contains version and revision information as well as optional
-    creator and template references.
-    """
-
-    version: Annotated[str, Field(min_length=1, max_length=4)] | None = Field(
-        default=None, description="Version of the element"
-    )
-    revision: Annotated[str, Field(min_length=1, max_length=4)] | None = Field(
-        default=None, description="Revision of the element"
-    )
-    creator: Reference | None = Field(
-        default=None, description="Reference to the creator of the element"
-    )
-    template_id: Annotated[str, Field(min_length=1, max_length=2000)] | None = Field(
-        default=None,
-        alias="templateId",
-        description="Identifier of the template this element was created from",
-    )
+# Version/revision pattern per IDTA-01001-3-0-1 v3.0.8 JSON schema.
+# Must be a non-negative integer (no leading zeros except for "0").
+VERSION_PATTERN = r"^(0|[1-9][0-9]*)$"
 
 
 class ValueFormatType(StrictModel):
@@ -56,12 +38,17 @@ class ValueFormatType(StrictModel):
 
 
 class LevelTypeSpec(StrictModel):
-    """Specification of which level types are applicable."""
+    """Specification of which level types are applicable.
 
-    min: bool = Field(default=False, description="Minimum value is applicable")
-    max: bool = Field(default=False, description="Maximum value is applicable")
-    nom: bool = Field(default=False, description="Nominal value is applicable")
-    typ: bool = Field(default=False, description="Typical value is applicable")
+    Per IDTA-01001-3-0-1 v3.0.8 JSON Schema, all four boolean fields
+    are required (no defaults). Each indicates whether that level type
+    is applicable for the associated data specification.
+    """
+
+    min: bool = Field(..., description="Minimum value is applicable")
+    nom: bool = Field(..., description="Nominal value is applicable")
+    typ: bool = Field(..., description="Typical value is applicable")
+    max: bool = Field(..., description="Maximum value is applicable")
 
 
 class DataSpecificationIec61360(StrictModel):
@@ -71,6 +58,11 @@ class DataSpecificationIec61360(StrictModel):
     for describing concept descriptions that follow the IEC 61360 standard.
     """
 
+    model_type: Literal["DataSpecificationIec61360"] = Field(
+        default="DataSpecificationIec61360",
+        alias="modelType",
+        description="Model type identifier",
+    )
     preferred_name: MultiLanguagePreferredNameType = Field(
         ...,
         alias="preferredName",
@@ -79,18 +71,18 @@ class DataSpecificationIec61360(StrictModel):
     short_name: MultiLanguageShortNameType | None = Field(
         default=None, alias="shortName", description="Short name in multiple languages"
     )
-    unit: Annotated[str, Field(max_length=30)] | None = Field(
+    unit: Annotated[str, Field(min_length=1)] | None = Field(
         default=None, description="Unit of the value"
     )
     unit_id: Reference | None = Field(
         default=None, alias="unitId", description="Reference to the unit definition"
     )
-    source_of_definition: Annotated[str, Field(max_length=255)] | None = Field(
+    source_of_definition: Annotated[str, Field(min_length=1)] | None = Field(
         default=None,
         alias="sourceOfDefinition",
         description="Source of the definition",
     )
-    symbol: Annotated[str, Field(max_length=30)] | None = Field(
+    symbol: Annotated[str, Field(min_length=1)] | None = Field(
         default=None, description="Symbol for the concept"
     )
     data_type: DataTypeIec61360 | None = Field(
@@ -99,15 +91,15 @@ class DataSpecificationIec61360(StrictModel):
     definition: MultiLanguageDefinitionType | None = Field(
         default=None, description="Definition in multiple languages"
     )
-    value_format: Annotated[str, Field(max_length=2000)] | None = Field(
+    value_format: Annotated[str, Field(min_length=1)] | None = Field(
         default=None, alias="valueFormat", description="Format specification for values"
     )
-    value_list: list[ValueReferencePair] | None = Field(
+    value_list: ValueList | None = Field(
         default=None,
         alias="valueList",
         description="List of allowed values (for enumerations)",
     )
-    value: Annotated[str, Field(max_length=2000)] | None = Field(
+    value: Annotated[str, Field(max_length=2048)] | None = Field(
         default=None, description="Default or example value"
     )
     level_type: LevelTypeSpec | None = Field(
@@ -144,8 +136,35 @@ class HasDataSpecificationMixin(StrictModel):
     embedding IEC 61360 data specifications.
     """
 
-    embedded_data_specifications: list[EmbeddedDataSpecification] | None = Field(
+    embedded_data_specifications: (
+        Annotated[list[EmbeddedDataSpecification], Field(min_length=1)] | None
+    ) = Field(
         default=None,
         alias="embeddedDataSpecifications",
         description="List of embedded data specifications",
+    )
+
+
+class AdministrativeInformation(HasDataSpecificationMixin):
+    """Administrative metadata for an identifiable element.
+
+    Contains version and revision information as well as optional
+    creator and template references. Per IDTA-01001-3-0-1 v3.0.8,
+    version and revision must be numeric strings (0 or positive integers
+    without leading zeros).
+    """
+
+    version: Annotated[str, Field(min_length=1, max_length=4, pattern=VERSION_PATTERN)] | None = (
+        Field(default=None, description="Version of the element (numeric, 1-4 digits)")
+    )
+    revision: Annotated[str, Field(min_length=1, max_length=4, pattern=VERSION_PATTERN)] | None = (
+        Field(default=None, description="Revision of the element (numeric, 1-4 digits)")
+    )
+    creator: Reference | None = Field(
+        default=None, description="Reference to the creator of the element"
+    )
+    template_id: Annotated[str, Field(min_length=1, max_length=2048)] | None = Field(
+        default=None,
+        alias="templateId",
+        description="Identifier of the template this element was created from",
     )

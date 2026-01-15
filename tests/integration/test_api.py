@@ -37,6 +37,7 @@ class TestAasEndpoints:
     def sample_aas(self) -> dict:
         """Create sample AAS payload."""
         return {
+            "modelType": "AssetAdministrationShell",
             "id": "urn:example:aas:integration-test",
             "idShort": "IntegrationTestAAS",
             "assetInformation": {
@@ -153,6 +154,7 @@ class TestSubmodelEndpoints:
     def sample_submodel(self) -> dict:
         """Create sample Submodel payload."""
         return {
+            "modelType": "Submodel",
             "id": "urn:example:submodel:integration-test",
             "idShort": "IntegrationTestSubmodel",
             "submodelElements": [
@@ -209,9 +211,13 @@ class TestConditionalRequests:
     @pytest.fixture
     def sample_aas(self) -> dict:
         return {
+            "modelType": "AssetAdministrationShell",
             "id": "urn:example:aas:etag-test",
             "idShort": "ETagTestAAS",
-            "assetInformation": {"assetKind": "Instance"},
+            "assetInformation": {
+                "assetKind": "Instance",
+                "globalAssetId": "urn:example:asset:etag-test",
+            },
         }
 
     @pytest.mark.asyncio
@@ -260,9 +266,13 @@ class TestPagination:
         # Create multiple AAS
         for i in range(5):
             aas = {
+                "modelType": "AssetAdministrationShell",
                 "id": f"urn:example:aas:pagination-{i}",
                 "idShort": f"PaginationAAS{i}",
-                "assetInformation": {"assetKind": "Instance"},
+                "assetInformation": {
+                    "assetKind": "Instance",
+                    "globalAssetId": f"urn:example:asset:pagination-{i}",
+                },
             }
             await test_client.post("/shells", json=aas)
 

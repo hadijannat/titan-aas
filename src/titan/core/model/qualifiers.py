@@ -1,7 +1,7 @@
-"""IDTA-01001 Part 1 v3.1.2: Qualifiers and Extensions.
+"""IDTA-01001 Part 1 v3.0.8: Qualifiers and Extensions.
 
 This module defines Qualifier, Extension, and related mixins used to
-add metadata and constraints to AAS elements.
+add metadata and constraints to AAS elements per IDTA-01001-3-0-1_schemasV3.0.8.
 """
 
 from __future__ import annotations
@@ -26,6 +26,20 @@ class ValueReferencePair(StrictModel):
     value: ValueDataType = Field(..., description="The value")
     value_id: Reference = Field(
         ..., alias="valueId", description="Reference to the value definition"
+    )
+
+
+class ValueList(StrictModel):
+    """Wrapper for a list of value-reference pairs.
+
+    Per IDTA-01001-3-0-1 v3.0.8 JSON Schema, this is the container
+    for enumeration values in DataSpecificationIec61360.
+    """
+
+    value_reference_pairs: Annotated[list[ValueReferencePair], Field(min_length=1)] = Field(
+        ...,
+        alias="valueReferencePairs",
+        description="List of value-reference pairs defining allowed values",
     )
 
 
@@ -71,7 +85,7 @@ class Extension(HasSemanticsMixin):
         default=None, alias="valueType", description="Data type of the extension value"
     )
     value: ValueDataType | None = Field(default=None, description="The extension value")
-    refers_to: list[Reference] | None = Field(
+    refers_to: Annotated[list[Reference], Field(min_length=1)] | None = Field(
         default=None,
         alias="refersTo",
         description="References to elements this extension refers to",
@@ -81,10 +95,14 @@ class Extension(HasSemanticsMixin):
 class HasExtensionsMixin(StrictModel):
     """Mixin for elements that can have extensions."""
 
-    extensions: list[Extension] | None = Field(default=None, description="List of extensions")
+    extensions: Annotated[list[Extension], Field(min_length=1)] | None = Field(
+        default=None, description="List of extensions"
+    )
 
 
 class HasQualifiersMixin(StrictModel):
     """Mixin for elements that can have qualifiers."""
 
-    qualifiers: list[Qualifier] | None = Field(default=None, description="List of qualifiers")
+    qualifiers: Annotated[list[Qualifier], Field(min_length=1)] | None = Field(
+        default=None, description="List of qualifiers"
+    )

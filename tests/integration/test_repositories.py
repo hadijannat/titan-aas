@@ -308,7 +308,10 @@ class TestDatabaseIntegrity:
             "modelType": "AssetAdministrationShell",
             "id": "urn:example:aas:duplicate",
             "idShort": "DuplicateAAS",
-            "assetInformation": {"assetKind": "Instance"},
+            "assetInformation": {
+                "assetKind": "Instance",
+                "globalAssetId": "urn:example:asset:duplicate",
+            },
         }
 
         identifier = data["id"]
