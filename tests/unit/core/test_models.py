@@ -144,7 +144,10 @@ class TestRange:
         """Range with min and max values."""
         rng = Range(
             model_type="Range",
-            idShort="operatingTemp", valueType=DataTypeDefXsd.XS_DOUBLE, min="-40", max="85"
+            idShort="operatingTemp",
+            valueType=DataTypeDefXsd.XS_DOUBLE,
+            min="-40",
+            max="85",
         )
         assert rng.min == "-40"
         assert rng.max == "85"
@@ -173,7 +176,9 @@ class TestFile:
         """File with path reference."""
         file = File(
             model_type="File",
-            idShort="manual", contentType="application/pdf", value="/aasx/documentation/manual.pdf"
+            idShort="manual",
+            contentType="application/pdf",
+            value="/aasx/documentation/manual.pdf",
         )
         assert file.content_type == "application/pdf"
         assert file.model_type == "File"
@@ -449,7 +454,7 @@ class TestHasDataSpecification:
                         preferredName=[
                             LangStringPreferredNameType(language="en", text="Voltage"),
                             LangStringPreferredNameType(language="de", text="Spannung"),
-                        ]
+                        ],
                     ),
                 )
             ],

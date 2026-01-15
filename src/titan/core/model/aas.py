@@ -74,7 +74,6 @@ class AssetInformation(StrictModel):
         description="Default thumbnail image for the asset",
     )
 
-
     @model_validator(mode="after")
     def _require_identifier(self) -> AssetInformation:
         """Ensure at least one asset identifier is present."""

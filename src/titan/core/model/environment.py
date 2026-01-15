@@ -44,10 +44,8 @@ class Environment(StrictModel):
         default=None,
         description="List of Submodels in this environment",
     )
-    concept_descriptions: Annotated[list[ConceptDescription], Field(min_length=1)] | None = (
-        Field(
-            default=None,
-            alias="conceptDescriptions",
-            description="List of Concept Descriptions in this environment",
-        )
+    concept_descriptions: Annotated[list[ConceptDescription], Field(min_length=1)] | None = Field(
+        default=None,
+        alias="conceptDescriptions",
+        description="List of Concept Descriptions in this environment",
     )

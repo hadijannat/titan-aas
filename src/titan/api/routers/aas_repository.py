@@ -444,6 +444,7 @@ async def _invoke_operation_for_shell(
 
     return invoke_result
 
+
 @router.get(
     "",
     dependencies=[Depends(require_permission(Permission.READ_AAS))],
