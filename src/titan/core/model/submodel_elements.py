@@ -15,8 +15,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Annotated, Any, Literal
 
-from pydantic import Discriminator, Field, Tag
-from pydantic import model_validator
+from pydantic import Discriminator, Field, Tag, model_validator
 
 from titan.core.model import StrictModel
 from titan.core.model.administrative import HasDataSpecificationMixin
@@ -26,14 +25,14 @@ from titan.core.model.descriptions import (
     MultiLanguageTextType,
 )
 from titan.core.model.identifiers import (
+    ISO8601_DURATION_PATTERN,
+    ISO8601_UTC_PATTERN,
     AasSubmodelElements,
     ContentType,
     DataTypeDefXsd,
     Direction,
     EntityType,
     IdShort,
-    ISO8601_DURATION_PATTERN,
-    ISO8601_UTC_PATTERN,
     PathType,
     Reference,
     StateOfEvent,
@@ -347,7 +346,7 @@ class SubmodelElementCollection(SubmodelElementBase):
     )
 
     @model_validator(mode="after")
-    def _validate_unique_id_shorts(self) -> "SubmodelElementCollection":
+    def _validate_unique_id_shorts(self) -> SubmodelElementCollection:
         _ensure_unique_id_shorts(self.value, "SubmodelElementCollection")
         return self
 
@@ -389,7 +388,7 @@ class SubmodelElementList(SubmodelElementBase):
     )
 
     @model_validator(mode="after")
-    def _validate_list_constraints(self) -> "SubmodelElementList":
+    def _validate_list_constraints(self) -> SubmodelElementList:
         """Validate list element type constraints and value type requirements."""
         if self.type_value_list_element in (
             AasSubmodelElements.PROPERTY,
@@ -397,7 +396,8 @@ class SubmodelElementList(SubmodelElementBase):
         ):
             if self.value_type_list_element is None:
                 raise ValueError(
-                    "valueTypeListElement is required when typeValueListElement is Property or Range"
+                    "valueTypeListElement is required when typeValueListElement is Property "
+                    "or Range"
                 )
         elif self.value_type_list_element is not None:
             raise ValueError(
@@ -459,7 +459,7 @@ class Entity(SubmodelElementBase):
     )
 
     @model_validator(mode="after")
-    def _validate_unique_id_shorts(self) -> "Entity":
+    def _validate_unique_id_shorts(self) -> Entity:
         _ensure_unique_id_shorts(self.statements, "Entity.statements")
         return self
 

@@ -71,7 +71,7 @@ class Submodel(
     )
 
     @model_validator(mode="after")
-    def _validate_unique_id_shorts(self) -> "Submodel":
+    def _validate_unique_id_shorts(self) -> Submodel:
         """Ensure idShort uniqueness at the Submodel root level."""
         if not self.submodel_elements:
             return self

@@ -427,13 +427,15 @@ class TestMutationSequence:
         """Multiple mutations in single request."""
         query = """
             mutation {
-                shell1: createShell(input: { id: "urn:example:aas:1" globalAssetId: "urn:example:asset:1" }) {
+                shell1: createShell(input: { id: "urn:example:aas:1"
+                                             globalAssetId: "urn:example:asset:1" }) {
                     success
                     shell {
                         id
                     }
                 }
-                shell2: createShell(input: { id: "urn:example:aas:2" globalAssetId: "urn:example:asset:2" }) {
+                shell2: createShell(input: { id: "urn:example:aas:2"
+                                             globalAssetId: "urn:example:asset:2" }) {
                     success
                     shell {
                         id

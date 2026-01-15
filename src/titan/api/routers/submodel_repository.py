@@ -23,11 +23,27 @@ from __future__ import annotations
 from typing import Any
 
 import orjson
-from fastapi import APIRouter, Body, Depends, File, Form, Header, Query, Request, Response, UploadFile
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    File,
+    Form,
+    Header,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+)
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from titan.api.attachment_utils import (
+    apply_attachment_payload,
+    build_attachment_response,
+    clear_attachment_payload,
+)
 from titan.api.deps import (
     check_not_modified,
     check_precondition,
@@ -41,11 +57,6 @@ from titan.api.errors import (
     NotFoundError,
 )
 from titan.api.operation_utils import arguments_to_value_map, coerce_value_only_arguments
-from titan.api.attachment_utils import (
-    apply_attachment_payload,
-    build_attachment_response,
-    clear_attachment_payload,
-)
 from titan.api.pagination import (
     DEFAULT_LIMIT,
     CursorParam,
@@ -58,7 +69,10 @@ from titan.api.routing import (
     LevelParam,
     is_fast_path,
 )
-from titan.api.submodel_update_utils import apply_submodel_metadata_patch, apply_submodel_value_patch
+from titan.api.submodel_update_utils import (
+    apply_submodel_metadata_patch,
+    apply_submodel_value_patch,
+)
 from titan.cache import RedisCache, get_redis
 from titan.core.canonicalize import canonical_bytes
 from titan.core.element_operations import (
@@ -76,6 +90,7 @@ from titan.core.model import Submodel
 from titan.core.model.submodel_elements import Operation
 from titan.core.operation_executor import (
     InvokeOperationRequest,
+    InvokeOperationResult,
     OperationExecutor,
     OperationValidationError,
 )
@@ -2210,7 +2225,10 @@ async def invoke_operation_sync_value_only(
 ) -> Response:
     """Invoke an Operation synchronously (value-only representation)."""
     input_args = coerce_value_only_arguments(payload.get("inputArguments"), "inputArguments")
-    inoutput_args = coerce_value_only_arguments(payload.get("inoutputArguments"), "inoutputArguments")
+    inoutput_args = coerce_value_only_arguments(
+        payload.get("inoutputArguments"),
+        "inoutputArguments",
+    )
     request_body = InvokeOperationRequest.model_validate(
         {
             "inputArguments": input_args,
@@ -2318,7 +2336,10 @@ async def invoke_operation_async_value_only(
 ) -> Response:
     """Invoke an Operation asynchronously (value-only representation)."""
     input_args = coerce_value_only_arguments(payload.get("inputArguments"), "inputArguments")
-    inoutput_args = coerce_value_only_arguments(payload.get("inoutputArguments"), "inoutputArguments")
+    inoutput_args = coerce_value_only_arguments(
+        payload.get("inoutputArguments"),
+        "inoutputArguments",
+    )
     request_body = InvokeOperationRequest.model_validate(
         {
             "inputArguments": input_args,

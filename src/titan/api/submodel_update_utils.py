@@ -6,7 +6,11 @@ from copy import deepcopy
 from typing import Any
 
 from titan.api.errors import BadRequestError, NotFoundError
-from titan.core.element_operations import ElementNotFoundError, InvalidPathError, update_element_value
+from titan.core.element_operations import (
+    ElementNotFoundError,
+    InvalidPathError,
+    update_element_value,
+)
 
 SUBMODEL_METADATA_FIELDS = frozenset(
     {

@@ -12,15 +12,30 @@ All identifiers in path segments are Base64URL encoded per IDTA spec.
 
 from __future__ import annotations
 
+import base64
 from typing import Any
 
-import base64
-
 import orjson
-from fastapi import APIRouter, Body, Depends, File, Form, Header, Query, Request, Response, UploadFile
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    File,
+    Form,
+    Header,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+)
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from titan.api.attachment_utils import (
+    apply_attachment_payload,
+    build_attachment_response,
+    clear_attachment_payload,
+)
 from titan.api.deps import (
     check_not_modified,
     check_precondition,
@@ -32,11 +47,6 @@ from titan.api.errors import (
     BadRequestError,
     ConflictError,
     NotFoundError,
-)
-from titan.api.attachment_utils import (
-    apply_attachment_payload,
-    build_attachment_response,
-    clear_attachment_payload,
 )
 from titan.api.operation_utils import arguments_to_value_map, coerce_value_only_arguments
 from titan.api.pagination import (
@@ -51,18 +61,12 @@ from titan.api.routing import (
     LevelParam,
     is_fast_path,
 )
-from titan.api.submodel_update_utils import apply_submodel_metadata_patch, apply_submodel_value_patch
+from titan.api.submodel_update_utils import (
+    apply_submodel_metadata_patch,
+    apply_submodel_value_patch,
+)
 from titan.cache import RedisCache, get_redis
 from titan.core.canonicalize import canonical_bytes
-from titan.core.ids import encode_id_to_b64url
-from titan.core.model import (
-    AssetAdministrationShell,
-    AssetInformation,
-    Operation,
-    Reference,
-    Resource,
-    Submodel,
-)
 from titan.core.element_operations import (
     ElementExistsError,
     ElementNotFoundError,
@@ -72,6 +76,21 @@ from titan.core.element_operations import (
     patch_element,
     replace_element,
     update_element_value,
+)
+from titan.core.ids import encode_id_to_b64url
+from titan.core.model import (
+    AssetAdministrationShell,
+    AssetInformation,
+    Operation,
+    Reference,
+    Resource,
+    Submodel,
+)
+from titan.core.operation_executor import (
+    InvokeOperationRequest,
+    InvokeOperationResult,
+    OperationExecutor,
+    OperationValidationError,
 )
 from titan.core.projection import (
     ProjectionModifiers,
@@ -85,11 +104,6 @@ from titan.core.projection import (
     extract_reference_for_submodel,
     extract_value,
     navigate_id_short_path,
-)
-from titan.core.operation_executor import (
-    InvokeOperationRequest,
-    OperationExecutor,
-    OperationValidationError,
 )
 from titan.events import (
     EventType,
@@ -2549,7 +2563,10 @@ async def invoke_operation_sync_value_only_for_shell(
 ) -> Response:
     """Invoke an Operation synchronously with value-only payload scoped to the AAS."""
     input_args = coerce_value_only_arguments(payload.get("inputArguments"), "inputArguments")
-    inoutput_args = coerce_value_only_arguments(payload.get("inoutputArguments"), "inoutputArguments")
+    inoutput_args = coerce_value_only_arguments(
+        payload.get("inoutputArguments"),
+        "inoutputArguments",
+    )
     request_body = InvokeOperationRequest.model_validate(
         {
             "inputArguments": input_args,
@@ -2661,7 +2678,10 @@ async def invoke_operation_async_value_only_for_shell(
 ) -> Response:
     """Invoke an Operation asynchronously with value-only payload scoped to the AAS."""
     input_args = coerce_value_only_arguments(payload.get("inputArguments"), "inputArguments")
-    inoutput_args = coerce_value_only_arguments(payload.get("inoutputArguments"), "inoutputArguments")
+    inoutput_args = coerce_value_only_arguments(
+        payload.get("inoutputArguments"),
+        "inoutputArguments",
+    )
     request_body = InvokeOperationRequest.model_validate(
         {
             "inputArguments": input_args,

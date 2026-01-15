@@ -8,8 +8,7 @@ from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from pydantic import Field
-from pydantic import model_validator
+from pydantic import Field, model_validator
 
 from titan.core.model import StrictModel
 from titan.core.model.administrative import (
@@ -77,7 +76,7 @@ class AssetInformation(StrictModel):
 
 
     @model_validator(mode="after")
-    def _require_identifier(self) -> "AssetInformation":
+    def _require_identifier(self) -> AssetInformation:
         """Ensure at least one asset identifier is present."""
         if not self.global_asset_id and not self.specific_asset_ids:
             raise ValueError("AssetInformation must include globalAssetId or specificAssetIds")

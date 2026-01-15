@@ -34,17 +34,17 @@ class Environment(StrictModel):
     """
 
     asset_administration_shells: (
-        Annotated[list["AssetAdministrationShell"], Field(min_length=1)] | None
+        Annotated[list[AssetAdministrationShell], Field(min_length=1)] | None
     ) = Field(
         default=None,
         alias="assetAdministrationShells",
         description="List of Asset Administration Shells in this environment",
     )
-    submodels: Annotated[list["Submodel"], Field(min_length=1)] | None = Field(
+    submodels: Annotated[list[Submodel], Field(min_length=1)] | None = Field(
         default=None,
         description="List of Submodels in this environment",
     )
-    concept_descriptions: Annotated[list["ConceptDescription"], Field(min_length=1)] | None = (
+    concept_descriptions: Annotated[list[ConceptDescription], Field(min_length=1)] | None = (
         Field(
             default=None,
             alias="conceptDescriptions",
